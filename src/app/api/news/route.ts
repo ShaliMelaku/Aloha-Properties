@@ -11,8 +11,8 @@ export async function GET() {
     
     const { count, error: countError } = await supabase
       .from('posts')
-      .select('*', { count: 'exact', head: true })
-      .eq('type', 'news')
+      .select('id', { count: 'exact', head: true })
+      .eq('author_name', 'Aloha Intelligence')
       .gte('created_at', today);
 
     if (countError) throw countError;
@@ -42,7 +42,6 @@ export async function GET() {
         cover_image: art.image,
         source_label: art.source.name,
         source_url: art.url,
-        type: art.type, // 'article' | 'report' | 'guide'
         author_name: "Aloha Intelligence"
       }, { onConflict: 'title' });
     }
@@ -56,7 +55,7 @@ export async function GET() {
     console.error("News Sync Fault:", error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Operational Fault",
-      details: JSON.stringify(error)
+      details: error instanceof Error ? error.stack : JSON.stringify(error)
     }, { status: 500 });
   }
 }
