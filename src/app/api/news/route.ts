@@ -52,7 +52,7 @@ export async function GET() {
       posted: sliced.length,
       articles: sliced
     });
-
+  } catch (error: unknown) {
     console.error("News Sync Fault:", error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Operational Fault",

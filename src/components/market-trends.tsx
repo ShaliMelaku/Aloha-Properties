@@ -32,7 +32,6 @@ interface Post {
 }
 
 export function MarketTrends() {
-  const [mounted, setMounted] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [activeMode, setActiveMode] = useState<'editorial' | 'pulse'>('editorial');
@@ -65,7 +64,6 @@ export function MarketTrends() {
   }, [notify]);
 
   useEffect(() => {
-    setMounted(true);
     async function fetchData() {
       setLoading(true);
       // Fetch Editorial Posts

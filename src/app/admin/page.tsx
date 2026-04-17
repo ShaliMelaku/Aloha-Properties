@@ -629,12 +629,12 @@ export default function AdminDashboard() {
                        <div className="space-y-6">
                           {dbLeads.length > 0 ? (
                             // DYNAMIC REACH: Aggregated from real leads
-                            Object.entries(dbLeads.reduce((acc: any, curr) => {
+                            Object.entries(dbLeads.reduce<Record<string, number>>((acc, curr) => {
                               const loc = curr.interest || 'General';
                               acc[loc] = (acc[loc] || 0) + 1;
                               return acc;
-                            }, {})).slice(0, 3).map(([hub, count]: [string, any], i) => {
-                              const share = Math.round((count / dbLeads.length) * 100);
+                            }, {})).slice(0, 3).map(([hub, count]) => {
+                              const share = Math.round(((count as number) / dbLeads.length) * 100);
                               return (
                                 <div key={hub} className="space-y-2">
                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40">

@@ -170,13 +170,18 @@ function InteractiveGlobe({ viewMode, markers = MARKERS }: { viewMode: string, m
   );
 }
 
+interface LeadRecord {
+  source?: string;
+  interest?: string;
+  created_at?: string;
+}
+
 export function VisitorGlobe() {
   const [viewMode, setViewMode] = useState("globe");
   const [feedIndex, setFeedIndex] = useState(0);
-  const [realLeads, setRealLeads] = useState<any[]>([]);
+  const [realLeads, setRealLeads] = useState<LeadRecord[]>([]);
   const [realTraffic, setRealTraffic] = useState(TRAFFIC_SOURCES);
   const [realRegions, setRealRegions] = useState(TOP_REGIONS);
-  const [loading, setLoading] = useState(true);
 
   // REAL DATA SYNC: Integrated database signal processing
   useEffect(() => {
@@ -187,14 +192,14 @@ export function VisitorGlobe() {
           setRealLeads(leads);
           
           // Aggregate Traffic Sources (Real)
-          const sources = leads.reduce((acc: any, lead: any) => {
+          const sources = leads.reduce<Record<string, number>>((acc, lead) => {
             const src = lead.source || 'Organic';
             acc[src] = (acc[src] || 0) + 1;
             return acc;
           }, {});
           
           const total = leads.length;
-          const mappedSources = Object.entries(sources).map(([name, count]: [string, any]) => ({
+          const mappedSources = Object.entries(sources).map(([name, count]: [string, number]): {source: string, percent: number, color: string} => ({
             source: name,
             percent: Math.round((count / total) * 100),
             color: name.toLowerCase() === 'direct' ? '#0066FF' : name.toLowerCase() === 'organic' ? '#10B981' : '#A855F7'
@@ -203,13 +208,13 @@ export function VisitorGlobe() {
           setRealTraffic(mappedSources);
 
           // Aggregate Regions (Real)
-          const regions = leads.reduce((acc: any, lead: any) => {
+          const regions = leads.reduce<Record<string, number>>((acc, lead) => {
             const reg = lead.interest || 'Unknown';
             acc[reg] = (acc[reg] || 0) + 1;
             return acc;
           }, {});
 
-          const mappedRegions = Object.entries(regions).map(([name, count]: [string, any]) => ({
+          const mappedRegions = Object.entries(regions).map(([name, count]: [string, number]): {name: string, sessions: number, trend: string} => ({
             name,
             sessions: count * 12, // Scaling for visual density
             trend: "+"+Math.floor(Math.random() * 20)+"%"
@@ -219,8 +224,6 @@ export function VisitorGlobe() {
         }
       } catch (e) {
         console.error("Globe data fault", e);
-      } finally {
-        setLoading(false);
       }
     }
     fetchGlobeData();
