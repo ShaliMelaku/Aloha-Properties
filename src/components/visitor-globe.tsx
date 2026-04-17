@@ -4,6 +4,7 @@ import createGlobe from "cobe";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe2, Flame, BarChart3, TrendingUp, Wifi, MapPin } from "lucide-react";
+import { supabaseClient } from "@/lib/supabase";
 
 // --- Data ---
 const LIVE_FEED = [
@@ -358,8 +359,6 @@ export function VisitorGlobe() {
         </div>
       </div>
     </div>
-  );
-}
   );
 }
 

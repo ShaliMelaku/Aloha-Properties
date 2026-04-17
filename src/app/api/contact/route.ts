@@ -46,12 +46,11 @@ export async function POST(req: Request) {
 
     // Email 2: Aloha Concierge Auto-responder to Lead
     const conciergeContent = `
-        <p>Dear ${name},</p>
         <p>Thank you for reaching out to Aloha Properties. This is an automated confirmation that your inquiry regarding <strong>${interest || 'our premium real estate collection'}</strong> has been received by our Concierge Desk.</p>
         <p>Our team of dedicated real estate advisors is currently reviewing your message and will be in touch shortly to provide personalized assistance.</p>
         <p>In the meantime, feel free to explore our digital portfolio to view our exquisite projects.</p>
     `;
-    const leadHtml = renderEmailTemplate(conciergeContent);
+    const leadHtml = renderEmailTemplate(conciergeContent, name);
 
     const { error: autoError } = await resend.emails.send({
       from: 'Aloha Concierge <onboarding@resend.dev>',

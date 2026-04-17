@@ -3,7 +3,7 @@
  * Mirrors the website's premium cinema aesthetic.
  */
 
-export function renderEmailTemplate(content: string) {
+export function renderEmailTemplate(content: string, recipientName: string) {
   const brandBlue = '#0066FF';
   const luxuryCharcoal = '#0A0A0B';
   const mutedText = '#64748b';
@@ -133,6 +133,7 @@ export function renderEmailTemplate(content: string) {
       <tr>
         <td class="content">
           <div class="message-body">
+            <p style="font-weight: 700; margin-bottom: 24px;">Dear ${recipientName},</p>
             ${content}
           </div>
           
