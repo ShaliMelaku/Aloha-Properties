@@ -13,7 +13,7 @@ export async function GET() {
     
     // Logic: Base rate + random fluctuation to simulate daily updates
     // if the real NBE site is unreachable or doesn't have a JSON API.
-    const baseRate = 128.45;
+    const baseRate = 156.91;
     const fluctuation = (Math.random() - 0.5) * 1.5; // +/- 0.75
     const indicativeRate = baseRate + fluctuation;
 

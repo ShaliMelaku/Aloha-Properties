@@ -14,7 +14,6 @@ import { useCurrency } from "@/context/currency-context";
 import { useTheme } from "next-themes";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { supabaseClient } from "@/lib/supabase";
-import Image from "next/image";
 
 interface Lead {
   id?: string;
@@ -1058,7 +1057,7 @@ export default function AdminDashboard() {
 
                                    <div className="flex gap-4">
                                       <div className="flex-1 flex gap-2">
-                                         <input type="text" placeholder="Unit Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                         <input type="text" title="Unit Image URL" placeholder="Unit Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                          <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
                                             <Upload size={14} />
                                             <input type="file" accept="image/*" className="hidden" onChange={async e => {
@@ -1096,6 +1095,7 @@ export default function AdminDashboard() {
                                             <button 
                                               type="button"
                                               onClick={() => setNewProp({...newProp, units: newProp.units.filter((_, idx) => idx !== i)})}
+                                              title="Remove Unit"
                                               className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                             >
                                                <Trash2 size={14} />
@@ -1295,7 +1295,7 @@ export default function AdminDashboard() {
                                              const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/blog-media/${data.path}`;
                                              if (editingPost) setEditingPost({...editingPost, cover_image: url});
                                              else setNewPost({...newPost, cover_image: url});
-                                          } catch (err) { 
+                                          } catch { 
                                              notify('error', 'Upload failed'); 
                                           }
                                        }}
@@ -1358,7 +1358,7 @@ export default function AdminDashboard() {
                                           onChange={async (e) => {
                                              const file = e.target.files?.[0];
                                              if (!file) return;
-                                             const toastId = notify('info', 'Uploading document...');
+                                             notify('info', 'Uploading document...');
                                              try {
                                                 const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
                                                 const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file);
@@ -1367,8 +1367,9 @@ export default function AdminDashboard() {
                                                 if (editingPost) setEditingPost({...editingPost, file_url: publicUrl});
                                                 else setNewPost({...newPost, file_url: publicUrl});
                                                 notify('success', 'PDF synchronization successful.');
-                                             } catch (err: any) { 
-                                                notify('error', `Protocol error: ${err.message || 'Check storage permissions'}`); 
+                                             } catch (err: unknown) { 
+                                                const message = err instanceof Error ? err.message : 'Check storage permissions';
+                                                notify('error', `Protocol error: ${message}`); 
                                              }
                                           }}
                                        />
@@ -1556,7 +1557,7 @@ export default function AdminDashboard() {
                            <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                            
                            <div className="flex gap-2">
-                              <input type="text" placeholder="Unit Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                              <input type="text" title="Unit Image URL" placeholder="Variant Photo URL (Floor plan or interior)" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                               <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
                                  <Upload size={14} />
                                  <input type="file" accept="image/*" className="hidden" onChange={async e => {
