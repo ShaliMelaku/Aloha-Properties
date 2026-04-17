@@ -51,6 +51,11 @@ interface Property {
   lat?: number;
   lng?: number;
   amenities: string[];
+  cover_image?: string;
+  images?: string[];
+  video_url?: string;
+  discount_percentage?: number;
+  payment_schedule?: string;
   units?: Unit[];
   progress?: PropertyProgress[];
 }
@@ -98,7 +103,7 @@ export default function AdminDashboard() {
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
-  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [] as string[], cover_image: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
+  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [] as string[], cover_image: '', video_url: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
   
   // Selection logic for CSV leads
   const [selectedLeadsIndices, setSelectedLeadsIndices] = useState<Set<number>>(new Set());
@@ -419,17 +424,25 @@ export default function AdminDashboard() {
   const handleUpdateProperty = async () => {
     if (!editingProperty) return;
     try {
-      const { error } = await supabaseClient.from('properties').update({
+      const updatePayload: Record<string, unknown> = {
         name: editingProperty.name,
         location: editingProperty.location,
         developer: editingProperty.developer,
         description: editingProperty.description || null,
         amenities: editingProperty.amenities || [],
-        discount_percentage: (editingProperty as unknown as Record<string, unknown>).discount_percentage ?? 0,
-        payment_schedule: (editingProperty as unknown as Record<string, unknown>).payment_schedule ?? 'Flexible Terms',
-      }).eq('id', editingProperty.id);
+        discount_percentage: editingProperty.discount_percentage ?? 0,
+        payment_schedule: editingProperty.payment_schedule ?? 'Flexible Terms',
+      };
+      // Only include cover_image if set (avoid overwriting with undefined)
+      if (editingProperty.cover_image !== undefined) {
+        updatePayload.cover_image = editingProperty.cover_image;
+      }
+      if (editingProperty.video_url !== undefined) {
+        updatePayload.video_url = editingProperty.video_url;
+      }
+      const { error } = await supabaseClient.from('properties').update(updatePayload).eq('id', editingProperty.id);
       if (!error) {
-        notify('success', 'Property updated.');
+        notify('success', 'Property updated successfully.');
         setEditingProperty(null);
         fetchProperties();
       } else {
@@ -486,16 +499,7 @@ export default function AdminDashboard() {
   };
 
   const handleCreateProperty = async () => {
-    if (!newProp.name || !newProp.location) return notify('info', "Missing property details.");
-    
-    let coverImageUrl = newProp.cover_image;
-    if (newProp.cover_image && typeof newProp.cover_image !== 'string') {
-       const uploadedUrl = await uploadFile(newProp.cover_image as unknown as File);
-       if (uploadedUrl) {
-         coverImageUrl = uploadedUrl;
-       }
-    }
-
+    if (!newProp.name || !newProp.location) return notify('info', "Name and location are required.");
     try {
       const { data: propData, error: propError } = await supabaseClient
         .from('properties')
@@ -503,31 +507,28 @@ export default function AdminDashboard() {
           name: newProp.name, 
           location: newProp.location, 
           developer: newProp.developer,
-          description: newProp.description,
+          description: newProp.description || null,
           lat: newProp.lat,
           lng: newProp.lng,
           amenities: newProp.amenities,
-          cover_image: coverImageUrl,
-          discount_percentage: newProp.discount_percentage,
-          payment_schedule: newProp.payment_schedule
+          cover_image: newProp.cover_image || null,
+          video_url: newProp.video_url || null,
+          discount_percentage: newProp.discount_percentage || 0,
+          payment_schedule: newProp.payment_schedule || 'Flexible Terms',
         })
         .select()
         .single();
-      
       if (propError) throw propError;
-
-      const { error: progError } = await supabaseClient.from('property_progress').insert({
+      await supabaseClient.from('property_progress').insert({
         property_id: propData.id, percent: 0, status: 'under-construction', status_text: 'Planning'
       });
-      
-      if (progError) throw progError;
-      
       notify('success', "Property registered successfully.");
       setIsAddingProperty(false);
-      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
+      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
       fetchProperties();
-    } catch {
-      notify('error', "Registration fault.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown';
+      notify('error', `Registration fault: ${msg}`);
     }
   };
 
@@ -914,7 +915,7 @@ export default function AdminDashboard() {
             {activeTab === "portfolio" && (
               <motion.div key="portfolio" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                  <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden shadow-sm p-8">
-                     <div className="flex justify-between items-center mb-8">
+<div className="flex justify-between items-center mb-8">
                         <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3"><Home size={20} className="text-brand-blue" />Property Management</h2>
                         <button onClick={() => setIsAddingProperty(!isAddingProperty)} className="bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-xl text-xs font-bold hover:bg-brand-blue/20 transition-all flex items-center gap-2">
                            <Plus size={16} /> {isAddingProperty ? 'Cancel' : 'New Property'}
@@ -922,31 +923,51 @@ export default function AdminDashboard() {
                      </div>
                      
                      <AnimatePresence>
-                       {isAddingProperty && (
-                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8 overflow-hidden">
-                            <div className="bg-slate-500/5 rounded-3xl p-6 border border-brand-blue/30 space-y-4">
-                               <h3 className="text-sm font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Register New Listing</h3>
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <input type="text" placeholder="Property Name" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                  <input type="text" placeholder="Location" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                  <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                  <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                  <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                  <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
-                                    <option value="Flexible Terms">Flexible Terms</option>
-                                    <option value="Quarterly">Quarterly Installments</option>
-                                    <option value="Semi-Annual">Semi-Annual</option>
-                                    <option value="Annual">Annual</option>
-                                    <option value="Cash">Cash Only</option>
-                                    <option value="Mortgage">Mortgage / Bank Finance</option>
-                                  </select>
-                               </div>
-                               <button onClick={handleCreateProperty} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-4 hover:shadow-brand-blue/20 transition-all">
-                                  Publish Listing
-                               </button>
-                            </div>
-                         </motion.div>
-                       )}
+                        {isAddingProperty && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8 overflow-hidden">
+                             <div className="bg-slate-500/5 rounded-3xl p-6 border border-brand-blue/30 space-y-4">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Register New Listing</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                   <input type="text" placeholder="Property Name *" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <input type="text" placeholder="Location *" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
+                                     <option value="Flexible Terms">Flexible Terms</option>
+                                     <option value="Quarterly">Quarterly Installments</option>
+                                     <option value="Semi-Annual">Semi-Annual</option>
+                                     <option value="Annual">Annual</option>
+                                     <option value="Cash">Cash Only</option>
+                                     <option value="Mortgage">Mortgage / Bank Finance</option>
+                                   </select>
+                                </div>
+                                <textarea placeholder="Description" rows={2} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-medium border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)] resize-none" />
+                                {/* Cover Photo Upload */}
+                                <div className="space-y-2">
+                                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
+                                   <div className="flex gap-3 items-center">
+                                     <input type="text" placeholder="Image URL or upload →" value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
+                                       <Upload size={14} />
+                                       {uploadingImage ? 'Uploading...' : 'Upload'}
+                                       <input type="file" accept="image/*,video/*" className="hidden" onChange={async e => {
+                                         const file = e.target.files?.[0]; if (!file) return;
+                                         const url = await uploadFile(file);
+                                         if (url) setNewProp({...newProp, cover_image: url});
+                                       }} />
+                                     </label>
+                                   </div>
+                                   {newProp.cover_image && <img src={newProp.cover_image} alt="preview" className="h-28 w-full object-cover rounded-xl mt-1" />}
+                                </div>
+                                {/* Video URL */}
+                                <input type="text" placeholder="Property Video URL (YouTube/Vimeo)" value={newProp.video_url} onChange={e => setNewProp({...newProp, video_url: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                <button onClick={handleCreateProperty} disabled={uploadingImage} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-2 hover:shadow-brand-blue/20 transition-all disabled:opacity-50">
+                                   {uploadingImage ? 'Uploading...' : 'Publish Listing'}
+                                </button>
+                             </div>
+                          </motion.div>
+                        )}
                      </AnimatePresence>
 
                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -1439,11 +1460,11 @@ export default function AdminDashboard() {
                           <input type="text" placeholder="Amenities (comma sep.)" value={editingProperty.amenities?.join(', ') || ''} onChange={e => setEditingProperty({...editingProperty, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                           <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Discount %</label>
-                            <input type="number" min={0} max={100} placeholder="0" value={(editingProperty as unknown as Record<string,unknown>).discount_percentage as number ?? 0} onChange={e => setEditingProperty({...editingProperty, ...{discount_percentage: parseInt(e.target.value)||0}} as unknown as Property)} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                            <input type="number" min={0} max={100} placeholder="0" value={editingProperty.discount_percentage ?? 0} onChange={e => setEditingProperty({...editingProperty, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Payment Schedule</label>
-                            <select title="Payment Schedule" value={(editingProperty as unknown as Record<string,unknown>).payment_schedule as string ?? 'Flexible Terms'} onChange={e => setEditingProperty({...editingProperty, ...{payment_schedule: e.target.value}} as unknown as Property)} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
+                            <select title="Payment Schedule" value={editingProperty.payment_schedule ?? 'Flexible Terms'} onChange={e => setEditingProperty({...editingProperty, payment_schedule: e.target.value})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
                               <option value="Flexible Terms">Flexible Terms</option>
                               <option value="Quarterly">Quarterly Installments</option>
                               <option value="Semi-Annual">Semi-Annual</option>
@@ -1452,6 +1473,36 @@ export default function AdminDashboard() {
                               <option value="Mortgage">Mortgage / Bank Finance</option>
                             </select>
                           </div>
+                        </div>
+                        {/* Description */}
+                        <textarea placeholder="Description" rows={2} value={editingProperty.description || ''} onChange={e => setEditingProperty({...editingProperty, description: e.target.value})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-medium border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)] resize-none" />
+                        {/* Cover Image — Upload or Replace */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
+                          {editingProperty.cover_image && (
+                            <div className="relative h-36 rounded-2xl overflow-hidden mb-2 border border-[var(--border)]">
+                              <img src={editingProperty.cover_image} alt="Current cover" className="w-full h-full object-cover" />
+                              <button onClick={() => setEditingProperty({...editingProperty, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          )}
+                          <div className="flex gap-3 items-center">
+                            <input type="text" placeholder="Image URL" value={editingProperty.cover_image || ''} onChange={e => setEditingProperty({...editingProperty, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-slate-500/5 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                            <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all whitespace-nowrap">
+                              <Upload size={14} />{uploadingImage ? 'Uploading...' : 'Replace Photo'}
+                              <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                                const file = e.target.files?.[0]; if (!file) return;
+                                const url = await uploadFile(file);
+                                if (url) setEditingProperty({...editingProperty, cover_image: url});
+                              }} />
+                            </label>
+                          </div>
+                        </div>
+                        {/* Property Video */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Property Video URL</label>
+                          <input type="text" placeholder="YouTube / Vimeo URL" value={editingProperty.video_url || ''} onChange={e => setEditingProperty({...editingProperty, video_url: e.target.value})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                         </div>
 
                         {/* Progress Tracker */}

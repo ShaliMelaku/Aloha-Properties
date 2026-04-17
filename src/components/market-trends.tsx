@@ -67,8 +67,41 @@ export function MarketTrends() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const { data: postsData } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
-      if (postsData) setPosts(postsData);
+      // 1. Supabase editorial posts
+      const { data: postsData } = await supabaseClient
+        .from('posts').select('*').order('created_at', { ascending: false });
+
+      // 2. Live news API articles
+      let apiPosts: Post[] = [];
+      try {
+        const res = await fetch('/api/news');
+        const data = await res.json();
+        if (data.articles && Array.isArray(data.articles)) {
+          apiPosts = (data.articles as Array<{
+            title: string; description?: string; content?: string;
+            url?: string; image?: string; publishedAt?: string;
+            source?: { name: string }; type?: string;
+          }>).map((a, i) => ({
+            id: `api-${i}-${(a.title || '').slice(0, 20)}`,
+            title: a.title || 'Untitled',
+            slug: `news-${(a.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)}-${i}`,
+            excerpt: a.description || '',
+            content: a.content || a.description || '',
+            cover_image: a.image || undefined,
+            source_url: a.url || undefined,
+            source_label: a.source?.name || 'Aloha Intelligence',
+            author_name: 'Aloha Intelligence',
+            created_at: a.publishedAt || new Date().toISOString(),
+            type: 'article' as const,
+          }));
+        }
+      } catch { /* silent */ }
+
+      // 3. Merge: editorial first, then API. Deduplicate by title prefix.
+      const supabasePosts: Post[] = postsData || [];
+      const supabaseTitles = new Set(supabasePosts.map(p => p.title.toLowerCase().slice(0, 40)));
+      const uniqueApiPosts = apiPosts.filter(p => !supabaseTitles.has(p.title.toLowerCase().slice(0, 40)));
+      setPosts([...supabasePosts, ...uniqueApiPosts]);
       setLoading(false);
     }
     fetchData();
@@ -92,7 +125,7 @@ export function MarketTrends() {
              <div className="max-w-xl">
                  <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-px bg-brand-blue" />
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Market Trends</span>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">News & Market Intelligence</span>
                  </motion.div>
                  <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-heading text-4xl md:text-6xl font-black tracking-tighter text-[var(--foreground)]">
                    GLOBAL MARKET <br className="hidden md:block"/>
@@ -125,20 +158,28 @@ export function MarketTrends() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: idx * 0.1 }}
-                    className="block group cursor-pointer bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] p-8 hover:border-brand-blue/40 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col h-full"
+                    className="block group cursor-pointer bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden hover:border-brand-blue/40 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col h-full"
                   >
-                      <div className="flex justify-between items-center mb-6">
-                         <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue bg-brand-blue/10 px-3 py-1 rounded-full">{post.author_name}</span>
-                         <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <h3 className="text-xl font-heading font-black tracking-tight mb-4 group-hover:text-brand-blue transition-colors text-[var(--foreground)]">{post.title}</h3>
-                      <p className="text-xs font-medium opacity-60 line-clamp-3 mb-8 flex-1 text-[var(--foreground)]">{post.excerpt}</p>
-                      
-                      <div className="flex items-center text-xs font-black uppercase tracking-widest text-[var(--foreground)] group-hover:text-brand-blue transition-colors">
-                         Read Insight <ArrowRight size={14} className="ml-2 group-hover:translate-x-2 transition-transform" />
+                      {/* Cover image â€” shown for API news that has images */}
+                      {post.cover_image && (
+                        <div className="relative h-44 w-full overflow-hidden flex-shrink-0">
+                          <Image src={post.cover_image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" unoptimized />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
+                        </div>
+                      )}
+                      <div className="flex flex-col flex-1 p-8">
+                        <div className="flex justify-between items-center mb-6">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue bg-brand-blue/10 px-3 py-1 rounded-full">{post.source_label || post.author_name}</span>
+                           <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <h3 className="text-xl font-heading font-black tracking-tight mb-4 group-hover:text-brand-blue transition-colors text-[var(--foreground)]">{post.title}</h3>
+                        <p className="text-xs font-medium opacity-60 line-clamp-3 mb-8 flex-1 text-[var(--foreground)]">{post.excerpt}</p>
+                        <div className="flex items-center text-xs font-black uppercase tracking-widest text-[var(--foreground)] group-hover:text-brand-blue transition-colors">
+                           Read Story <ArrowRight size={14} className="ml-2 group-hover:translate-x-2 transition-transform" />
+                        </div>
                       </div>
                   </motion.div>
-                ))
+                 ))
               )}
           </div>
         </div>
@@ -163,20 +204,31 @@ export function MarketTrends() {
                    className="relative w-full max-w-5xl max-h-[90vh] bg-[var(--background)] rounded-[3rem] border border-[var(--border)] overflow-hidden shadow-2xl flex flex-col"
                  >
                     {/* Header Action Bar */}
-                    <div className="flex justify-between items-center p-6 border-b border-[var(--border)] bg-[var(--background)] sticky top-0 z-10">
-                       <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">Market Intelligence</span>
-                          <div className="w-1 h-1 rounded-full bg-slate-500/20" />
-                          <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(selectedPost.created_at).toLocaleDateString()}</span>
-                       </div>
-                       <button 
-                         onClick={() => setSelectedPost(null)}
-                         className="w-10 h-10 rounded-full bg-slate-500/5 flex items-center justify-center hover:bg-red-500/10 hover:text-red-400 transition-all font-bold"
-                         title="Close Article"
-                       >
-                          <X size={20} />
-                       </button>
-                    </div>
+                     <div className="flex justify-between items-center p-6 border-b border-[var(--border)] bg-[var(--background)] sticky top-0 z-10">
+                        <div className="flex items-center gap-4">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">News</span>
+                           <div className="w-1 h-1 rounded-full bg-slate-500/20" />
+                           <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(selectedPost.created_at).toLocaleDateString()}</span>
+                           {selectedPost.source_label && (
+                             <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest hidden sm:block">â€” {selectedPost.source_label}</span>
+                           )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {selectedPost.source_url && (
+                            <a href={selectedPost.source_url} target="_blank" rel="noopener noreferrer" title="Open Original Source"
+                               className="w-9 h-9 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
+                              <ExternalLink size={14} />
+                            </a>
+                          )}
+                          <button 
+                            onClick={() => setSelectedPost(null)}
+                            className="w-10 h-10 rounded-full bg-slate-500/5 flex items-center justify-center hover:bg-red-500/10 hover:text-red-400 transition-all font-bold"
+                            title="Close Article"
+                          >
+                             <X size={20} />
+                          </button>
+                        </div>
+                     </div>
 
                     <div className="overflow-y-auto flex-1 p-6 md:p-12">
                        <div className="max-w-3xl mx-auto">

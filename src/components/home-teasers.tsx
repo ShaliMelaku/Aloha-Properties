@@ -11,6 +11,7 @@ interface PartialProperty {
   id: string;
   name: string;
   location: string;
+  cover_image?: string;
   images?: string[];
 }
 
@@ -145,29 +146,39 @@ export function PortfolioTeaser() {
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
         {loading ? (
           [1,2,3].map(i => <div key={i} className="aspect-[3/4] rounded-[2.5rem] bg-slate-500/10 animate-pulse" />)
-        ) : properties.map((prop, idx) => (
-          <motion.div 
-            key={prop.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: idx * 0.1 }}
-            className="group relative aspect-[3/4] rounded-[2.5rem] overflow-hidden"
-          >
-            <Image 
-              src={prop.images?.[0] || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80"} 
-              alt={prop.name} 
-              fill 
-              className="object-cover group-hover:scale-110 transition-transform duration-700" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-8 left-8 right-8">
-               <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-1">{prop.location}</p>
-               <h4 className="text-2xl font-heading font-black text-white tracking-tight">{prop.name}</h4>
-            </div>
-            <Link href={`/portfolio?id=${prop.id}`} className="absolute inset-0 z-10" />
-          </motion.div>
-        ))}
+        ) : properties.map((prop, idx) => {
+          // Unique fallback images so cards are never identical
+          const fallbacks = [
+            "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80",
+          ];
+          const imgSrc = prop.cover_image || prop.images?.[0] || fallbacks[idx % fallbacks.length];
+          return (
+            <motion.div 
+              key={prop.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              className="group relative aspect-[3/4] rounded-[2.5rem] overflow-hidden"
+            >
+              <Image 
+                src={imgSrc} 
+                alt={prop.name} 
+                fill 
+                className="object-cover group-hover:scale-110 transition-transform duration-700" 
+                unoptimized
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-8 left-8 right-8">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-1">{prop.location}</p>
+                 <h4 className="text-2xl font-heading font-black text-white tracking-tight">{prop.name}</h4>
+              </div>
+              <Link href={`/portfolio?id=${prop.id}`} className="absolute inset-0 z-10" />
+            </motion.div>
+          );
+        })}
       </div>
     </section>
   );
