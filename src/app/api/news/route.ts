@@ -53,9 +53,11 @@ export async function GET() {
       articles: sliced
     });
 
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal Operational Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("News Sync Fault:", error);
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : "Operational Fault",
+      details: JSON.stringify(error)
+    }, { status: 500 });
   }
 }
 
