@@ -958,7 +958,14 @@ export default function AdminDashboard() {
                                        }} />
                                      </label>
                                    </div>
-                                   {newProp.cover_image && <img src={newProp.cover_image} alt="preview" className="h-28 w-full object-cover rounded-xl mt-1" />}
+                                   {newProp.cover_image && (
+                                     <div className="relative h-28 rounded-xl overflow-hidden mt-1 border border-[var(--border)]">
+                                       <img src={newProp.cover_image} alt="preview" className="w-full h-full object-cover" />
+                                       <button onClick={() => setNewProp({...newProp, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all">
+                                         <X size={14} />
+                                       </button>
+                                     </div>
+                                   )}
                                 </div>
                                 {/* Video URL */}
                                 <input type="text" placeholder="Property Video URL (YouTube/Vimeo)" value={newProp.video_url} onChange={e => setNewProp({...newProp, video_url: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
@@ -1146,6 +1153,21 @@ export default function AdminDashboard() {
                                     <button title="Upload File" className="h-full px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center"><Upload size={16}/></button>
                                  </div>
                               </div>
+                              
+                              {/* Post Cover Image Preview & Replacement */}
+                              {((editingPost && editingPost.cover_image) || (!editingPost && newPost.cover_image)) && (
+                                <div className="relative h-36 rounded-2xl overflow-hidden mt-3 border border-[var(--border)]">
+                                  <img src={editingPost ? editingPost.cover_image : newPost.cover_image} alt="preview" className="w-full h-full object-cover" />
+                                  <button 
+                                    onClick={() => editingPost ? setEditingPost({...editingPost, cover_image: ''}) : setNewPost({...newPost, cover_image: ''})}
+                                    title="Remove Image" 
+                                    className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              )}
+
                            </div>
                            <div className="space-y-2">
                               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Video Link (YouTube)</label>
