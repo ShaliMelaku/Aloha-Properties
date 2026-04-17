@@ -270,7 +270,18 @@ export function MarketTrends() {
                              <p className="text-xl font-bold italic opacity-60 leading-relaxed mb-8 border-l-4 border-brand-blue pl-6">
                                 {selectedPost.excerpt}
                              </p>
-                             <div className="whitespace-pre-wrap leading-loose font-medium opacity-80" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+                             {selectedPost.source_url ? (
+                               <div className="w-full h-[60vh] rounded-3xl overflow-hidden border border-brand-blue/20 bg-white shadow-[inset_0_0_20px_rgba(0,0,0,0.1)] mt-8 mb-12">
+                                 <iframe 
+                                   src={selectedPost.source_url} 
+                                   className="w-full h-full" 
+                                   title={selectedPost.title} 
+                                   sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                 />
+                               </div>
+                             ) : (
+                               <div className="whitespace-pre-wrap leading-loose font-medium opacity-80" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+                             )}
                           </div>
 
                           {selectedPost.source_url && (

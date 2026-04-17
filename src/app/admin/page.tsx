@@ -947,21 +947,25 @@ export default function AdminDashboard() {
                                 <div className="space-y-2">
                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
                                    <div className="flex gap-3 items-center">
-                                     <input type="text" placeholder="Image URL or upload →" value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     <input type="text" placeholder="Image URL or local preview →" value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                      <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
                                        <Upload size={14} />
                                        {uploadingImage ? 'Uploading...' : 'Upload'}
-                                       <input type="file" accept="image/*,video/*" className="hidden" onChange={async e => {
+                                       <input type="file" accept="image/*" className="hidden" onChange={async e => {
                                          const file = e.target.files?.[0]; if (!file) return;
+                                         // Show preview instantly
+                                         const previewUrl = URL.createObjectURL(file);
+                                         setNewProp({...newProp, cover_image: previewUrl});
+                                         // Then perform upload silently
                                          const url = await uploadFile(file);
                                          if (url) setNewProp({...newProp, cover_image: url});
                                        }} />
                                      </label>
                                    </div>
                                    {newProp.cover_image && (
-                                     <div className="relative h-28 rounded-xl overflow-hidden mt-1 border border-[var(--border)]">
+                                     <div className="relative h-40 rounded-2xl overflow-hidden mt-2 border border-[var(--border)] shadow-md">
                                        <img src={newProp.cover_image} alt="preview" className="w-full h-full object-cover" />
-                                       <button onClick={() => setNewProp({...newProp, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all">
+                                       <button onClick={() => setNewProp({...newProp, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all z-10">
                                          <X size={14} />
                                        </button>
                                      </div>
@@ -1135,6 +1139,12 @@ export default function AdminDashboard() {
                                        onChange={async (e) => {
                                           const file = e.target.files?.[0];
                                           if (!file) return;
+                                          // Local immediate preview
+                                          const previewUrl = URL.createObjectURL(file);
+                                          if (editingPost) setEditingPost({...editingPost, cover_image: previewUrl});
+                                          else setNewPost({...newPost, cover_image: previewUrl});
+                                          
+                                          // Silent upload logic
                                           try {
                                              const fileExt = file.name.split('.').pop();
                                              const fileName = `${Math.random()}.${fileExt}`;
@@ -1143,10 +1153,8 @@ export default function AdminDashboard() {
                                              const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/blog-media/${data.path}`;
                                              if (editingPost) setEditingPost({...editingPost, cover_image: url});
                                              else setNewPost({...newPost, cover_image: url});
-                                             notify('success', 'Media uploaded.');
-                                          } catch (err: unknown) { 
-                                             const errorMessage = err instanceof Error ? err.message : 'Unknown upload error';
-                                             notify('error', 'Upload failed: ' + errorMessage); 
+                                          } catch (err) { 
+                                             notify('error', 'Upload failed'); 
                                           }
                                        }}
                                     />
@@ -1221,7 +1229,7 @@ export default function AdminDashboard() {
                                           }
                                        }}
                                     />
-                                    <button title="Upload PDF" className="h-full px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center"><Plus size={16}/></button>
+                                    <button title="Upload PDF" className="h-full px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest whitespace-nowrap"><Upload size={14}/> Upload PDF</button>
                                  </div>
                               </div>
                            </div>
@@ -1503,19 +1511,21 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
                           {editingProperty.cover_image && (
-                            <div className="relative h-36 rounded-2xl overflow-hidden mb-2 border border-[var(--border)]">
+                            <div className="relative h-40 rounded-2xl overflow-hidden mb-3 border border-[var(--border)] shadow-md">
                               <img src={editingProperty.cover_image} alt="Current cover" className="w-full h-full object-cover" />
-                              <button onClick={() => setEditingProperty({...editingProperty, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all">
+                              <button onClick={() => setEditingProperty({...editingProperty, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all z-10">
                                 <X size={14} />
                               </button>
                             </div>
                           )}
                           <div className="flex gap-3 items-center">
-                            <input type="text" placeholder="Image URL" value={editingProperty.cover_image || ''} onChange={e => setEditingProperty({...editingProperty, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-slate-500/5 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                            <input type="text" placeholder="Image URL or local preview" value={editingProperty.cover_image || ''} onChange={e => setEditingProperty({...editingProperty, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-slate-500/5 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                             <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all whitespace-nowrap">
                               <Upload size={14} />{uploadingImage ? 'Uploading...' : 'Replace Photo'}
                               <input type="file" accept="image/*" className="hidden" onChange={async e => {
                                 const file = e.target.files?.[0]; if (!file) return;
+                                const previewUrl = URL.createObjectURL(file);
+                                setEditingProperty({...editingProperty, cover_image: previewUrl});
                                 const url = await uploadFile(file);
                                 if (url) setEditingProperty({...editingProperty, cover_image: url});
                               }} />
