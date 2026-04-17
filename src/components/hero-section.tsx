@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useRef } from "react";
+import Link from "next/link";
 
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,19 +79,19 @@ export function HeroSection() {
             ESTATE<span className="text-brand-blue">.</span>
           </motion.h1>
           
-          <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-end gap-12">
-             <p className="text-lg md:text-xl text-white/70 font-medium max-w-xl leading-relaxed backdrop-blur-sm p-4 rounded-2xl bg-white/5 border border-white/10">
+          <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-start md:items-end gap-8 md:gap-12">
+             <p className="text-base md:text-xl text-white/70 font-medium max-w-xl leading-relaxed backdrop-blur-sm p-4 rounded-2xl bg-white/5 border border-white/10">
                Aloha Properties curates the most prestigious residential developments in Addis Ababa, bridging the gap between global luxury and local soul.
              </p>
              
-             <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
-               <a href="#catalog" className="btn-premium-primary text-base px-12 py-6 flex items-center gap-3 group whitespace-nowrap">
+             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+               <Link href="/portfolio" className="btn-premium-primary text-sm md:text-base px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 group whitespace-nowrap">
                  Explore Portfolio
                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-               </a>
-               <a href="#about" className="btn-premium px-12 py-6 text-base whitespace-nowrap bg-brand-blue/10 text-brand-blue border border-brand-blue/20 hover:bg-brand-blue/20 transition-all font-bold backdrop-blur-sm shadow-lg shadow-brand-blue/5">
+               </Link>
+               <Link href="/about" className="btn-premium px-8 md:px-12 py-4 md:py-6 text-sm md:text-base whitespace-nowrap bg-brand-blue/10 text-brand-blue border border-brand-blue/20 hover:bg-brand-blue/20 transition-all font-bold backdrop-blur-sm shadow-lg shadow-brand-blue/5 text-center">
                  Our Vision
-               </a>
+               </Link>
              </div>
           </motion.div>
         </motion.div>

@@ -35,7 +35,7 @@ interface Post {
 
 export function MarketTrends() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [activeMode, setActiveMode] = useState<'all' | 'reports' | 'guides' | 'news'>('all');
+  const [activeMode, setActiveMode] = useState<'all' | 'article' | 'reports' | 'guides' | 'news'>('all');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useStatus();
@@ -76,9 +76,12 @@ export function MarketTrends() {
 
   const filteredPosts = posts.filter(post => {
     if (activeMode === 'all') return true;
-    if (activeMode === 'reports') return post.type === 'report';
-    if (activeMode === 'guides') return post.type === 'guide';
-    if (activeMode === 'news') return post.author_name === 'Aloha Intelligence' || post.type === 'article';
+    // Treat null/undefined type as 'article' (legacy AI posts stored without type)
+    const postType = post.type ?? 'article';
+    if (activeMode === 'reports') return postType === 'report';
+    if (activeMode === 'guides') return postType === 'guide';
+    if (activeMode === 'news') return post.author_name === 'Aloha Intelligence';
+    if (activeMode === 'article') return post.author_name !== 'Aloha Intelligence' && postType === 'article';
     return true;
   });
 
@@ -98,13 +101,13 @@ export function MarketTrends() {
              </div>
              
              <div className="flex items-center gap-1 p-1.5 bg-[var(--background)] rounded-2xl border border-[var(--border)] w-full overflow-x-auto no-scrollbar whitespace-nowrap md:w-auto">
-                {['all', 'reports', 'guides', 'news'].map((mode) => (
+                {(['all', 'article', 'reports', 'guides', 'news'] as const).map((mode) => (
                   <button 
                     key={mode}
-                    onClick={() => setActiveMode(mode as any)}
-                    className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeMode === mode ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'opacity-40 hover:opacity-100'}`}
+                    onClick={() => setActiveMode(mode)}
+                    className={`px-4 md:px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeMode === mode ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'opacity-40 hover:opacity-100'}`}
                   >
-                    {mode}
+                    {mode === 'article' ? 'Articles' : mode}
                   </button>
                 ))}
              </div>

@@ -225,6 +225,16 @@ export default function AdminDashboard() {
   };
 
 
+  // ─── Silent auto-sync: fetch + upsert fresh AI news on every admin load ───
+  const syncNews = async () => {
+    try {
+      await fetch('/api/news', { method: 'GET' });
+      fetchPosts(); // reload posts list after sync
+    } catch {
+      // silent — do not surface news sync errors to admin UI
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
 
@@ -237,6 +247,7 @@ export default function AdminDashboard() {
         fetchProperties();
         fetchHistory();
         fetchPosts();
+        syncNews(); // ← auto-sync news on admin load
       }
       setIsVerifying(false);
       setLoading(false);
@@ -251,13 +262,18 @@ export default function AdminDashboard() {
         fetchProperties();
         fetchHistory();
         fetchPosts();
+        syncNews(); // ← auto-sync news on sign in
       } else if (event === 'SIGNED_OUT') {
         setIsAuthorized(false);
       }
     });
 
+    // ── Auto-refresh news every 15 minutes while admin panel is open ──
+    const newsInterval = setInterval(() => { syncNews(); }, 15 * 60 * 1000);
+
     return () => {
       authListener.subscription.unsubscribe();
+      clearInterval(newsInterval);
     };
   }, []);
 
@@ -407,8 +423,8 @@ export default function AdminDashboard() {
         name: editingProperty.name,
         location: editingProperty.location,
         developer: editingProperty.developer,
-        description: editingProperty.description,
-        amenities: editingProperty.amenities,
+        description: editingProperty.description || null,
+        amenities: editingProperty.amenities || [],
         discount_percentage: (editingProperty as unknown as Record<string, unknown>).discount_percentage ?? 0,
         payment_schedule: (editingProperty as unknown as Record<string, unknown>).payment_schedule ?? 'Flexible Terms',
       }).eq('id', editingProperty.id);
@@ -416,8 +432,14 @@ export default function AdminDashboard() {
         notify('success', 'Property updated.');
         setEditingProperty(null);
         fetchProperties();
-      } else throw error;
-    } catch { notify('error', 'Update fault.'); }
+      } else {
+        console.error('Update error:', error);
+        notify('error', `Update failed: ${error.message}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      notify('error', `Update fault: ${msg}`);
+    }
   };
 
   const handleUpdateProgress = async (propId: string, progressId: string | undefined, percent: number, status: string, statusText: string) => {
@@ -1444,9 +1466,12 @@ export default function AdminDashboard() {
                             return (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-3">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 min-w-[80px]">Progress</span>
+                                  <label htmlFor="progress-slider" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 min-w-[80px]">Progress</label>
                                   <input
+                                    id="progress-slider"
                                     type="range" min={0} max={100}
+                                    aria-label="Construction progress percentage"
+                                    title="Construction progress percentage"
                                     defaultValue={progressPct}
                                     onChange={e => {
                                       if (!editingProperty.progress) editingProperty.progress = [{ id: '', property_id: editingProperty.id, percent: 0, status: 'under-construction', status_text: '', created_at: '' }];

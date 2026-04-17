@@ -32,7 +32,7 @@ export async function GET() {
     // 3. Auto-post logic: Upsert into 'posts' table
     for (const art of sliced) {
       // Create a slug from title
-      const slug = art.title.toLowerCase().replace(/[^a-z0-0]/g, '-').slice(0, 50);
+      const slug = art.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 60);
       
       await supabase.from('posts').upsert({
         title: art.title,
@@ -42,8 +42,9 @@ export async function GET() {
         cover_image: art.image,
         source_label: art.source.name,
         source_url: art.url,
-        author_name: "Aloha Intelligence"
-      }, { onConflict: 'title' });
+        author_name: "Aloha Intelligence",
+        type: art.type || 'article',   // ← critical: store categorized type
+      }, { onConflict: 'slug' });       // ← use slug as conflict key (unique)
     }
 
     return NextResponse.json({

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, BookOpen, LayoutGrid, MessageSquare } from "lucide-react";
+import { ArrowRight, BookOpen, LayoutGrid, MessageSquare, X, ExternalLink, Clock, Newspaper } from "lucide-react";
 import Image from "next/image";
 import { supabaseClient } from "@/lib/supabase";
 
@@ -14,86 +14,93 @@ interface PartialProperty {
   images?: string[];
 }
 
-interface PartialNews {
+interface NewsArticle {
   title: string;
   description: string;
+  content?: string;
+  url?: string;
+  image?: string;
+  publishedAt?: string;
+  source?: { name: string; url?: string };
+  type?: string;
 }
 
 export function VisionTeaser() {
   return (
-    <section className="py-32 px-6 bg-[var(--background)] overflow-hidden">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-20">
-        <motion.div 
+    <section className="py-20 md:py-32 px-6 bg-[var(--background)] overflow-hidden">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-20">
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          className="flex-1 space-y-8"
+          className="flex-1 space-y-6 md:space-y-8 text-center md:text-left"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-center md:justify-start">
             <div className="w-12 h-px bg-brand-blue" />
             <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-blue">Aloha Vision</span>
           </div>
-          <h2 className="text-5xl md:text-7xl font-heading font-black tracking-tighter leading-[0.9]">
+          <h2 className="text-4xl sm:text-5xl md:text-7xl font-heading font-black tracking-tighter leading-[0.9]">
              DEFINING <br />
              <span className="opacity-30 italic">LUXURY.</span>
           </h2>
-          <p className="text-lg opacity-60 font-medium leading-relaxed max-w-md">
+          <p className="text-base md:text-lg opacity-60 font-medium leading-relaxed max-w-md mx-auto md:mx-0">
              From bespoke placement to global investment standards, discover how we are reshaping the Addis Ababa skyline.
           </p>
           <Link href="/about" className="btn-premium-primary text-xs tracking-wider uppercase inline-flex items-center gap-2 group">
              Our Journey <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
           </Link>
         </motion.div>
-        
-        <div className="flex-1 relative w-full h-[600px] flex items-center justify-center">
+
+        {/* Poker Card Stack — scales down on mobile */}
+        <div className="flex-1 relative w-full h-[320px] sm:h-[440px] md:h-[600px] flex items-center justify-center">
           {/* Card 1 (Back Left) */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 50, rotate: 0 }}
-            whileInView={{ opacity: 1, x: -60, rotate: -12 }}
+            whileInView={{ opacity: 1, x: -40, rotate: -10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute aspect-[4/5] w-64 rounded-[2rem] overflow-hidden shadow-2xl border flex items-center justify-center border-white/10 z-10"
+            className="absolute aspect-[4/5] w-36 sm:w-52 md:w-64 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
-            <Image 
-              src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80" 
-              alt="Aloha Vision Back" 
-              fill 
+            <Image
+              src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
+              alt="Luxury Property Back"
+              fill
               className="object-cover opacity-60"
             />
           </motion.div>
           {/* Card 2 (Back Right) */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -50, rotate: 0 }}
-            whileInView={{ opacity: 1, x: 60, rotate: 12 }}
+            whileInView={{ opacity: 1, x: 40, rotate: 10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-            className="absolute aspect-[4/5] w-64 rounded-[2rem] overflow-hidden shadow-2xl border flex items-center justify-center border-white/10 z-10"
+            className="absolute aspect-[4/5] w-36 sm:w-52 md:w-64 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
-            <Image 
-              src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80" 
-              alt="Aloha Vision Back Right" 
-              fill 
+            <Image
+              src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80"
+              alt="Luxury Property Right"
+              fill
               className="object-cover opacity-60"
             />
           </motion.div>
           {/* Card 3 (Center Front) */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0, rotate: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="absolute aspect-[4/5] w-72 rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
+            className="absolute aspect-[4/5] w-44 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
           >
-            <Image 
-              src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80" 
-              alt="Aloha Luxury Focus" 
-              fill 
+            <Image
+              src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80"
+              alt="Aloha Luxury Focus"
+              fill
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-            <div className="absolute bottom-8 left-8 right-8">
-               <div className="w-12 h-1 bg-brand-blue mb-4" />
-                <p className="text-white text-lg font-heading font-black tracking-tight leading-tight">&quot;Integrity is the bedrock of our investment strategy.&quot;</p>
+            <div className="absolute bottom-5 md:bottom-8 left-5 md:left-8 right-5 md:right-8">
+               <div className="w-8 md:w-12 h-1 bg-brand-blue mb-3 md:mb-4" />
+                <p className="text-white text-sm md:text-lg font-heading font-black tracking-tight leading-tight">&quot;Integrity is the bedrock of our investment strategy.&quot;</p>
             </div>
           </motion.div>
         </div>
@@ -166,60 +173,333 @@ export function PortfolioTeaser() {
   );
 }
 
-export function TrendsTeaser() {
-  const [latestNews, setLatestNews] = useState<PartialNews[]>([]);
+/* ─── Full Story Modal ─────────────────────────────────────── */
+function NewsStoryModal({ article, onClose }: { article: NewsArticle; onClose: () => void }) {
+  const isVideo = article.url && (article.url.includes('youtube') || article.url.includes('youtu.be') || article.url.includes('vimeo'));
 
+  // Close on Escape key
   useEffect(() => {
-    async function fetchNews() {
-      try {
-        const res = await fetch('/api/news');
-        const data = await res.json();
-        if (data.articles) setLatestNews(data.articles.slice(0, 1));
-      } catch {
-        console.error("Failed to fetch teaser news");
-      }
-    }
-    fetchNews();
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // Prevent body scroll while open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
   }, []);
 
   return (
-    <section className="py-32 px-6 bg-[var(--background)]">
-      <div className="max-w-6xl mx-auto bg-slate-500/5 rounded-[3.5rem] p-8 md:p-20 border border-[var(--border)] relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-[400px] h-full bg-brand-blue/5 -skew-x-12 -mr-32 group-hover:-mr-24 transition-all duration-700" />
-        
-        <div className="relative max-w-2xl text-left">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center text-brand-blue">
-               <BookOpen size={20} />
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-lg flex items-end sm:items-center justify-center p-0 sm:p-6"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 60, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 40, scale: 0.96 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] bg-[var(--background)] rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl border border-[var(--border)]"
+        >
+          {/* Cover Image / Video */}
+          {isVideo ? (
+            <div className="relative w-full aspect-video flex-shrink-0 bg-black">
+              <iframe
+                src={article.url}
+                title={article.title}
+                className="w-full h-full"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
             </div>
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-40">Intelligence Highlights</span>
-          </div>
-          
-          <h2 className="text-4xl md:text-6xl font-heading font-black tracking-tighter mb-8 text-[var(--foreground)]">
-             MARKET PERFORMANCE <br />
-             <span className="text-brand-blue italic">LIVE PULSE.</span>
-          </h2>
-
-          {latestNews.length > 0 ? (
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="mb-12 p-6 bg-[var(--background)] rounded-3xl border border-brand-blue/20 shadow-xl"
-            >
-               <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">Breaking Headlines</p>
-               <h4 className="text-xl font-bold mb-2 text-[var(--foreground)]">{latestNews[0].title}</h4>
-               <p className="text-sm opacity-60 line-clamp-2 text-[var(--foreground)]">{latestNews[0].description}</p>
-            </motion.div>
+          ) : article.image ? (
+            <div className="relative w-full h-52 sm:h-64 flex-shrink-0 overflow-hidden">
+              <Image
+                src={article.image}
+                alt={article.title}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
+              {/* Breaking badge on image */}
+              <div className="absolute top-4 left-4">
+                <span className="inline-flex items-center gap-1.5 bg-brand-blue text-white text-[9px] font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full shadow-lg">
+                  <Newspaper size={10} /> Breaking News
+                </span>
+              </div>
+            </div>
           ) : (
-            <p className="text-lg opacity-60 font-medium mb-12 text-[var(--foreground)]">Access the latest deep-dives on the Ethiopia capital growth rates and investment yields.</p>
+            <div className="w-full h-20 flex-shrink-0 bg-gradient-to-br from-brand-blue/20 to-transparent flex items-center px-8 pt-6">
+              <span className="inline-flex items-center gap-1.5 bg-brand-blue text-white text-[9px] font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full">
+                <Newspaper size={10} /> Breaking News
+              </span>
+            </div>
           )}
 
-          <Link href="/market-trends" className="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-brand-blue group">
-             Enter Intelligence Hub <div className="w-12 h-12 rounded-full border border-brand-blue/30 flex items-center justify-center group-hover:bg-brand-blue group-hover:text-white transition-all"><ArrowRight size={18} /></div>
-          </Link>
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            title="Close"
+            className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-all border border-white/10"
+          >
+            <X size={18} />
+          </button>
+
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto px-6 sm:px-10 pb-8 pt-6">
+            {/* Source + date */}
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              {article.source?.name && (
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-brand-blue bg-brand-blue/10 px-3 py-1 rounded-full">
+                  {article.source.name}
+                </span>
+              )}
+              {article.publishedAt && (
+                <span className="flex items-center gap-1 text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                  <Clock size={10} />
+                  {new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              )}
+              {article.type && (
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-30 border border-[var(--border)] px-2 py-0.5 rounded-full">
+                  {article.type}
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <h2 className="font-heading font-black text-2xl sm:text-3xl tracking-tight text-[var(--foreground)] mb-4 leading-tight">
+              {article.title}
+            </h2>
+
+            {/* Description */}
+            {article.description && (
+              <p className="text-base font-medium opacity-70 mb-6 leading-relaxed text-[var(--foreground)]">
+                {article.description}
+              </p>
+            )}
+
+            {/* Full content */}
+            {article.content && article.content !== article.description && (
+              <div className="prose-sm text-[var(--foreground)] opacity-80 leading-relaxed space-y-4 text-sm">
+                {article.content.split('\n').filter(Boolean).map((para, i) => (
+                  <p key={i}>{para.replace(/\[\+\d+ chars\]$/, '').trim()}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="my-6 h-px bg-[var(--border)]" />
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {article.url && (
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-blue/90 transition-all shadow-lg shadow-brand-blue/20"
+                >
+                  Open Full Article <ExternalLink size={14} />
+                </a>
+              )}
+              <Link
+                href="/market-trends"
+                onClick={onClose}
+                className="flex items-center justify-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-500/10 transition-all"
+              >
+                More Intelligence <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ─── Trends Teaser Section ────────────────────────────────── */
+export function TrendsTeaser() {
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNews = useCallback(async () => {
+    try {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      if (data.articles && data.articles.length > 0) {
+        setArticles(data.articles.slice(0, 5));
+      }
+    } catch {
+      // silent fallback
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchNews(); }, [fetchNews]);
+
+  const topArticle = articles[0];
+  const sideArticles = articles.slice(1, 4);
+
+  return (
+    <>
+      {/* ── Full-Story Modal ── */}
+      {selectedArticle && (
+        <NewsStoryModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+      )}
+
+      <section className="py-20 md:py-32 px-6 bg-[var(--background)]">
+        <div className="max-w-6xl mx-auto">
+          {/* Section header */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+                  <BookOpen size={20} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-40">Intelligence Highlights</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-6xl font-heading font-black tracking-tighter text-[var(--foreground)]">
+                MARKET PERFORMANCE <br />
+                <span className="text-brand-blue italic">LIVE PULSE.</span>
+              </h2>
+            </div>
+            <Link href="/market-trends" className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-brand-blue shrink-0 group">
+              Full Intelligence Hub
+              <div className="w-10 h-10 rounded-full border border-brand-blue/30 flex items-center justify-center group-hover:bg-brand-blue group-hover:text-white transition-all">
+                <ArrowRight size={16} />
+              </div>
+            </Link>
+          </div>
+
+          {loading ? (
+            /* Loading skeleton */
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 h-80 rounded-[2rem] bg-slate-500/10 animate-pulse" />
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => <div key={i} className="h-24 rounded-2xl bg-slate-500/10 animate-pulse" />)}
+              </div>
+            </div>
+          ) : articles.length === 0 ? (
+            <div className="bg-slate-500/5 rounded-[2.5rem] p-10 md:p-20 border border-[var(--border)] text-center">
+              <p className="text-lg opacity-50 font-medium">Live market intelligence arriving shortly.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* ── Hero article (left / top) ── */}
+              {topArticle && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="md:col-span-2 group relative flex flex-col rounded-[2rem] overflow-hidden border border-[var(--border)] bg-[var(--card)] hover:border-brand-blue/30 transition-all shadow-xl cursor-pointer"
+                  onClick={() => setSelectedArticle(topArticle)}
+                >
+                  {/* Cover image */}
+                  {topArticle.image && (
+                    <div className="relative h-48 sm:h-64 w-full overflow-hidden flex-shrink-0">
+                      <Image
+                        src={topArticle.image}
+                        alt={topArticle.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-black/20 to-transparent" />
+                    </div>
+                  )}
+                  <div className="flex-1 p-6 sm:p-8 flex flex-col">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="inline-flex items-center gap-1.5 bg-brand-blue text-white text-[9px] font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full">
+                        <Newspaper size={9} /> Breaking
+                      </span>
+                      {topArticle.source?.name && (
+                        <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{topArticle.source.name}</span>
+                      )}
+                      {topArticle.publishedAt && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold opacity-30 uppercase tracking-widest ml-auto">
+                          <Clock size={10} />
+                          {new Date(topArticle.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-heading font-black text-xl sm:text-2xl tracking-tight text-[var(--foreground)] mb-3 leading-tight group-hover:text-brand-blue transition-colors">
+                      {topArticle.title}
+                    </h3>
+                    <p className="text-sm opacity-60 line-clamp-3 text-[var(--foreground)] leading-relaxed flex-1">
+                      {topArticle.description}
+                    </p>
+                    {/* Read full story CTA */}
+                    <button
+                      onClick={e => { e.stopPropagation(); setSelectedArticle(topArticle); }}
+                      className="mt-6 self-start flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-blue group/btn"
+                    >
+                      Read the whole story
+                      <span className="w-8 h-8 rounded-full border border-brand-blue/30 flex items-center justify-center group-hover/btn:bg-brand-blue group-hover/btn:text-white transition-all">
+                        <ArrowRight size={13} />
+                      </span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ── Side articles (right / below) ── */}
+              <div className="flex flex-col gap-4">
+                {sideArticles.map((art, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    onClick={() => setSelectedArticle(art)}
+                    className="group flex gap-4 p-4 rounded-2xl bg-[var(--card)] border border-[var(--border)] hover:border-brand-blue/30 hover:shadow-lg cursor-pointer transition-all"
+                  >
+                    {/* Thumbnail */}
+                    {art.image && (
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                        <Image src={art.image} alt={art.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-brand-blue mb-1 opacity-80">
+                        {art.source?.name || 'Aloha Intelligence'}
+                      </p>
+                      <h4 className="text-sm font-bold text-[var(--foreground)] line-clamp-2 leading-snug group-hover:text-brand-blue transition-colors">
+                        {art.title}
+                      </h4>
+                      <button
+                        onClick={e => { e.stopPropagation(); setSelectedArticle(art); }}
+                        className="mt-2 text-[9px] font-black uppercase tracking-widest text-brand-blue/60 hover:text-brand-blue flex items-center gap-1 transition-colors"
+                      >
+                        Read story <ArrowRight size={10} />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* View all CTA */}
+                <Link
+                  href="/market-trends"
+                  className="flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-brand-blue/20 text-[10px] font-black uppercase tracking-widest text-brand-blue hover:bg-brand-blue/5 hover:border-brand-blue/40 transition-all"
+                >
+                  View All Intelligence <ArrowRight size={12} />
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 
