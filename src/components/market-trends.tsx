@@ -163,7 +163,7 @@ export function MarketTrends() {
                       {/* Cover image â€” shown for API news that has images */}
                       {post.cover_image && (
                         <div className="relative h-44 w-full overflow-hidden flex-shrink-0">
-                          <Image src={post.cover_image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" unoptimized />
+                          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                           <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
                         </div>
                       )}

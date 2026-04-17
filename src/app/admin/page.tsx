@@ -103,7 +103,7 @@ export default function AdminDashboard() {
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
-  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [] as string[], cover_image: '', video_url: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
+  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [] as string[], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms' });
   
   // Selection logic for CSV leads
   const [selectedLeadsIndices, setSelectedLeadsIndices] = useState<Set<number>>(new Set());
@@ -431,6 +431,7 @@ export default function AdminDashboard() {
         description: editingProperty.description || null,
         amenities: editingProperty.amenities || [],
         discount_percentage: editingProperty.discount_percentage ?? 0,
+        downpayment_percentage: editingProperty.downpayment_percentage ?? 0,
         payment_schedule: editingProperty.payment_schedule ?? 'Flexible Terms',
       };
       // Only include cover_image if set (avoid overwriting with undefined)
@@ -514,6 +515,7 @@ export default function AdminDashboard() {
           cover_image: newProp.cover_image || null,
           video_url: newProp.video_url || null,
           discount_percentage: newProp.discount_percentage || 0,
+          downpayment_percentage: newProp.downpayment_percentage || 0,
           payment_schedule: newProp.payment_schedule || 'Flexible Terms',
         })
         .select()
@@ -524,7 +526,7 @@ export default function AdminDashboard() {
       });
       notify('success', "Property registered successfully.");
       setIsAddingProperty(false);
-      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
+      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms' });
       fetchProperties();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown';
@@ -932,7 +934,10 @@ export default function AdminDashboard() {
                                    <input type="text" placeholder="Location *" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                   <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <div className="flex gap-2">
+                                     <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     <input type="number" placeholder="Downpayment %" min={0} max={100} value={newProp.downpayment_percentage} onChange={e => setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   </div>
                                    <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
                                      <option value="Flexible Terms">Flexible Terms</option>
                                      <option value="Quarterly">Quarterly Installments</option>
@@ -1489,9 +1494,15 @@ export default function AdminDashboard() {
                           <input type="text" placeholder="Location" value={editingProperty.location} onChange={e => setEditingProperty({...editingProperty, location: e.target.value})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                           <input type="text" placeholder="Developer" value={editingProperty.developer} onChange={e => setEditingProperty({...editingProperty, developer: e.target.value})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                           <input type="text" placeholder="Amenities (comma sep.)" value={editingProperty.amenities?.join(', ') || ''} onChange={e => setEditingProperty({...editingProperty, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Discount %</label>
-                            <input type="number" min={0} max={100} placeholder="0" value={editingProperty.discount_percentage ?? 0} onChange={e => setEditingProperty({...editingProperty, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                          <div className="flex gap-2">
+                            <div className="w-1/2 space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Discount %</label>
+                              <input type="number" min={0} max={100} placeholder="0" value={editingProperty.discount_percentage ?? 0} onChange={e => setEditingProperty({...editingProperty, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                            </div>
+                            <div className="w-1/2 space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Downpayment %</label>
+                              <input type="number" min={0} max={100} placeholder="0" value={editingProperty.downpayment_percentage ?? 0} onChange={e => setEditingProperty({...editingProperty, downpayment_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                            </div>
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Payment Schedule</label>
