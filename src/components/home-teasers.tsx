@@ -51,15 +51,15 @@ export function VisionTeaser() {
           </Link>
         </motion.div>
 
-        {/* Poker Card Stack — scales down on mobile */}
-        <div className="flex-1 relative w-full h-[320px] sm:h-[440px] md:h-[600px] flex items-center justify-center">
-          {/* Card 1 (Back Left) */}
+        {/* Poker Card Stack */}
+        <div className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center overflow-hidden rounded-[2rem]">
+          {/* Card 1 (Back Left) — hidden on mobile to avoid text overlap */}
           <motion.div
             initial={{ opacity: 0, x: 50, rotate: 0 }}
-            whileInView={{ opacity: 1, x: -40, rotate: -10 }}
+            whileInView={{ opacity: 1, x: -55, rotate: -10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute aspect-[4/5] w-36 sm:w-52 md:w-64 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
+            className="absolute hidden sm:block aspect-[4/5] w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
             <Image
               src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
@@ -68,13 +68,13 @@ export function VisionTeaser() {
               className="object-cover opacity-60"
             />
           </motion.div>
-          {/* Card 2 (Back Right) */}
+          {/* Card 2 (Back Right) — hidden on mobile */}
           <motion.div
             initial={{ opacity: 0, x: -50, rotate: 0 }}
-            whileInView={{ opacity: 1, x: 40, rotate: 10 }}
+            whileInView={{ opacity: 1, x: 55, rotate: 10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-            className="absolute aspect-[4/5] w-36 sm:w-52 md:w-64 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
+            className="absolute hidden sm:block aspect-[4/5] w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
             <Image
               src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80"
@@ -83,13 +83,13 @@ export function VisionTeaser() {
               className="object-cover opacity-60"
             />
           </motion.div>
-          {/* Card 3 (Center Front) */}
+          {/* Card 3 (Center Front) — always visible */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0, rotate: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="absolute aspect-[4/5] w-44 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
+            className="absolute aspect-[4/5] w-52 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
           >
             <Image
               src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80"
