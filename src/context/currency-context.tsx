@@ -9,6 +9,7 @@ interface CurrencyContextType {
   setCurrency: (currency: Currency) => void;
   formatPrice: (etbPrice: number) => string;
   convertPrice: (etbPrice: number) => number;
+  usdRate: number;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -25,13 +26,32 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     return "ETB";
   });
 
+  const [usdRate, setUsdRate] = useState(120); // Fallback base
+
+  // Fetch dynamic NBE rate on mount
+  React.useEffect(() => {
+    async function fetchRate() {
+      try {
+        const res = await fetch('/api/exchange-rate');
+        const data = await res.json();
+        if (data.success && data.rate) {
+          setUsdRate(data.rate);
+          console.log(`[Currency] Live NBE Rate Sync: 1 USD = ${data.rate} ETB`);
+        }
+      } catch (err) {
+        console.error("[Currency] NBE Sync Failed, using local fallback.");
+      }
+    }
+    fetchRate();
+  }, []);
+
   const handleSetCurrency = (curr: Currency) => {
     setCurrency(curr);
     localStorage.setItem("aloha-currency", curr);
   };
 
   const convertPrice = (etbPrice: number) => {
-    if (currency === "USD") return etbPrice / USD_RATE;
+    if (currency === "USD") return etbPrice / usdRate;
     return etbPrice;
   };
 
@@ -54,7 +74,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency: handleSetCurrency, formatPrice, convertPrice }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency: handleSetCurrency, formatPrice, convertPrice, usdRate }}>
       {children}
     </CurrencyContext.Provider>
   );

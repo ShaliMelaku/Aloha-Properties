@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { 
   Upload, Mail, Users, FileSpreadsheet, Send, Activity, 
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
+import { useCurrency } from "@/context/currency-context";
 import { useTheme } from "next-themes";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { supabaseClient } from "@/lib/supabase";
@@ -55,6 +56,7 @@ interface Property {
   images?: string[];
   video_url?: string;
   discount_percentage?: number;
+  downpayment_percentage?: number;
   payment_schedule?: string;
   units?: Unit[];
   progress?: PropertyProgress[];
@@ -67,6 +69,7 @@ export interface Unit {
   baths: number;
   sqm: number;
   price: number;
+  variety_img?: string;
 }
 
 
@@ -88,6 +91,7 @@ export interface Post {
 
 export default function AdminDashboard() {
   const { notify } = useStatus();
+  const { formatPrice } = useCurrency();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   
@@ -103,7 +107,21 @@ export default function AdminDashboard() {
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
-  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [] as string[], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms' });
+  const [newProp, setNewProp] = useState({ 
+    name: '', 
+    location: '', 
+    developer: '', 
+    description: '', 
+    lat: 9.0, 
+    lng: 38.7, 
+    amenities: [] as string[], 
+    cover_image: '', 
+    video_url: '', 
+    discount_percentage: 0, 
+    downpayment_percentage: 0, 
+    payment_schedule: 'Flexible Terms',
+    units: [] as Partial<Unit>[]
+  });
   
   // Selection logic for CSV leads
   const [selectedLeadsIndices, setSelectedLeadsIndices] = useState<Set<number>>(new Set());
@@ -120,7 +138,8 @@ export default function AdminDashboard() {
   // Property Selection, Unit Management & Editing
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [newUnit, setNewUnit] = useState({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000 });
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [newUnit, setNewUnit] = useState({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' });
 
   // Lead Add Modal
   const [isAddingLead, setIsAddingLead] = useState(false);
@@ -231,14 +250,14 @@ export default function AdminDashboard() {
 
 
   // ─── Silent auto-sync: fetch + upsert fresh AI news on every admin load ───
-  const syncNews = async () => {
+  const syncNews = useCallback(async () => {
     try {
       await fetch('/api/news', { method: 'GET' });
       fetchPosts(); // reload posts list after sync
     } catch {
       // silent — do not surface news sync errors to admin UI
     }
-  };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -280,7 +299,7 @@ export default function AdminDashboard() {
       authListener.subscription.unsubscribe();
       clearInterval(newsInterval);
     };
-  }, []);
+  }, [syncNews]);
 
   const handleLogin = async () => {
     setIsVerifying(true);
@@ -492,7 +511,7 @@ export default function AdminDashboard() {
       setUploadingImage(false);
       if (data.success) return data.url;
       else throw new Error(data.error);
-    } catch (err) {
+    } catch {
       setUploadingImage(false);
       notify('error', 'Image upload failed');
       return null;
@@ -520,13 +539,41 @@ export default function AdminDashboard() {
         })
         .select()
         .single();
+      
       if (propError) throw propError;
+
+      // Atomic Progress Insertion
       await supabaseClient.from('property_progress').insert({
         property_id: propData.id, percent: 0, status: 'under-construction', status_text: 'Planning'
       });
-      notify('success', "Property registered successfully.");
+
+      // Batch Unit Insertion
+      if (newProp.units && newProp.units.length > 0) {
+        const unitsToInsert = newProp.units.map(u => ({
+          ...u,
+          property_id: propData.id
+        }));
+        const { error: batchError } = await supabaseClient.from('property_units').insert(unitsToInsert);
+        if (batchError) throw batchError;
+      }
+
+      notify('success', "Property and units registered successfully.");
       setIsAddingProperty(false);
-      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms' });
+      setNewProp({ 
+        name: '', 
+        location: '', 
+        developer: '', 
+        description: '', 
+        lat: 9.0, 
+        lng: 38.7, 
+        amenities: [], 
+        cover_image: '', 
+        video_url: '', 
+        discount_percentage: 0, 
+        downpayment_percentage: 0, 
+        payment_schedule: 'Flexible Terms',
+        units: []
+      });
       fetchProperties();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown';
@@ -601,11 +648,10 @@ export default function AdminDashboard() {
         <div className="p-8 pb-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 group-hover:scale-105 transition-transform">
-              <Image 
+              <img 
                 src="/images/brand/aloha-logo.png" 
                 alt="Aloha Logo" 
-                fill 
-                className="object-contain"
+                className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
             <span className="font-heading font-black text-xl text-white tracking-tighter">ALOHA<span className="text-brand-blue">.</span></span>
@@ -928,24 +974,41 @@ export default function AdminDashboard() {
                         {isAddingProperty && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8 overflow-hidden">
                              <div className="bg-slate-500/5 rounded-3xl p-6 border border-brand-blue/30 space-y-4">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Register New Listing</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <h3 className="text-sm font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Register New Listing</h3>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                    <input type="text" placeholder="Property Name *" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    <input type="text" placeholder="Location *" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   
+                                   {/* Coordinates */}
                                    <div className="flex gap-2">
-                                     <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                     <input type="number" placeholder="Downpayment %" min={0} max={100} value={newProp.downpayment_percentage} onChange={e => setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     <input type="number" step="any" placeholder="Latitude" value={newProp.lat} onChange={e => setNewProp({...newProp, lat: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     <input type="number" step="any" placeholder="Longitude" value={newProp.lng} onChange={e => setNewProp({...newProp, lng: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    </div>
-                                   <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
-                                     <option value="Flexible Terms">Flexible Terms</option>
-                                     <option value="Quarterly">Quarterly Installments</option>
-                                     <option value="Semi-Annual">Semi-Annual</option>
-                                     <option value="Annual">Annual</option>
-                                     <option value="Cash">Cash Only</option>
-                                     <option value="Mortgage">Mortgage / Bank Finance</option>
-                                   </select>
+
+                                   {/* Financials Grid */}
+                                   <div className="grid grid-cols-3 gap-2 col-span-1 md:col-span-2">
+                                     <div className="space-y-1">
+                                       <label className="text-[10px] font-black uppercase opacity-40 ml-1">Discount %</label>
+                                       <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     </div>
+                                     <div className="space-y-1">
+                                       <label className="text-[10px] font-black uppercase opacity-40 ml-1">Downpay %</label>
+                                       <input type="number" placeholder="Downpayment %" min={0} max={100} value={newProp.downpayment_percentage} onChange={e => setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     </div>
+                                     <div className="space-y-1">
+                                       <label className="text-[10px] font-black uppercase opacity-40 ml-1">Schedule</label>
+                                       <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
+                                         <option value="Flexible Terms">Flexible</option>
+                                         <option value="Quarterly">Quarterly</option>
+                                         <option value="Semi-Annual">Semi-Annual</option>
+                                         <option value="Annual">Annual</option>
+                                         <option value="Cash">Cash Only</option>
+                                         <option value="Mortgage">Bank Finance</option>
+                                       </select>
+                                     </div>
+                                   </div>
                                 </div>
                                 <textarea placeholder="Description" rows={2} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-medium border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)] resize-none" />
                                 {/* Cover Photo Upload */}
@@ -978,6 +1041,70 @@ export default function AdminDashboard() {
                                 </div>
                                 {/* Video URL */}
                                 <input type="text" placeholder="Property Video URL (YouTube/Vimeo)" value={newProp.video_url} onChange={e => setNewProp({...newProp, video_url: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                
+                                {/* Units Configuration */}
+                                 <div className="bg-slate-500/5 rounded-2xl p-6 border border-brand-blue/10 space-y-4">
+                                   <div className="flex justify-between items-center">
+                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue">Units Configuration</h4>
+                                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{newProp.units.length} Prepared</span>
+                                   </div>
+
+                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                      <input type="text" placeholder="Type (e.g. 1BR)" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                      <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                      <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                      <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   </div>
+
+                                   <div className="flex gap-4">
+                                      <div className="flex-1 flex gap-2">
+                                         <input type="text" placeholder="Unit Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                         <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
+                                            <Upload size={14} />
+                                            <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                                              const file = e.target.files?.[0]; if (!file) return;
+                                              const url = await uploadFile(file);
+                                              if (url) setNewUnit({...newUnit, variety_img: url});
+                                            }} />
+                                         </label>
+                                      </div>
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          if (!newUnit.type || !newUnit.price) return notify('info', 'Type and Price are required.');
+                                          setNewProp({ ...newProp, units: [...newProp.units, { ...newUnit }] });
+                                          setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' });
+                                          notify('success', 'Unit added to listing.');
+                                        }}
+                                        className="px-6 py-3 bg-brand-blue text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-brand-blue/20"
+                                      >
+                                         <Plus size={14} /> Add
+                                      </button>
+                                   </div>
+
+                                   {/* Local Unit List */}
+                                   <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                      {newProp.units.map((u, i) => (
+                                         <div key={i} className="flex justify-between items-center p-3 bg-slate-500/5 rounded-xl border border-transparent hover:border-brand-blue/20 transition-all group">
+                                            <div className="flex items-center gap-4">
+                                               {u.variety_img && <img src={u.variety_img} alt="unit" className="w-8 h-8 rounded-lg object-cover" />}
+                                               <div>
+                                                  <p className="text-[10px] font-black uppercase tracking-widest leading-none">{u.type}</p>
+                                                  <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1">{u.beds}B/{u.baths}B • {formatPrice(u.price || 0)}</p>
+                                               </div>
+                                            </div>
+                                            <button 
+                                              type="button"
+                                              onClick={() => setNewProp({...newProp, units: newProp.units.filter((_, idx) => idx !== i)})}
+                                              className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                            >
+                                               <Trash2 size={14} />
+                                            </button>
+                                         </div>
+                                      ))}
+                                   </div>
+                                 </div>
+
                                 <button onClick={handleCreateProperty} disabled={uploadingImage} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-2 hover:shadow-brand-blue/20 transition-all disabled:opacity-50">
                                    {uploadingImage ? 'Uploading...' : 'Publish Listing'}
                                 </button>
@@ -1066,16 +1193,26 @@ export default function AdminDashboard() {
                            <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
                               <Plus size={16} /> New Article
                            </button>
-                        </div>
+                         </div>
                     </div>
                     <div className="p-8 space-y-4">
                        {posts.length === 0 ? (
                           <div className="py-12 text-center opacity-40 italic">No articles published yet.</div>
                        ) : posts.map((post) => (
-                          <div key={post.id} className="flex justify-between items-center p-4 rounded-2xl bg-slate-500/5 hover:bg-slate-500/10 border border-transparent hover:border-brand-blue/30 transition-all">
-                             <div>
-                                <h3 className="font-bold text-sm text-[var(--foreground)]">{post.title}</h3>
-                                <p className="text-[10px] uppercase font-black tracking-widest opacity-40 mt-1">/{post.slug} • {new Date(post.created_at).toLocaleDateString()}</p>
+                          <div key={post.id} className="flex justify-between items-center gap-4 p-4 rounded-2xl bg-slate-500/5 hover:bg-slate-500/10 border border-transparent hover:border-brand-blue/30 transition-all group">
+                             <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-500/20 border border-[var(--border)] flex-shrink-0">
+                                   <img 
+                                     src={post.cover_image || "/images/cover.jpg"} 
+                                     alt={post.title} 
+                                     className="w-full h-full object-cover" 
+                                     onError={(e) => { (e.target as HTMLImageElement).src = "/images/cover.jpg"; }} 
+                                   />
+                                </div>
+                                <div>
+                                   <h3 className="font-bold text-sm text-[var(--foreground)]">{post.title}</h3>
+                                   <p className="text-[10px] uppercase font-black tracking-widest opacity-40 mt-1">/{post.slug} • {new Date(post.created_at).toLocaleDateString()}</p>
+                                </div>
                              </div>
                              <div className="flex gap-4">
                                 <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-brand-blue text-[10px] font-black uppercase tracking-widest hover:underline">Edit</button>
@@ -1209,33 +1346,43 @@ export default function AdminDashboard() {
                            </div>
                            <div className="space-y-2">
                               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">PDF Report Attachment</label>
-                              <div className="flex gap-2">
-                                 <input type="text" placeholder="PDF URL" value={editingPost ? editingPost.file_url : newPost.file_url} onChange={e => editingPost ? setEditingPost({...editingPost, file_url: e.target.value}) : setNewPost({...newPost, file_url: e.target.value})} className="flex-1 px-4 py-3 bg-slate-500/5 rounded-xl border border-transparent focus:border-brand-blue outline-none text-xs font-bold text-[var(--foreground)]" />
-                                 <div className="relative">
-                                    <input 
-                                       type="file" 
-                                       accept=".pdf"
-                                       title="Upload PDF Asset"
-                                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                                       onChange={async (e) => {
-                                          const file = e.target.files?.[0];
-                                          if (!file) return;
-                                          try {
-                                             const fileName = `${Math.random()}-${file.name.replace(/\s+/g, '_')}`;
-                                             const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file);
-                                             if (error) throw error;
-                                             const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/blog-media/${data.path}`;
-                                             if (editingPost) setEditingPost({...editingPost, file_url: url});
-                                             else setNewPost({...newPost, file_url: url});
-                                             notify('success', 'PDF Document uploaded.');
-                                          } catch (err: unknown) { 
-                                             const errorMessage = err instanceof Error ? err.message : 'Upload failed';
-                                             notify('error', errorMessage); 
-                                          }
-                                       }}
-                                    />
-                                    <button title="Upload PDF" className="h-full px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest whitespace-nowrap"><Upload size={14}/> Upload PDF</button>
+                              <div className="flex flex-col gap-3 p-4 bg-slate-500/5 rounded-2xl border border-dashed border-brand-blue/20">
+                                 <div className="flex gap-2">
+                                    <input type="text" placeholder="PDF URL" value={editingPost ? editingPost.file_url : newPost.file_url} onChange={e => editingPost ? setEditingPost({...editingPost, file_url: e.target.value}) : setNewPost({...newPost, file_url: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl border border-transparent focus:border-brand-blue outline-none text-xs font-bold text-[var(--foreground)]" />
+                                    <div className="relative">
+                                       <input 
+                                          type="file" 
+                                          accept=".pdf"
+                                          title="Upload PDF Asset"
+                                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                          onChange={async (e) => {
+                                             const file = e.target.files?.[0];
+                                             if (!file) return;
+                                             const toastId = notify('info', 'Uploading document...');
+                                             try {
+                                                const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+                                                const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file);
+                                                if (error) throw error;
+                                                const { data: { publicUrl } } = supabaseClient.storage.from('blog-media').getPublicUrl(data.path);
+                                                if (editingPost) setEditingPost({...editingPost, file_url: publicUrl});
+                                                else setNewPost({...newPost, file_url: publicUrl});
+                                                notify('success', 'PDF synchronization successful.');
+                                             } catch (err: any) { 
+                                                notify('error', `Protocol error: ${err.message || 'Check storage permissions'}`); 
+                                             }
+                                          }}
+                                       />
+                                       <button title="Upload PDF" className="h-full px-6 bg-brand-blue text-white rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest">
+                                          <Upload size={14}/> {editingPost?.file_url || newPost.file_url ? 'Replace PDF' : 'Upload PDF'}
+                                       </button>
+                                    </div>
                                  </div>
+                                 {(editingPost?.file_url || newPost.file_url) && (
+                                    <div className="flex items-center justify-between text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-3 py-2 rounded-lg">
+                                       <span className="truncate max-w-[200px]">{editingPost ? editingPost.file_url : newPost.file_url}</span>
+                                       <button onClick={() => editingPost ? setEditingPost({...editingPost, file_url: ''}) : setNewPost({...newPost, file_url: ''})} className="text-red-500">Remove</button>
+                                    </div>
+                                 )}
                               </div>
                            </div>
                         </div>
@@ -1393,31 +1540,70 @@ export default function AdminDashboard() {
                     </div>
                     
                     <div className="bg-[var(--card)] p-6 rounded-2xl border border-[var(--border)] mb-8">
-                       <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-4 text-[var(--foreground)]">Add New Unit Types</h4>
-                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <input type="text" placeholder="Type (e.g. 1 Bedroom)" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                          <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                          <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                          <input type="number" placeholder="SQM" value={newUnit.sqm} onChange={e => setNewUnit({...newUnit, sqm: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                       </div>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                          <input type="number" placeholder="Starting Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                          <button onClick={async () => {
-                              try {
-                                 const { error } = await supabaseClient.from('property_units').insert({ 
-                                     ...newUnit, variety_img: null, property_id: selectedPropertyId 
-                                 });
-                                 if (!error) {
-                                    notify('success', 'Unit added.');
-                                    setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000 });
-                                    fetchProperties();
-                                 } else throw error;
-                              } catch { notify('error', 'Failed to add unit.'); }
-                          }} className="w-full bg-brand-blue text-white font-bold text-[10px] uppercase tracking-widest py-3 rounded-xl hover:shadow-brand-blue/20 shadow-lg">
-                             Register Unit
-                          </button>
-                       </div>
-                    </div>
+                        <div className="flex justify-between items-center mb-4">
+                           <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">{editingUnit ? 'Edit Unit Type' : 'Add New Unit Types'}</h4>
+                           {editingUnit && (
+                             <button onClick={() => { setEditingUnit(null); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' }); }} className="text-[9px] font-black text-brand-blue uppercase hover:underline">Cancel Edit</button>
+                           )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                           <input type="text" placeholder="Type (e.g. 1BR)" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           <input type="number" placeholder="SQM" value={newUnit.sqm} onChange={e => setNewUnit({...newUnit, sqm: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                           <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           
+                           <div className="flex gap-2">
+                              <input type="text" placeholder="Unit Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                              <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
+                                 <Upload size={14} />
+                                 <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                                   const file = e.target.files?.[0]; if (!file) return;
+                                   const url = await uploadFile(file);
+                                   if (url) setNewUnit({...newUnit, variety_img: url});
+                                 }} />
+                              </label>
+                           </div>
+                        </div>
+
+                        {newUnit.variety_img && (
+                          <div className="relative h-24 rounded-xl overflow-hidden mt-4 border border-[var(--border)] group">
+                             <img src={newUnit.variety_img} alt="Unit variety" className="w-full h-full object-cover" />
+                             <button onClick={() => setNewUnit({...newUnit, variety_img: ''})} className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                <X size={12} />
+                             </button>
+                          </div>
+                        )}
+
+                        <button 
+                         onClick={async () => {
+                           if (!newUnit.type || !newUnit.price) return notify('info', 'Required fields missing');
+                           try {
+                             if (editingUnit) {
+                               const { error } = await supabaseClient.from('property_units').update({ 
+                                 type: newUnit.type, beds: newUnit.beds, baths: newUnit.baths, sqm: newUnit.sqm, price: newUnit.price, variety_img: newUnit.variety_img 
+                               }).eq('id', editingUnit.id);
+                               if (error) throw error;
+                               notify('success', 'Unit updated');
+                             } else {
+                               const { error } = await supabaseClient.from('property_units').insert({ 
+                                 ...newUnit, property_id: selectedPropertyId 
+                               });
+                               if (error) throw error;
+                               notify('success', 'Unit added');
+                             }
+                             setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' });
+                             setEditingUnit(null);
+                             fetchProperties();
+                           } catch { notify('error', 'Operation failed'); }
+                         }} 
+                         className="w-full bg-brand-blue text-white font-bold text-[10px] uppercase tracking-widest py-4 rounded-xl hover:shadow-brand-blue/20 shadow-lg mt-4"
+                        >
+                           {editingUnit ? 'Synchronize Updates' : 'Register Unit Type'}
+                        </button>
+                     </div>
                     
                     <div className="space-y-2">
                        <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-4 text-[var(--foreground)]">Registered Inventory</h4>
@@ -1428,15 +1614,28 @@ export default function AdminDashboard() {
                                 <p className="text-[10px] font-bold text-[var(--foreground)]/40 uppercase tracking-widest mt-1">{u.beds} Beds • {u.baths} Baths • {u.sqm} SQM</p>
                              </div>
                              <div className="text-right">
-                                <p className="font-black text-brand-blue">{new Intl.NumberFormat('en-ET', { style: 'currency', currency: 'ETB', maximumFractionDigits: 0 }).format(u.price)}</p>
-                                <button onClick={async () => {
-                                    if(!confirm('Delete this unit?')) return;
-                                    try {
-                                       const { error } = await supabaseClient.from('property_units').delete().eq('id', u.id);
-                                       if(!error){ notify('success','Unit deleted'); fetchProperties(); }
-                                       else throw error;
-                                    }catch{ notify('error','Failed delete');}
-                                }} className="text-[10px] text-red-400 font-bold uppercase tracking-widest mt-1 hover:underline">Remove</button>
+                                <div className="flex flex-col items-end gap-1">
+                                   <p className="font-black text-brand-blue">{formatPrice(u.price)}</p>
+                                   <div className="flex gap-3">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingUnit(u);
+                                          setNewUnit({ ...u, variety_img: u.variety_img || '' });
+                                        }}
+                                        className="text-[10px] text-brand-blue font-black uppercase tracking-widest hover:underline"
+                                      >
+                                         Edit
+                                      </button>
+                                      <button onClick={async () => {
+                                          if(!confirm(`Permanently remove ${u.type}?`)) return;
+                                          try {
+                                             const { error } = await supabaseClient.from('property_units').delete().eq('id', u.id);
+                                             if(!error){ notify('success','Unit purged from inventory'); fetchProperties(); }
+                                             else throw error;
+                                          }catch{ notify('error','Failed to delete unit');}
+                                      }} className="text-[10px] text-red-500 font-black uppercase tracking-widest hover:underline">Delete</button>
+                                   </div>
+                                </div>
                              </div>
                           </div>
                        ))}

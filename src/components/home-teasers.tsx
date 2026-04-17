@@ -62,11 +62,10 @@ export function VisionTeaser() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="absolute hidden sm:block aspect-[4/5] w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
-            <Image
+            <img
               src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
               alt="Luxury Property Back"
-              fill
-              className="object-cover opacity-60"
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
           </motion.div>
           {/* Card 2 (Back Right) — hidden on mobile */}
@@ -77,11 +76,10 @@ export function VisionTeaser() {
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
             className="absolute hidden sm:block aspect-[4/5] w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
-            <Image
+            <img
               src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80"
               alt="Luxury Property Right"
-              fill
-              className="object-cover opacity-60"
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
           </motion.div>
           {/* Card 3 (Center Front) — always visible */}
@@ -92,11 +90,10 @@ export function VisionTeaser() {
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
             className="absolute aspect-[4/5] w-52 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
           >
-            <Image
+            <img
               src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80"
               alt="Aloha Luxury Focus"
-              fill
-              className="object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
             <div className="absolute bottom-5 md:bottom-8 left-5 md:left-8 right-5 md:right-8">
@@ -163,12 +160,10 @@ export function PortfolioTeaser() {
               transition={{ delay: idx * 0.1 }}
               className="group relative aspect-[3/4] rounded-[2.5rem] overflow-hidden"
             >
-              <Image 
+              <img 
                 src={imgSrc} 
                 alt={prop.name} 
-                fill 
-                className="object-cover group-hover:scale-110 transition-transform duration-700" 
-                unoptimized
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-8 left-8 right-8">
@@ -231,12 +226,10 @@ function NewsStoryModal({ article, onClose }: { article: NewsArticle; onClose: (
             </div>
           ) : article.image ? (
             <div className="relative w-full h-52 sm:h-64 flex-shrink-0 overflow-hidden">
-              <Image
+              <img
                 src={article.image}
                 alt={article.title}
-                fill
-                className="object-cover"
-                unoptimized
+                className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
               {/* Breaking badge on image */}
@@ -418,12 +411,10 @@ export function TrendsTeaser() {
                   {/* Cover image */}
                   {topArticle.image && (
                     <div className="relative h-48 sm:h-64 w-full overflow-hidden flex-shrink-0">
-                      <Image
+                      <img
                         src={topArticle.image}
                         alt={topArticle.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                        unoptimized
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-black/20 to-transparent" />
                     </div>
@@ -478,7 +469,7 @@ export function TrendsTeaser() {
                     {/* Thumbnail */}
                     {art.image && (
                       <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                        <Image src={art.image} alt={art.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
+                        <img src={art.image} alt={art.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">

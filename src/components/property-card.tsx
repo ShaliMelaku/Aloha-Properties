@@ -57,13 +57,14 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
         </button>
       </div>
 
-      {/* Image Section */}
-      <div className="relative h-72 w-full overflow-hidden">
-        <Image 
-          src={unit.variety_img || "/images/cover.jpg"} 
+      <div className="relative h-72 w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+        <img 
+          src={unit.variety_img || property.cover_image || "/images/cover.jpg"} 
           alt={unit.type} 
-          fill 
-          className="object-cover transition-transform duration-1000 group-hover:scale-110" 
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/images/cover.jpg";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-transparent to-transparent opacity-80" />
         
@@ -140,9 +141,14 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
             {offer.discountPercent > 0 && (
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-xs text-slate-400 line-through">{formatPrice(unit.price)}</span>
-                <span className="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-md">SAVE {offer.discountPercent}%</span>
+                <span className="text-[10px] font-black bg-brand-blue text-white px-2 py-0.5 rounded-md">SAVE {offer.discountPercent}%</span>
               </div>
             )}
+            {property.downpayment_percentage && property.downpayment_percentage > 0 ? (
+               <div className="mt-2 text-[10px] font-bold opacity-40 uppercase tracking-widest italic">
+                 Starting from {property.downpayment_percentage}% Downpayment
+               </div>
+            ) : null}
         </div>
 
         {/* Actions */}

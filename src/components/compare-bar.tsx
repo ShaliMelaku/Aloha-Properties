@@ -48,12 +48,10 @@ export function CompareBar() {
             {compared.map((prop: SupabaseProperty) => (
               <motion.div key={prop.id} layoutId={`compare-${prop.id}`} className="relative group flex-shrink-0">
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden border-2 border-brand-blue shadow-lg">
-                  <Image
+                  <img
                     src={prop.units?.[0]?.variety_img || "/images/cover.jpg"}
                     alt={prop.name}
-                    width={48}
-                    height={48}
-                    className="object-cover w-full h-full"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <button
@@ -139,7 +137,7 @@ export function CompareBar() {
                           </div>
                         )}
                         <div className="relative h-48">
-                          <Image src={prop.units?.[0]?.variety_img || "/images/cover.jpg"} alt={prop.name} fill className="object-cover" />
+                          <img src={prop.units?.[0]?.variety_img || "/images/cover.jpg"} alt={prop.name} className="absolute inset-0 w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                           <div className="absolute bottom-4 left-4">
                             <h3 className="text-xl font-heading font-black text-white">{prop.name}</h3>
@@ -207,7 +205,7 @@ export function CompareBar() {
                               </div>
                             )}
                             <div className="relative h-44 w-full rounded-2xl overflow-hidden mb-6 border border-[var(--border)]">
-                              <Image src={prop.units?.[0]?.variety_img || "/images/cover.jpg"} alt={prop.name} fill className="object-cover" />
+                              <img src={prop.units?.[0]?.variety_img || "/images/cover.jpg"} alt={prop.name} className="absolute inset-0 w-full h-full object-cover" />
                             </div>
                             <h3 className="text-xl font-heading font-black tracking-tight">{prop.name}</h3>
                             <p className="text-xs font-bold text-brand-blue uppercase tracking-widest mt-1">{prop.developer}</p>

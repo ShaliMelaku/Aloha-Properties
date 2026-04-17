@@ -11,11 +11,10 @@ export function Footer() {
           <div className="max-w-xs">
             <Link href="/" className="flex items-center gap-2 mb-6 group">
               <div className="relative w-8 h-8 group-hover:scale-105 transition-transform">
-                <Image
+                <img
                   src="/images/brand/aloha-logo.png"
                   alt="Aloha Properties Logo"
-                  fill
-                  className="object-contain"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
               </div>
               <span className="font-heading text-2xl font-black tracking-tighter">

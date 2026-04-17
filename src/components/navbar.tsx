@@ -10,7 +10,7 @@ import Image from "next/image";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
-  const { currency, setCurrency } = useCurrency();
+  const { currency, setCurrency, usdRate } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -47,11 +47,10 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group relative z-10" aria-label="Aloha Properties Home">
               <div className="relative w-10 h-10 group-hover:scale-105 transition-transform">
-                <Image 
+                <img 
                   src="/images/brand/aloha-logo.png" 
                   alt="Aloha Properties Logo" 
-                  fill 
-                  className="object-contain"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
               </div>
               <span className={`font-heading text-xl font-black tracking-tighter transition-all duration-500 ${scrolled ? "text-[var(--foreground)]" : "text-white drop-shadow-md"}`}>
@@ -76,10 +75,10 @@ export function Navbar() {
            {/* Actions */}
            <div className="hidden md:flex items-center gap-4">
               {/* Currency Toggle */}
-              <button
+               <button
                 onClick={() => setCurrency(currency === "ETB" ? "USD" : "ETB")}
                 suppressHydrationWarning
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-500 border font-black text-[10px] uppercase tracking-tighter 
+                className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-500 border font-black text-[9px] uppercase tracking-tighter 
                   ${scrolled 
                     ? "bg-slate-200 dark:bg-slate-800 border-[var(--border)] text-[var(--foreground)]" 
                     : "bg-white/10 border-white/20 text-white backdrop-blur-md"
@@ -87,8 +86,11 @@ export function Navbar() {
                 `}
                 title={`Switch to ${currency === 'ETB' ? 'USD' : 'ETB'}`}
               >
-                <Coins size={14} className="text-brand-blue" />
-                {currency}
+                <div className="flex items-center gap-1.5">
+                  <Coins size={12} className="text-brand-blue" />
+                  {currency}
+                </div>
+                <span className="opacity-40 text-[7px] font-medium leading-none">1 USD = {usdRate} ETB</span>
               </button>
 
               {/* Theme Toggle */}
@@ -168,18 +170,33 @@ export function Navbar() {
                 ))}
               </div>
 
-              <div className="mt-auto pt-10 border-t border-[var(--border)] flex justify-between items-center">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-bold text-slate-400">Current Theme</span>
-                  <span className="text-xs uppercase tracking-widest font-black text-brand-blue">{currentTheme}</span>
+               <div className="mt-auto space-y-4">
+                <div className="flex justify-between items-center bg-slate-500/5 p-5 rounded-3xl border border-[var(--border)]">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-bold text-slate-400">Currency</span>
+                    <span className="text-[10px] uppercase tracking-widest font-black text-brand-blue">1 USD = {usdRate} ETB</span>
+                  </div>
+                  <button
+                    onClick={() => setCurrency(currency === "ETB" ? "USD" : "ETB")}
+                    className="px-6 py-3 rounded-xl bg-brand-blue text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-brand-blue/20"
+                  >
+                    {currency}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
-                  className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-blue border border-[var(--border)]"
-                  aria-label={`Toggle to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
-                >
-                  {currentTheme === "dark" ? <Moon size={24} /> : <Sun size={24} />}
-                </button>
+
+                <div className="pt-6 border-t border-[var(--border)] flex justify-between items-center">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-bold text-slate-400">Current Theme</span>
+                    <span className="text-xs uppercase tracking-widest font-black text-brand-blue">{currentTheme}</span>
+                  </div>
+                  <button
+                    onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+                    className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-blue border border-[var(--border)]"
+                    aria-label={`Toggle to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
+                  >
+                    {currentTheme === "dark" ? <Moon size={24} /> : <Sun size={24} />}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>

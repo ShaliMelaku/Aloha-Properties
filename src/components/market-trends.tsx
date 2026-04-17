@@ -262,7 +262,7 @@ export function MarketTrends() {
                              </div>
                           ) : selectedPost.cover_image && (
                              <div className="relative aspect-[21/9] rounded-3xl overflow-hidden mb-12 border border-[var(--border)] shadow-xl">
-                                <Image src={selectedPost.cover_image} alt={selectedPost.title} fill className="object-cover" />
+                                <img src={selectedPost.cover_image} alt={selectedPost.title} className="absolute inset-0 w-full h-full object-cover" />
                              </div>
                           )}
 

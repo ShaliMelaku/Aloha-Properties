@@ -38,11 +38,10 @@ export function StoryModal({ isOpen, onClose }: StoryModalProps) {
 
                <div className="relative z-10">
                   <div className="w-16 h-16 relative mb-8 group-hover:scale-105 transition-transform">
-                    <Image 
+                    <img 
                       src="/images/brand/aloha-logo.png" 
                       alt="Aloha Logo" 
-                      fill 
-                      className="object-contain"
+                      className="absolute inset-0 w-full h-full object-contain"
                     />
                   </div>
                   <h2 className="font-heading font-black text-3xl text-white leading-none uppercase tracking-tighter">
@@ -101,11 +100,10 @@ export function StoryModal({ isOpen, onClose }: StoryModalProps) {
                   <section className="bg-white dark:bg-luxury-charcoal p-8 md:p-12 rounded-[2.5rem] border border-[var(--border)] shadow-xl relative overflow-hidden">
                      <div className="flex flex-col md:flex-row gap-12 items-center">
                         <div className="w-full md:w-1/2 aspect-[4/5] relative rounded-[2rem] overflow-hidden grayscale hover:grayscale-0 transition-all duration-700 shadow-2xl">
-                           <Image 
+                           <img 
                              src="/images/about/founder.png" 
                              alt="Mr Asmelash - Founder of Aloha Properties"
-                             fill
-                             className="object-cover"
+                             className="absolute inset-0 w-full h-full object-cover"
                            />
                         </div>
                         <div className="w-full md:w-1/2">

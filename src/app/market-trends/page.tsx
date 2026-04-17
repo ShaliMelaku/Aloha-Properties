@@ -160,11 +160,10 @@ export default function MarketTrendsHub() {
                         className="group relative flex flex-col bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden hover:border-brand-blue/40 transition-all hover:shadow-2xl h-full"
                      >
                         <div className="aspect-[16/10] relative overflow-hidden">
-                           <Image 
+                           <img 
                              src={pub.cover_image || 'https://images.unsplash.com/photo-1460472178825-e5240623abe5?auto=format&fit=crop&q=80'} 
                              alt={pub.title} 
-                             fill 
-                             className="object-cover group-hover:scale-105 transition-transform duration-700"
+                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                            />
                            <div className="absolute top-6 left-6">
                               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-black/40 text-white backdrop-blur-md border border-white/20 flex items-center gap-2`}>
@@ -300,7 +299,7 @@ export default function MarketTrendsHub() {
                            </div>
                         ) : selectedPost.cover_image && (
                            <div className="relative aspect-[21/9] rounded-3xl overflow-hidden mb-12 border border-[var(--border)] shadow-xl">
-                              <Image src={selectedPost.cover_image} alt={selectedPost.title} fill className="object-cover" />
+                               <img src={selectedPost.cover_image} alt={selectedPost.title} className="absolute inset-0 w-full h-full object-cover" />
                            </div>
                         )}
                         <div className="prose prose-luxury lg:prose-xl text-[var(--foreground)]">
