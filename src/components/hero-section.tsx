@@ -71,11 +71,11 @@ export function HeroSection() {
           
           <motion.h1 
             variants={itemVariants}
-            className="font-heading text-6xl md:text-[9rem] font-black leading-[0.85] text-white tracking-tighter mb-10 drop-shadow-2xl"
+            className="font-heading text-6xl md:text-[8rem] font-black leading-[0.85] text-white tracking-tighter mb-10 drop-shadow-2xl"
           >
-            ARCHITECTURE <br />
-            <span className="text-white/30 italic">FOR THE</span> <br />
-            VISIONARY<span className="text-brand-blue">.</span>
+            REDEFINING <br />
+            <span className="text-white/30 italic">ETHIOPIAN</span> <br />
+            ESTATE<span className="text-brand-blue">.</span>
           </motion.h1>
           
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-end gap-12">

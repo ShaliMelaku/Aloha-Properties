@@ -45,24 +45,58 @@ export function VisionTeaser() {
           </Link>
         </motion.div>
         
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="flex-1 relative aspect-[4/5] w-full max-w-md rounded-[3rem] overflow-hidden"
-        >
-          <Image 
-            src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80" 
-            alt="Aloha Luxury" 
-            fill 
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-12 left-12 right-12">
-             <div className="w-16 h-1 bg-white/40 mb-4" />
-              <p className="text-white text-xl font-heading font-black tracking-tight leading-tight">&quot;Integrity is the bedrock of our investment strategy.&quot;</p>
-          </div>
-        </motion.div>
+        <div className="flex-1 relative w-full h-[600px] flex items-center justify-center">
+          {/* Card 1 (Back Left) */}
+          <motion.div 
+            initial={{ opacity: 0, x: 50, rotate: 0 }}
+            whileInView={{ opacity: 1, x: -60, rotate: -12 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="absolute aspect-[4/5] w-64 rounded-[2rem] overflow-hidden shadow-2xl border flex items-center justify-center border-white/10 z-10"
+          >
+            <Image 
+              src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80" 
+              alt="Aloha Vision Back" 
+              fill 
+              className="object-cover opacity-60"
+            />
+          </motion.div>
+          {/* Card 2 (Back Right) */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50, rotate: 0 }}
+            whileInView={{ opacity: 1, x: 60, rotate: 12 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+            className="absolute aspect-[4/5] w-64 rounded-[2rem] overflow-hidden shadow-2xl border flex items-center justify-center border-white/10 z-10"
+          >
+            <Image 
+              src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80" 
+              alt="Aloha Vision Back Right" 
+              fill 
+              className="object-cover opacity-60"
+            />
+          </motion.div>
+          {/* Card 3 (Center Front) */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="absolute aspect-[4/5] w-72 rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
+          >
+            <Image 
+              src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80" 
+              alt="Aloha Luxury Focus" 
+              fill 
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+            <div className="absolute bottom-8 left-8 right-8">
+               <div className="w-12 h-1 bg-brand-blue mb-4" />
+                <p className="text-white text-lg font-heading font-black tracking-tight leading-tight">&quot;Integrity is the bedrock of our investment strategy.&quot;</p>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

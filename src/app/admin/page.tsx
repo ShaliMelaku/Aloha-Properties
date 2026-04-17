@@ -11,7 +11,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
 import { useTheme } from "next-themes";
-import { VisitorGlobe } from "@/components/visitor-globe";
+import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { supabaseClient } from "@/lib/supabase";
 import Image from "next/image";
 
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
-  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', lat: 9.0, lng: 38.7, amenities: [] as string[] });
+  const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [] as string[], cover_image: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
   
   // Selection logic for CSV leads
   const [selectedLeadsIndices, setSelectedLeadsIndices] = useState<Set<number>>(new Set());
@@ -112,9 +112,15 @@ export default function AdminDashboard() {
   // CRM State
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
 
-  // Property Selection & Unit Management
+  // Property Selection, Unit Management & Editing
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [newUnit, setNewUnit] = useState({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000 });
+
+  // Lead Add Modal
+  const [isAddingLead, setIsAddingLead] = useState(false);
+  const [newLead, setNewLead] = useState<Lead>({ name: '', email: '', phone: '', interest: '', status: 'new' });
+  const [addingLead, setAddingLead] = useState(false);
 
   // Security State
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -129,7 +135,7 @@ export default function AdminDashboard() {
   const [newPost, setNewPost] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' });
 
   // Global Delete Confirmation State
-  const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post', id: string, name: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead', id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Sync Logic
@@ -376,6 +382,56 @@ export default function AdminDashboard() {
     notify('success', "Leads manifest exported to XLSX.");
   };
 
+  const handleAddLead = async () => {
+    if (!newLead.name || !newLead.email) return notify('info', 'Name and email required.');
+    setAddingLead(true);
+    try {
+      const { error } = await supabaseClient.from('leads').insert({
+        name: newLead.name, email: newLead.email, phone: newLead.phone,
+        interest: newLead.interest, status: newLead.status || 'new',
+      });
+      if (!error) {
+        notify('success', 'Lead added successfully.');
+        setIsAddingLead(false);
+        setNewLead({ name: '', email: '', phone: '', interest: '', status: 'new' });
+        fetchLeads();
+      } else throw error;
+    } catch { notify('error', 'Failed to add lead.'); }
+    setAddingLead(false);
+  };
+
+  const handleUpdateProperty = async () => {
+    if (!editingProperty) return;
+    try {
+      const { error } = await supabaseClient.from('properties').update({
+        name: editingProperty.name,
+        location: editingProperty.location,
+        developer: editingProperty.developer,
+        description: editingProperty.description,
+        amenities: editingProperty.amenities,
+        discount_percentage: (editingProperty as unknown as Record<string, unknown>).discount_percentage ?? 0,
+        payment_schedule: (editingProperty as unknown as Record<string, unknown>).payment_schedule ?? 'Flexible Terms',
+      }).eq('id', editingProperty.id);
+      if (!error) {
+        notify('success', 'Property updated.');
+        setEditingProperty(null);
+        fetchProperties();
+      } else throw error;
+    } catch { notify('error', 'Update fault.'); }
+  };
+
+  const handleUpdateProgress = async (propId: string, progressId: string | undefined, percent: number, status: string, statusText: string) => {
+    try {
+      if (progressId) {
+        const { error } = await supabaseClient.from('property_progress').update({ percent, status, status_text: statusText }).eq('id', progressId);
+        if (!error) { notify('success', 'Progress updated.'); fetchProperties(); } else throw error;
+      } else {
+        const { error } = await supabaseClient.from('property_progress').insert({ property_id: propId, percent, status, status_text: statusText });
+        if (!error) { notify('success', 'Progress created.'); fetchProperties(); } else throw error;
+      }
+    } catch { notify('error', 'Progress update fault.'); }
+  };
+
   const handleLogout = async () => {
     await supabaseClient.auth.signOut();
     notify('info', "Administrative session terminated.");
@@ -383,12 +439,56 @@ export default function AdminDashboard() {
 
 
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const uploadFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('path', 'properties');
+
+    try {
+      setUploadingImage(true);
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      setUploadingImage(false);
+      if (data.success) return data.url;
+      else throw new Error(data.error);
+    } catch (err) {
+      setUploadingImage(false);
+      notify('error', 'Image upload failed');
+      return null;
+    }
+  };
+
   const handleCreateProperty = async () => {
     if (!newProp.name || !newProp.location) return notify('info', "Missing property details.");
+    
+    let coverImageUrl = newProp.cover_image;
+    if (newProp.cover_image && typeof newProp.cover_image !== 'string') {
+       const uploadedUrl = await uploadFile(newProp.cover_image as unknown as File);
+       if (uploadedUrl) {
+         coverImageUrl = uploadedUrl;
+       }
+    }
+
     try {
       const { data: propData, error: propError } = await supabaseClient
         .from('properties')
-        .insert(newProp)
+        .insert({ 
+          name: newProp.name, 
+          location: newProp.location, 
+          developer: newProp.developer,
+          description: newProp.description,
+          lat: newProp.lat,
+          lng: newProp.lng,
+          amenities: newProp.amenities,
+          cover_image: coverImageUrl,
+          discount_percentage: newProp.discount_percentage,
+          payment_schedule: newProp.payment_schedule
+        })
         .select()
         .single();
       
@@ -402,7 +502,7 @@ export default function AdminDashboard() {
       
       notify('success', "Property registered successfully.");
       setIsAddingProperty(false);
-      setNewProp({ name: '', location: '', developer: '', lat: 9.0, lng: 38.7, amenities: [] });
+      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', discount_percentage: 0, payment_schedule: 'Flexible Terms' });
       fetchProperties();
     } catch {
       notify('error', "Registration fault.");
@@ -578,7 +678,7 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-12"
+                className="space-y-8"
               >
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-[var(--card)] p-8 rounded-[2.5rem] border border-[var(--border)] shadow-xl relative overflow-hidden group">
@@ -607,52 +707,15 @@ export default function AdminDashboard() {
                         <div className="flex flex-col justify-between h-full">
                            <div>
                              <p className="text-[10px] uppercase tracking-widest opacity-60 mb-2">Portfolio Density</p>
-                             <h3 className="text-4xl font-heading tracking-tight italic">{stats.activeProperties} Units</h3>
+                             <h3 className="text-4xl font-heading tracking-tight italic">{stats.activeProperties} Props</h3>
                            </div>
                            <p className="text-sm opacity-60 mt-4">Active Managed Listings</p>
                         </div>
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-center bg-[var(--card)] rounded-[3rem] border border-[var(--border)] overflow-hidden p-8 md:p-12 shadow-2xl relative">
-                    <div className="space-y-10">
-                       <div>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-px bg-brand-blue" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-blue">Market Reach Analysis</span>
-                          </div>
-                          <h2 className="text-4xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)] leading-none">Global <br/>Reach <span className="text-brand-blue italic">Pulse.</span></h2>
-                          <p className="text-[var(--foreground)]/60 font-medium leading-relaxed max-w-sm mt-6">
-                            Live visualization of regional investor density across the Aloha registry.
-                          </p>
-                       </div>
-                       <div className="space-y-6">
-                          {dbLeads.length > 0 ? (
-                            // DYNAMIC REACH: Aggregated from real leads
-                            Object.entries(dbLeads.reduce<Record<string, number>>((acc, curr) => {
-                              const loc = curr.interest || 'General';
-                              acc[loc] = (acc[loc] || 0) + 1;
-                              return acc;
-                            }, {})).slice(0, 3).map(([hub, count]) => {
-                              const share = Math.round(((count as number) / dbLeads.length) * 100);
-                              return (
-                                <div key={hub} className="space-y-2">
-                                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40">
-                                      <span>{hub} Hub</span><span>{share}%</span>
-                                   </div>
-                                   <div className="h-2 w-full bg-slate-500/10 rounded-full overflow-hidden">
-                                      <motion.div initial={{ width: 0 }} animate={{ width: `${share}%` }} className="h-full bg-brand-blue rounded-full shadow-[0_0_10px_#3b82f6]" />
-                                   </div>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-20 italic">Awaiting primary signals...</p>
-                          )}
-                       </div>
-                    </div>
-                     <VisitorGlobe />
-                 </div>
+                 {/* 2D Analytics Dashboard */}
+                 <AnalyticsDashboard />
               </motion.div>
             )}
 
@@ -760,9 +823,17 @@ export default function AdminDashboard() {
             {activeTab === "leads" && (
               <motion.div key="leads" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                 <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden shadow-sm">
-                  <div className="p-8 border-b border-[var(--border)] flex justify-between items-center text-[var(--foreground)]">
+                  <div className="p-8 border-b border-[var(--border)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[var(--foreground)]">
                     <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3"><Users size={20} className="text-brand-blue" />Captured Inquiries</h2>
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{dbLeads.length} Total Records</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{dbLeads.length} Records</span>
+                      <button
+                        onClick={() => setIsAddingLead(true)}
+                        className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-brand-blue/20"
+                      >
+                        <Plus size={14} /> Add Lead
+                      </button>
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -788,7 +859,7 @@ export default function AdminDashboard() {
                                <div className="flex justify-end gap-2">
                                   <button 
                                    onClick={() => setViewingLead(lead)} 
-                                   title="View CRM Details"
+                                   title="Edit CRM Details"
                                    className="text-[var(--foreground)] hover:scale-110 transition-transform bg-slate-500/10 p-2 rounded-lg"
                                   >
                                    <Edit3 size={16} />
@@ -799,6 +870,13 @@ export default function AdminDashboard() {
                                    className="text-brand-blue hover:scale-110 transition-transform bg-brand-blue/10 p-2 rounded-lg"
                                   >
                                    <Mail size={16} />
+                                  </button>
+                                  <button 
+                                   onClick={() => setConfirmDelete({ type: 'lead', id: lead.id!, name: lead.name })}
+                                   title="Delete Lead"
+                                   className="text-red-400 hover:scale-110 transition-transform bg-red-400/10 p-2 rounded-lg opacity-0 group-hover:opacity-100"
+                                  >
+                                   <Trash2 size={16} />
                                   </button>
                                </div>
                             </td>
@@ -831,6 +909,15 @@ export default function AdminDashboard() {
                                   <input type="text" placeholder="Location" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                   <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                   <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                  <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                  <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
+                                    <option value="Flexible Terms">Flexible Terms</option>
+                                    <option value="Quarterly">Quarterly Installments</option>
+                                    <option value="Semi-Annual">Semi-Annual</option>
+                                    <option value="Annual">Annual</option>
+                                    <option value="Cash">Cash Only</option>
+                                    <option value="Mortgage">Mortgage / Bank Finance</option>
+                                  </select>
                                </div>
                                <button onClick={handleCreateProperty} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-4 hover:shadow-brand-blue/20 transition-all">
                                   Publish Listing
@@ -843,17 +930,47 @@ export default function AdminDashboard() {
                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {loading ? (
                            <div className="col-span-full py-12 text-center opacity-40 italic">Decrypting Registry...</div>
-                        ) : properties.map((prop) => (
+                        ) : properties.map((prop) => {
+                          const progress = prop.progress?.[0];
+                          const discount = (prop as unknown as Record<string, unknown>).discount_percentage as number | undefined;
+                          const paySchedule = (prop as unknown as Record<string, unknown>).payment_schedule as string | undefined;
+                          return (
                            <div key={prop.id} className="bg-slate-500/5 border border-white/5 rounded-3xl overflow-hidden hover:border-brand-blue/30 transition-all group flex flex-col shadow-lg">
                               <div className="p-6 flex-1 relative">
                                  <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-heading font-black text-lg text-[var(--foreground)] pr-8">{prop.name}</h3>
-                                    <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} title="Delete Property" className="absolute top-6 right-6 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity bg-red-400/10 p-2 rounded-lg"><Trash2 size={16}/></button>
+                                    <h3 className="font-heading font-black text-lg text-[var(--foreground)] pr-16">{prop.name}</h3>
+                                    <div className="absolute top-5 right-5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button onClick={() => setEditingProperty(prop)} title="Edit Property" className="text-brand-blue bg-brand-blue/10 p-2 rounded-lg"><Edit3 size={14}/></button>
+                                      <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} title="Delete Property" className="text-red-400 bg-red-400/10 p-2 rounded-lg"><Trash2 size={14}/></button>
+                                    </div>
                                  </div>
                                  <p className="text-xs font-bold opacity-60 text-[var(--foreground)] mb-1">{prop.location}</p>
-                                 <p className="text-[10px] uppercase tracking-widest font-black text-brand-blue">{prop.developer}</p>
+                                 <p className="text-[10px] uppercase tracking-widest font-black text-brand-blue mb-3">{prop.developer}</p>
+
+                                 {/* Discount & Payment */}
+                                 <div className="flex gap-2 mb-4 flex-wrap">
+                                   {discount && discount > 0 ? (
+                                     <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-lg uppercase tracking-widest">{discount}% OFF</span>
+                                   ) : null}
+                                   {paySchedule && (
+                                     <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[10px] font-black rounded-lg uppercase tracking-widest">{paySchedule}</span>
+                                   )}
+                                 </div>
+
+                                 {/* Progress Bar */}
+                                 {progress && (
+                                   <div className="mb-4">
+                                     <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-1">
+                                       <span>{progress.status_text || progress.status}</span>
+                                       <span>{progress.percent}%</span>
+                                     </div>
+                                     <div className="h-1.5 bg-slate-500/10 rounded-full overflow-hidden">
+                                       <div className="h-full bg-brand-blue rounded-full transition-all" style={{ width: `${progress.percent}%` }} />
+                                     </div>
+                                   </div>
+                                 )}
                                  
-                                 <div className="mt-6 flex flex-wrap gap-2">
+                                 <div className="flex flex-wrap gap-2">
                                      {prop.amenities && prop.amenities.slice(0,3).map((am: string, i: number) => (
                                          <span key={i} className="px-2 py-1 bg-[var(--background)] text-[10px] font-bold rounded-md uppercase text-[var(--foreground)]/60">{am}</span>
                                      ))}
@@ -861,11 +978,12 @@ export default function AdminDashboard() {
                                  </div>
                               </div>
                               <div className="bg-[var(--background)]/50 p-4 border-t border-[var(--border)] flex justify-between items-center">
-                                 <span className="text-xs font-bold text-[var(--foreground)]/40">{prop.units?.length || 0} Units Registered</span>
-                                 <button onClick={() => setSelectedPropertyId(prop.id)} className="text-brand-blue text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">Manage Units <MoreVertical size={14}/></button>
+                                 <span className="text-xs font-bold text-[var(--foreground)]/40">{prop.units?.length || 0} Units</span>
+                                 <button onClick={() => setSelectedPropertyId(prop.id)} className="text-brand-blue text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">Manage <MoreVertical size={14}/></button>
                               </div>
                            </div>
-                        ))}
+                          );
+                        })}
                      </div>
                  </div>
               </motion.div>
@@ -1254,6 +1372,146 @@ export default function AdminDashboard() {
             )}
           </AnimatePresence>
 
+           {/* Add Lead Modal */}
+           <AnimatePresence>
+             {isAddingLead && (
+               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAddingLead(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl">
+                     <h3 className="text-2xl font-heading font-black tracking-tight mb-6 uppercase text-[var(--foreground)]">Add New Lead</h3>
+                     <div className="space-y-4">
+                        <input type="text" placeholder="Full Name *" value={newLead.name} onChange={e => setNewLead({...newLead, name: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
+                        <input type="email" placeholder="Email Address *" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
+                        <input type="tel" placeholder="Phone Number" value={newLead.phone||''} onChange={e => setNewLead({...newLead, phone: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
+                        <input type="text" placeholder="Interest / Property" value={newLead.interest||''} onChange={e => setNewLead({...newLead, interest: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
+                        <select title="Lead Status" value={newLead.status||'new'} onChange={e => setNewLead({...newLead, status: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]">
+                          <option value="new">New</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="viewing">Viewing</option>
+                          <option value="qualified">Qualified</option>
+                          <option value="closed">Closed / Won</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                        <div className="flex gap-4 pt-2">
+                          <button onClick={() => setIsAddingLead(false)} className="flex-1 py-4 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]">Cancel</button>
+                          <button onClick={handleAddLead} disabled={addingLead} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">{addingLead ? 'Saving...' : 'Add Lead'}</button>
+                        </div>
+                     </div>
+                  </motion.div>
+               </div>
+             )}
+           </AnimatePresence>
+
+           {/* Edit Property Modal */}
+           <AnimatePresence>
+             {editingProperty && (
+               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingProperty(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                     <h3 className="text-2xl font-heading font-black tracking-tight mb-6 uppercase text-[var(--foreground)]">Edit Property</h3>
+                     <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <input type="text" placeholder="Property Name" value={editingProperty.name} onChange={e => setEditingProperty({...editingProperty, name: e.target.value})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                          <input type="text" placeholder="Location" value={editingProperty.location} onChange={e => setEditingProperty({...editingProperty, location: e.target.value})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                          <input type="text" placeholder="Developer" value={editingProperty.developer} onChange={e => setEditingProperty({...editingProperty, developer: e.target.value})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                          <input type="text" placeholder="Amenities (comma sep.)" value={editingProperty.amenities?.join(', ') || ''} onChange={e => setEditingProperty({...editingProperty, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Discount %</label>
+                            <input type="number" min={0} max={100} placeholder="0" value={(editingProperty as unknown as Record<string,unknown>).discount_percentage as number ?? 0} onChange={e => setEditingProperty({...editingProperty, ...{discount_percentage: parseInt(e.target.value)||0}} as unknown as Property)} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 text-[var(--foreground)]">Payment Schedule</label>
+                            <select title="Payment Schedule" value={(editingProperty as unknown as Record<string,unknown>).payment_schedule as string ?? 'Flexible Terms'} onChange={e => setEditingProperty({...editingProperty, ...{payment_schedule: e.target.value}} as unknown as Property)} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
+                              <option value="Flexible Terms">Flexible Terms</option>
+                              <option value="Quarterly">Quarterly Installments</option>
+                              <option value="Semi-Annual">Semi-Annual</option>
+                              <option value="Annual">Annual</option>
+                              <option value="Cash">Cash Only</option>
+                              <option value="Mortgage">Mortgage / Bank Finance</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Progress Tracker */}
+                        <div className="bg-slate-500/5 rounded-2xl p-5 border border-[var(--border)] space-y-4">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/50">Construction Progress</h4>
+                          {(() => {
+                            const prog = editingProperty.progress?.[0];
+                            const progressId = prog?.id;
+                            const progressPct = prog?.percent ?? 0;
+                            const progressStatus = prog?.status ?? 'under-construction';
+                            const progressText = prog?.status_text ?? '';
+                            return (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 min-w-[80px]">Progress</span>
+                                  <input
+                                    type="range" min={0} max={100}
+                                    defaultValue={progressPct}
+                                    onChange={e => {
+                                      if (!editingProperty.progress) editingProperty.progress = [{ id: '', property_id: editingProperty.id, percent: 0, status: 'under-construction', status_text: '', created_at: '' }];
+                                      editingProperty.progress[0] = { ...editingProperty.progress[0], percent: parseInt(e.target.value) };
+                                      setEditingProperty({...editingProperty});
+                                    }}
+                                    className="flex-1 accent-brand-blue"
+                                  />
+                                  <span className="text-sm font-black text-brand-blue min-w-[40px] text-right">{editingProperty.progress?.[0]?.percent ?? progressPct}%</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Stage</label>
+                                    <select title="Construction Stage"
+                                      defaultValue={progressStatus}
+                                      onChange={e => {
+                                        if (!editingProperty.progress) editingProperty.progress = [{ id: '', property_id: editingProperty.id, percent: 0, status: 'under-construction', status_text: '', created_at: '' }];
+                                        editingProperty.progress[0] = { ...editingProperty.progress[0], status: e.target.value as PropertyProgress['status'] };
+                                        setEditingProperty({...editingProperty});
+                                      }}
+                                      className="w-full px-3 py-2 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]"
+                                    >
+                                      <option value="planning">Planning</option>
+                                      <option value="under-construction">Under Construction</option>
+                                      <option value="topping-out">Topping Out</option>
+                                      <option value="finishing">Finishing</option>
+                                      <option value="delivered">Delivered</option>
+                                    </select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Status Label</label>
+                                    <input type="text" placeholder="e.g. Foundation Done" defaultValue={progressText}
+                                      onChange={e => {
+                                        if (!editingProperty.progress) editingProperty.progress = [{ id: '', property_id: editingProperty.id, percent: 0, status: 'under-construction', status_text: '', created_at: '' }];
+                                        editingProperty.progress[0] = { ...editingProperty.progress[0], status_text: e.target.value };
+                                        setEditingProperty({...editingProperty});
+                                      }}
+                                      className="w-full px-3 py-2 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]"
+                                    />
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const p = editingProperty.progress?.[0];
+                                    handleUpdateProgress(editingProperty.id, progressId || p?.id, p?.percent ?? progressPct, p?.status ?? progressStatus, p?.status_text ?? progressText);
+                                  }}
+                                  className="text-xs font-black uppercase tracking-widest text-brand-blue hover:underline"
+                                >
+                                  Save Progress
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="flex gap-4 pt-2">
+                          <button onClick={() => setEditingProperty(null)} className="flex-1 py-4 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]">Cancel</button>
+                          <button onClick={handleUpdateProperty} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">Save Changes</button>
+                        </div>
+                     </div>
+                  </motion.div>
+               </div>
+             )}
+           </AnimatePresence>
+
            {/* Global Delete Confirmation Modal */}
            <AnimatePresence>
              {confirmDelete && (
@@ -1279,10 +1537,13 @@ export default function AdminDashboard() {
                           onClick={async () => {
                              setIsDeleting(true);
                              try {
-                                const { error } = await supabaseClient.from(confirmDelete.type === 'property' ? 'properties' : 'posts').delete().eq('id', confirmDelete.id);
+                                const table = confirmDelete.type === 'property' ? 'properties' : confirmDelete.type === 'lead' ? 'leads' : 'posts';
+                                const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
                                 if (!error) {
-                                   notify('success', 'Resource purged.');
-                                   if (confirmDelete.type === 'property') fetchProperties(); else fetchPosts();
+                                   notify('success', 'Record purged.');
+                                   if (confirmDelete.type === 'property') fetchProperties();
+                                   else if (confirmDelete.type === 'lead') fetchLeads();
+                                   else fetchPosts();
                                    setConfirmDelete(null);
                                 } else throw error;
                              } catch { notify('error', 'Purge fault.'); }

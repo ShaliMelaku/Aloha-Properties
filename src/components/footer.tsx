@@ -27,20 +27,28 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-12 md:gap-24">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Navigator</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Quick Links</h4>
               <ul className="space-y-4 text-sm font-bold">
                 <li><Link href="/" className="hover:text-brand-blue transition-colors">Home</Link></li>
                 <li><Link href="/portfolio" className="hover:text-brand-blue transition-colors">Portfolio</Link></li>
-                <li><Link href="/about" className="hover:text-brand-blue transition-colors">About</Link></li>
+                <li><Link href="/market-trends" className="hover:text-brand-blue transition-colors">Intelligence</Link></li>
               </ul>
             </div>
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Action</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Corporate</h4>
               <ul className="space-y-4 text-sm font-bold">
+                <li><Link href="/about" className="hover:text-brand-blue transition-colors">About Us</Link></li>
                 <li><Link href="/contact" className="hover:text-brand-blue transition-colors">Inquire</Link></li>
                 <li><Link href="/admin" className="hover:text-brand-blue transition-colors">Admin Hub</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-6">
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Legal</h4>
+              <ul className="space-y-4 text-sm font-bold opacity-70">
+                <li><Link href="/legal/privacy" className="hover:text-brand-blue transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/legal/terms" className="hover:text-brand-blue transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
             <div className="space-y-6">
@@ -48,6 +56,7 @@ export function Footer() {
               <ul className="space-y-4 text-sm font-bold">
                 <li><a href="#" className="hover:text-brand-blue transition-colors">Instagram</a></li>
                 <li><a href="#" className="hover:text-brand-blue transition-colors">Telegram</a></li>
+                <li><a href="#" className="hover:text-brand-blue transition-colors">LinkedIn</a></li>
               </ul>
             </div>
           </div>

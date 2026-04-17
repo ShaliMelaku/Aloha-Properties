@@ -25,7 +25,10 @@ CREATE TABLE IF NOT EXISTS public.properties (
   lat DOUBLE PRECISION,
   lng DOUBLE PRECISION,
   amenities TEXT [],
-  images TEXT []
+  images TEXT [],
+  cover_image TEXT,
+  discount_percentage INTEGER DEFAULT 0,
+  payment_schedule TEXT DEFAULT 'Flexible Terms'
 );
 CREATE TABLE IF NOT EXISTS public.property_units (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
