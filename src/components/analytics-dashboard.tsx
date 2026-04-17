@@ -250,10 +250,12 @@ export function AnalyticsDashboard() {
                         return (
                           <div key={c.name} className="flex items-center justify-between p-3 bg-slate-500/5 rounded-xl">
                             <div className="flex items-center gap-3">
+                              {/* eslint-disable-next-line react/forbid-dom-props */}
                               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
                               <span className="text-xs font-black uppercase tracking-widest text-[var(--foreground)]/60">{c.name}</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              {/* eslint-disable-next-line react/forbid-dom-props */}
                               <span className="text-sm font-black" style={{ color: c.color }}>{pct}%</span>
                               <ArrowUpRight size={12} className="text-[var(--foreground)]/20" />
                             </div>
@@ -293,6 +295,7 @@ export function AnalyticsDashboard() {
                           }
                         />
                         <Legend
+                          {/* eslint-disable-next-line react/forbid-dom-props */}
                           formatter={(value) => <span style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>{value}</span>}
                         />
                       </PieChart>
@@ -306,6 +309,7 @@ export function AnalyticsDashboard() {
                             <div className="flex-1">
                               <div className="flex justify-between mb-1">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/60">{r.name}</span>
+                                {/* eslint-disable-next-line react/forbid-dom-props */}
                                 <span className="text-[10px] font-black" style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}>{pct}%</span>
                               </div>
                               <div className="h-1.5 w-full bg-slate-500/10 rounded-full overflow-hidden">

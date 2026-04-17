@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.properties (
   amenities TEXT [],
   images TEXT [],
   cover_image TEXT,
+  video_url TEXT,
   discount_percentage INTEGER DEFAULT 0,
   payment_schedule TEXT DEFAULT 'Flexible Terms'
 );

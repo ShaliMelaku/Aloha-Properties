@@ -3,6 +3,8 @@ import { fetchEthiopiaRealEstateNews } from '@/lib/news-service';
 import { supabase } from '@/lib/supabase';
 
 // This API route acts as a proxy and simple rate-limiter
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // 1. Check a simple "daily limit"

@@ -1008,6 +1008,7 @@ export default function AdminDashboard() {
                                        <span>{progress.percent}%</span>
                                      </div>
                                      <div className="h-1.5 bg-slate-500/10 rounded-full overflow-hidden">
+                                       {/* eslint-disable-next-line react/forbid-dom-props */}
                                        <div className="h-full bg-brand-blue rounded-full transition-all" style={{ width: `${progress.percent}%` }} />
                                      </div>
                                    </div>
