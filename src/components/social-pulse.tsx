@@ -1,7 +1,7 @@
 "use client";
 
 import { useComparison } from "@/context/comparison-context";
-import { Users, TrendingUp, Sparkles, Eye } from "lucide-react";
+import { TrendingUp, Sparkles, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function SocialPulse() {

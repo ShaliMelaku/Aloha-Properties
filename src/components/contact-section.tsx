@@ -38,7 +38,7 @@ export function ContactSection() {
       } else {
         notify('error', `Transmission failed: ${data.error}`);
       }
-    } catch (ignore) {
+    } catch {
       notify('error', "An unexpected network error occurred.");
     } finally {
       setLoading(false);

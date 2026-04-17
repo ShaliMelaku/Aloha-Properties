@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         <p>Our team of dedicated real estate advisors is currently reviewing your message and will be in touch shortly to provide personalized assistance.</p>
         <p>In the meantime, feel free to explore our digital portfolio to view our exquisite projects.</p>
     `;
-    const leadHtml = renderEmailTemplate(conciergeContent, name);
+    const leadHtml = renderEmailTemplate(conciergeContent);
 
     const { error: autoError } = await resend.emails.send({
       from: 'Aloha Concierge <onboarding@resend.dev>',
@@ -66,7 +66,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, data: adminData });
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as Error;
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

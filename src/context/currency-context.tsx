@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 type Currency = "ETB" | "USD";
 
@@ -17,15 +17,13 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 const USD_RATE = 120;
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrency] = useState<Currency>("ETB");
-
-  // Load from localStorage if available
-  useEffect(() => {
-    const saved = localStorage.getItem("aloha-currency") as Currency;
-    if (saved && (saved === "ETB" || saved === "USD")) {
-      setCurrency(saved);
+  const [currency, setCurrency] = useState<Currency>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("aloha-currency") as Currency;
+      if (saved && (saved === "ETB" || saved === "USD")) return saved;
     }
-  }, []);
+    return "ETB";
+  });
 
   const handleSetCurrency = (curr: Currency) => {
     setCurrency(curr);

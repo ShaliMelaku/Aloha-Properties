@@ -66,7 +66,7 @@ export function NewsletterSection() {
               </h2>
               
               <p className="text-slate-500 font-medium leading-relaxed max-w-sm">
-                Receive exclusive quarterly briefings on Addis Ababa's most lucrative real estate appreciation zones and developer insider reports.
+                Receive exclusive quarterly briefings on Addis Ababa&apos;s most lucrative real estate appreciation zones and developer insider reports.
               </p>
             </div>
 

@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { ArrowLeft, Calendar, User, Share2, Play, ExternalLink } from "lucide-react";
+import { ArrowLeft, Calendar, User, ExternalLink } from "lucide-react";
 import { BlogShareButton } from "@/components/blog-share-button";
 import Link from "next/link";
 import Image from "next/image";

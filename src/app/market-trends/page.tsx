@@ -1,29 +1,22 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabaseClient } from "@/lib/supabase";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ArrowLeft, 
   ArrowRight, 
   BookOpen, 
   FileText, 
   Search, 
-  Filter, 
   X, 
-  ExternalLink, 
   Download,
   Share2,
-  User,
-  Calendar,
-  Play
+  User
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import { useStatus } from "@/context/status-context";
-import { BlogShareButton } from "@/components/blog-share-button";
 
 interface Publication {
   id: string;
@@ -43,7 +36,6 @@ interface Publication {
 
 export default function MarketTrendsHub() {
   const [publications, setPublications] = useState<Publication[]>([]);
-  const [filtered, setFiltered] = useState<Publication[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPost, setSelectedPost] = useState<Publication | null>(null);
@@ -59,24 +51,24 @@ export default function MarketTrendsHub() {
       
       if (data) {
         setPublications(data);
-        setFiltered(data);
       }
     }
     fetchDocs();
   }, []);
 
-  useEffect(() => {
+  const filtered = useMemo(() => {
     let result = publications;
     if (activeCategory !== 'all') {
       result = result.filter(p => p.type === activeCategory);
     }
     if (searchQuery) {
+      const q = searchQuery.toLowerCase();
       result = result.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+        p.title.toLowerCase().includes(q) || 
+        p.excerpt.toLowerCase().includes(q)
       );
     }
-    setFiltered(result);
+    return result;
   }, [activeCategory, searchQuery, publications]);
 
   const handleShare = useCallback(async (post: Publication) => {
@@ -85,7 +77,9 @@ export default function MarketTrendsHub() {
       try {
         await navigator.share({ title: post.title, text: post.excerpt, url });
         notify('success', 'Shared successfully');
-      } catch (err) {}
+      } catch {
+        // Share cancelled or failed
+      }
     } else {
       await navigator.clipboard.writeText(url);
       notify('success', 'Link copied to clipboard');

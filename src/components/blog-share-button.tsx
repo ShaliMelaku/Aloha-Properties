@@ -33,7 +33,7 @@ export function BlogShareButton({ title, excerpt, slug }: BlogShareButtonProps) 
       try {
         await navigator.clipboard.writeText(url);
         notify('success', 'Link copied to clipboard');
-      } catch (err) {
+      } catch {
         notify('error', 'Failed to copy link');
       }
     }

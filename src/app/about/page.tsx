@@ -5,7 +5,7 @@ import { Footer } from "@/components/footer";
 import { AboutSection } from "@/components/about-section";
 import { PartnerSlider } from "@/components/partner-slider";
 import { motion } from "framer-motion";
-import { Globe, Shield, Zap } from "lucide-react";
+import { Globe, Shield } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -26,7 +26,7 @@ export default function AboutPage() {
                         <Globe size={24} />
                      </div>
                      <h3 className="text-xl font-bold tracking-tight">Global Standards</h3>
-                     <p className="opacity-60 font-medium">Bringing world-class real estate marketing and investment analytics to Ethiopia's capital.</p>
+                     <p className="opacity-60 font-medium">Bringing world-class real estate marketing and investment analytics to Ethiopia&apos;s capital.</p>
                   </div>
                   <div className="space-y-4">
                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">

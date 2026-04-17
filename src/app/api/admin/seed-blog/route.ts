@@ -56,12 +56,12 @@ export async function GET(req: Request) {
       message: `${data?.length || 0} blog posts seeded successfully.`,
       posts: data 
     });
-  } catch (err: any) {
-    console.error('Seeding Catch:', err);
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error('Seeding Catch:', error);
     return NextResponse.json({ 
-      error: err?.message || 'Unknown error', 
-      stack: err?.stack,
-      raw: JSON.stringify(err)
+      error: error.message || 'Unknown error', 
+      stack: error.stack,
     }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@
  * Mirrors the website's premium cinema aesthetic.
  */
 
-export function renderEmailTemplate(content: string, recipientName: string) {
+export function renderEmailTemplate(content: string) {
   const brandBlue = '#0066FF';
   const luxuryCharcoal = '#0A0A0B';
   const mutedText = '#64748b';

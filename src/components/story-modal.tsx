@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Globe, Target, Sparkles, Heart, Quote } from "lucide-react";
+import { X, Target, Sparkles, Heart, Quote } from "lucide-react";
 import Image from "next/image";
 
 interface StoryModalProps {

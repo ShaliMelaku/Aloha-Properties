@@ -4,9 +4,18 @@ import { useEffect, useState, useCallback } from "react";
 import { useStatus } from "@/context/status-context";
 import { supabaseClient } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, BookOpen, X, User, Share2, ExternalLink } from "lucide-react";
+import { ArrowRight, X, User, Share2, ExternalLink } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+
+interface NewsArticle {
+  title: string;
+  url: string;
+  description: string;
+  publishedAt: string;
+  source: {
+    name: string;
+  };
+}
 
 interface Post {
   id: string;
@@ -23,8 +32,12 @@ interface Post {
 }
 
 export function MarketTrends() {
+  const [mounted, setMounted] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [activeMode, setActiveMode] = useState<'editorial' | 'pulse'>('editorial');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
   const { notify } = useStatus();
 
   const handleShare = useCallback(async (post: Post) => {
@@ -38,33 +51,42 @@ export function MarketTrends() {
           url: url,
         });
         notify('success', 'Article shared successfully');
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          notify('error', 'Error sharing article');
-        }
+      } catch {
+        notify('error', 'Error sharing article');
       }
     } else {
       try {
         await navigator.clipboard.writeText(url);
         notify('success', 'Link copied to clipboard');
-      } catch (err) {
+      } catch {
         notify('error', 'Failed to copy link');
       }
     }
   }, [notify]);
 
   useEffect(() => {
-    async function fetchPosts() {
-      const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false }).limit(3);
-      if (data) setPosts(data);
+    setMounted(true);
+    async function fetchData() {
+      setLoading(true);
+      // Fetch Editorial Posts
+      const { data: postsData } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false }).limit(3);
+      if (postsData) setPosts(postsData);
+
+      // Fetch Live News
+      try {
+        const newsRes = await fetch('/api/news');
+        const newsData = await newsRes.json();
+        if (newsData.articles) setNews(newsData.articles);
+      } catch {
+        console.error("News fetch failed");
+      }
+      setLoading(false);
     }
-    fetchPosts();
+    fetchData();
   }, []);
 
-  if (posts.length === 0) return null;
-
   return (
-    <section id="blog" className="py-32 bg-[var(--card)] border-y border-[var(--border)]">
+    <section id="blog" className="py-32 bg-[var(--card)] border-y border-[var(--border)] overflow-hidden">
        <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8 text-left">
              <div className="max-w-xl">
@@ -73,43 +95,80 @@ export function MarketTrends() {
                     <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Market Trends</span>
                  </motion.div>
                  <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-heading text-4xl md:text-6xl font-black tracking-tighter text-[var(--foreground)]">
-                   EDITORIAL <span className="opacity-30 italic">INSIGHTS.</span>
+                   {activeMode === 'editorial' ? 'EDITORIAL ' : 'LIVE NEWS '}
+                   <span className="opacity-30 italic">PULSE.</span>
                  </motion.h2>
              </div>
-             <Link 
-               href="/intelligence" 
-               title="View All Publications" 
-               className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all border bg-[var(--background)] border-[var(--border)] hover:border-brand-blue/40 text-[var(--foreground)] group w-full md:w-auto justify-center md:justify-start"
-             >
-                <BookOpen size={16} /> View All Publications <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-             </Link>
+             
+             <div className="flex items-center gap-2 p-1.5 bg-[var(--background)] rounded-2xl border border-[var(--border)] w-full md:w-auto">
+                <button 
+                  onClick={() => setActiveMode('editorial')}
+                  className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeMode === 'editorial' ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'opacity-40 hover:opacity-100'}`}
+                >
+                  Insights
+                </button>
+                <button 
+                  onClick={() => setActiveMode('pulse')}
+                  className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeMode === 'pulse' ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'opacity-40 hover:opacity-100'}`}
+                >
+                  Live Feed
+                </button>
+             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {posts.map((post, idx) => (
-                <motion.div 
-                   key={post.id} 
-                   onClick={() => setSelectedPost(post)}
-                   initial={{ opacity: 0, y: 20 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ delay: idx * 0.1 }}
-                   className="block group cursor-pointer bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] p-8 hover:border-brand-blue/40 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col h-full"
-                >
+              {loading ? (
+                [1,2,3].map(i => <div key={i} className="aspect-square rounded-[2.5rem] bg-slate-500/5 animate-pulse" />)
+              ) : activeMode === 'editorial' ? (
+                posts.map((post, idx) => (
+                  <motion.div 
+                    key={post.id} 
+                    onClick={() => setSelectedPost(post)}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="block group cursor-pointer bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] p-8 hover:border-brand-blue/40 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col h-full"
+                  >
+                      <div className="flex justify-between items-center mb-6">
+                         <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue bg-brand-blue/10 px-3 py-1 rounded-full">{post.author_name}</span>
+                         <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <h3 className="text-2xl font-heading font-black tracking-tight mb-4 group-hover:text-brand-blue transition-colors text-[var(--foreground)]">{post.title}</h3>
+                      <p className="text-sm font-medium opacity-60 line-clamp-3 mb-8 flex-1 text-[var(--foreground)]">{post.excerpt}</p>
+                      
+                      <div className="flex items-center text-xs font-black uppercase tracking-widest text-[var(--foreground)] group-hover:text-brand-blue transition-colors">
+                         Read Article <ArrowRight size={14} className="ml-2 group-hover:translate-x-2 transition-transform" />
+                      </div>
+                  </motion.div>
+                ))
+              ) : (
+                news.map((item, idx) => (
+                  <motion.a 
+                    key={idx}
+                    href={item.url}
+                    target="_blank"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="group bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] p-8 hover:border-brand-blue/40 transition-all flex flex-col shadow-sm"
+                  >
                     <div className="flex justify-between items-center mb-6">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue bg-brand-blue/10 px-3 py-1 rounded-full">{post.author_name}</span>
-                       <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">{item.source.name}</span>
+                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(item.publishedAt).toLocaleDateString()}</span>
                     </div>
-                    <h3 className="text-2xl font-heading font-black tracking-tight mb-4 group-hover:text-brand-blue transition-colors text-[var(--foreground)]">{post.title}</h3>
-                    <p className="text-sm font-medium opacity-60 line-clamp-3 mb-8 flex-1 text-[var(--foreground)]">{post.excerpt}</p>
-                    
-                    <div className="flex items-center text-xs font-black uppercase tracking-widest text-[var(--foreground)] group-hover:text-brand-blue transition-colors">
-                       Read Article <ArrowRight size={14} className="ml-2 group-hover:translate-x-2 transition-transform" />
+                    <h3 className="text-xl font-heading font-black tracking-tight mb-4 line-clamp-2 text-[var(--foreground)] group-hover:text-brand-blue">{item.title}</h3>
+                    <p className="text-xs opacity-60 line-clamp-3 mb-6 flex-1 text-[var(--foreground)]">{item.description}</p>
+                    <div className="flex items-center justify-between">
+                       <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">External Feed</span>
+                       <ExternalLink size={14} className="text-brand-blue opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                </motion.div>
-              ))}
+                  </motion.a>
+                ))
+              )}
           </div>
         </div>
+
 
         {/* Detailed Article Modal */}
         <AnimatePresence>

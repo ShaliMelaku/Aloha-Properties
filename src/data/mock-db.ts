@@ -25,14 +25,7 @@ export interface ProgressInfo {
   estimated: string;
 }
 
-const varietyImages = {
-  studio: "/images/Bedroom 1.jpg", 
-  oneBr: "/images/Bedroom1.jpg",
-  twoBr: "/images/Bedroom 2.jpg",
-  threeBr: "/images/Bedroom 3.jpg",
-  penthouse: "/images/cover.jpg",
-  villa: "/images/Cover.webp"
-};
+
 
 export const productProgress: Record<string, ProgressInfo> = {
   "Getas Kazanchis Tower": { progress: 68, status: "under-construction", statusText: "Under Construction", estimated: "Q4 2025" },
@@ -44,55 +37,31 @@ export const productProgress: Record<string, ProgressInfo> = {
 
 export const properties: Property[] = [
   { 
-    id: 1, name: "Getas Kazanchis Tower", location: "Kazanchis, Addis Ababa", developer: "Getas Real Estate", lat: 9.0192, lng: 38.7625, 
-    amenities: ["24/7 Security", "Elevator", "Parking", "CCTV"], 
+    id: 1, name: "The Sovereign", location: "Bole Atlas, Addis Ababa", developer: "Aloha Developments", lat: 9.01, lng: 38.78, 
+    amenities: ["Rooftop Infinity Pool", "Private Cinema", "Smart Automation", "24/7 Security"], 
     units: [
-      { type: "Studio", beds: 0, baths: 1, sqm: 45, price: 2800000, varietyImg: "/images/getas real estate kazanchis site/Bedroom 1.jpg" }, 
-      { type: "1 Bedroom", beds: 1, baths: 1, sqm: 65, price: 3800000, varietyImg: "/images/getas real estate kazanchis site/Bedroom 2.jpg" }, 
-      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 95, price: 5500000, varietyImg: "/images/getas real estate kazanchis site/Bedroom 3.jpg" }, 
-      { type: "3 Bedroom", beds: 3, baths: 2.5, sqm: 135, price: 7800000, varietyImg: "/images/getas real estate kazanchis site/cover.JPG" }
+      { type: "Studio", beds: 0, baths: 1, sqm: 48, price: 4500000, varietyImg: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80" }, 
+      { type: "Penthouse", beds: 4, baths: 4.5, sqm: 320, price: 32000000, varietyImg: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80" }
     ] 
   },
   { 
-    id: 2, name: "Getas Summit Residence", location: "Summit, Addis Ababa", developer: "Getas Real Estate", lat: 9.0350, lng: 38.7850, 
-    amenities: ["Gym", "Pool", "24/7 Security", "Parking"], 
+    id: 2, name: "Empire Heights", location: "Kazanchis, Addis Ababa", developer: "Aloha Developments", lat: 9.02, lng: 38.76, 
+    amenities: ["Executive Lounge", "Fitness Center", "High-speed Elevators", "Concierge"], 
     units: [
-      { type: "1 Bedroom", beds: 1, baths: 1, sqm: 72, price: 3200000, varietyImg: "/images/getas real estate Sumit 72 site/Bedroom 1.jpg" }, 
-      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 108, price: 5200000, varietyImg: "/images/getas real estate Sumit 72 site/Bedroom 2.jpg" }, 
-      { type: "3 Bedroom", beds: 3, baths: 2.5, sqm: 152, price: 7800000, varietyImg: "/images/getas real estate Sumit 72 site/Bedroom 3.jpg" }, 
-      { type: "Villa", beds: 4, baths: 3.5, sqm: 245, price: 11200000, varietyImg: "/images/getas real estate Sumit 72 site/cover.png" }
+      { type: "1 Bedroom", beds: 1, baths: 1, sqm: 75, price: 8200000, varietyImg: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80" }, 
+      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 110, price: 12500000, varietyImg: "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80" }
     ] 
   },
   { 
-    id: 3, name: "Enyi Bulbula Heights", location: "Bulbula, Addis Ababa", developer: "Enyi Real Estate", lat: 8.9950, lng: 38.7450, 
-    amenities: ["Smart Home Ready", "Underground Parking", "Gym", "Concierge"], 
+    id: 3, name: "Skyline Residences", location: "Bole Medhanialem", developer: "Aloha Premium", lat: 9.00, lng: 38.79, 
+    amenities: ["Spa & Wellness Centre", "Children's Play Area", "Podium Parking"], 
     units: [
-      { type: "Studio", beds: 0, baths: 1, sqm: 42, price: 2450000, varietyImg: "/images/Enyi real estate bulbula site/Bedroom1.jpg" }, 
-      { type: "1 Bedroom", beds: 1, baths: 1, sqm: 58, price: 3200000, varietyImg: "/images/Enyi real estate bulbula site/Bedroom 2.jpg" }, 
-      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 88, price: 4900000, varietyImg: "/images/Enyi real estate bulbula site/Bedroom 3.jpg" }, 
-      { type: "3 Bedroom", beds: 3, baths: 2, sqm: 125, price: 7200000, varietyImg: "/images/Enyi real estate bulbula site/Cover.webp" }
-    ] 
-  },
-  { 
-    id: 4, name: "Enyi Jemo Gardens", location: "Jemo, Addis Ababa", developer: "Enyi Real Estate", lat: 9.0080, lng: 38.7200, 
-    amenities: ["Landscaped Gardens", "Playground", "24/7 Security", "Parking"], 
-    units: [
-      { type: "1 Bedroom", beds: 1, baths: 1, sqm: 52, price: 1850000, varietyImg: "/images/Enyi real estate Jemo site/Bedroom1.jpg" }, 
-      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 78, price: 2900000, varietyImg: "/images/Enyi real estate Jemo site/Bedroom 2.jpg" }, 
-      { type: "3 Bedroom", beds: 3, baths: 2, sqm: 112, price: 4500000, varietyImg: "/images/Enyi real estate Jemo site/Bedroom 3.jpg" }, 
-      { type: "Penthouse", beds: 4, baths: 3, sqm: 185, price: 8500000, varietyImg: "/images/Enyi real estate Jemo site/cover.jpg" }
-    ] 
-  },
-  { 
-    id: 5, name: "Metro Bulbula Tower", location: "Bulbula, Addis Ababa", developer: "Metro Real Estate", lat: 8.9950, lng: 38.7450, 
-    amenities: ["Rooftop Terrace", "Fitness Center", "Sauna", "Business Lounge"], 
-    units: [
-      { type: "1 Bedroom", beds: 1, baths: 1, sqm: 68, price: 4200000, varietyImg: "/images/Metro real estate bulbula site/Bedroom 1.jpg" }, 
-      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 98, price: 6200000, varietyImg: "/images/Metro real estate bulbula site/Bedroom 2.jpg" }, 
-      { type: "Penhouse", beds: 4, baths: 3.5, sqm: 310, price: 15800000, varietyImg: "/images/Metro real estate bulbula site/Cover.jpg" }
+      { type: "2 Bedroom", beds: 2, baths: 2, sqm: 125, price: 15800000, varietyImg: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80" }, 
+      { type: "3 Bedroom", beds: 3, baths: 3, sqm: 185, price: 21000000, varietyImg: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&q=80" }
     ] 
   }
 ];
+
 
 export function getProductProgress(name: string): ProgressInfo {
   return productProgress[name] || { progress: 50, status: "under-construction", statusText: "Under Construction", estimated: "TBD" };

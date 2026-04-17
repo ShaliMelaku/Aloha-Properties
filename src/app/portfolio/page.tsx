@@ -20,7 +20,7 @@ export default function PortfolioPage() {
                      OUR SELECTED <span className="opacity-30 italic">PORTFOLIO.</span>
                   </h1>
                   <p className="text-lg md:text-xl font-medium opacity-60 leading-relaxed max-w-xl">
-                     Explore our curated high-performance units across Addis Ababa's most prestigious developments.
+                     Explore our curated high-performance units across Addis Ababa&apos;s most prestigious developments.
                   </p>
                </motion.div>
             </div>

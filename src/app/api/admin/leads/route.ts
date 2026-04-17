@@ -25,7 +25,8 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ leads });
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as Error;
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -44,7 +45,7 @@ export async function PATCH(req: Request) {
     
     if (!id) return NextResponse.json({ error: 'Lead ID missing' }, { status: 400 });
 
-    const updateData: any = {};
+    const updateData: Record<string, string | undefined> = {};
     if (status !== undefined) updateData.status = status;
     if (notes !== undefined) updateData.notes = notes;
 
@@ -56,7 +57,8 @@ export async function PATCH(req: Request) {
     if (error) throw error;
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as Error;
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

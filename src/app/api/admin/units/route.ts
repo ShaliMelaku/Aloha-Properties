@@ -25,8 +25,9 @@ export async function POST(req: Request) {
     if (unitError) throw unitError;
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -40,10 +41,12 @@ export async function DELETE(req: Request) {
   }
 
   try {
+    if (!id) throw new Error('Unit ID missing');
     const { error } = await supabase.from('property_units').delete().eq('id', id);
     if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

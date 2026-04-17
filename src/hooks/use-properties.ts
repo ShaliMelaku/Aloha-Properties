@@ -50,8 +50,8 @@ export function useProperties() {
 
         if (sbError) throw sbError;
         setProperties(data as SupabaseProperty[]);
-      } catch (err: any) {
-        setError(err);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown database failure'));
       } finally {
         setLoading(false);
       }

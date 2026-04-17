@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductProgress, calculateDiscount, getLoanPercentage } from "@/data/mock-db";
 import { SupabaseProperty } from "@/hooks/use-properties";
-import { ChevronDown, MapPin, HardHat, BedDouble, Bath, Maximize, Banknote, Sparkles, ArrowRight, LayoutGrid } from "lucide-react";
+import { ChevronDown, MapPin, HardHat, BedDouble, Bath, Maximize, Banknote, ArrowRight, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";

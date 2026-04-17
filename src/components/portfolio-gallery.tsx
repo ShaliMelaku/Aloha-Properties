@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, SlidersHorizontal, LayoutGrid, X } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { useProperties } from "@/hooks/use-properties";
 import { PropertyCard } from "./property-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,7 @@ export function PortfolioGallery() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -30,12 +31,12 @@ export function PortfolioGallery() {
       }
       if (bedsFilter !== "all") {
         if (!prop.units || prop.units.length === 0) return false;
-        const maxBeds = Math.max(...prop.units.map((u: any) => u.beds || 0));
+        const maxBeds = Math.max(...prop.units.map((u) => u.beds || 0));
         if (maxBeds < parseInt(bedsFilter)) return false;
       }
       if (priceFilter !== "all") {
         if (!prop.units || prop.units.length === 0) return false;
-        const maxPrice = Math.max(...prop.units.map((u: any) => u.price || 0));
+        const maxPrice = Math.max(...prop.units.map((u) => u.price || 0));
         const [min, max] = priceFilter.split("-");
         if (max && maxPrice > parseInt(max)) return false;
         if (!max && maxPrice < parseInt(min)) return false;

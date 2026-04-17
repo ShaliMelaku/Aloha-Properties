@@ -26,8 +26,9 @@ export async function GET(req: Request) {
 
     if (error) throw error;
     return NextResponse.json({ properties });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
 
     // 2. Insert Units
     if (units && units.length > 0) {
-      const unitsWithId = units.map((u: any) => ({ ...u, property_id: propData.id }));
+      const unitsWithId = units.map((u: Record<string, unknown>) => ({ ...u, property_id: propData.id }));
       const { error: unitError } = await supabase.from('property_units').insert(unitsWithId);
       if (unitError) throw unitError;
     }
@@ -68,8 +69,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, propertyId: propData.id });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -83,11 +85,13 @@ export async function DELETE(req: Request) {
   }
 
   try {
+    if (!id) throw new Error('Property ID is required');
     const { error } = await supabase.from('properties').delete().eq('id', id);
     if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -101,6 +105,7 @@ export async function PATCH(req: Request) {
   }
 
   try {
+    if (!id) throw new Error('Property ID is required');
     const { percent, status_text } = await req.json();
     const { error } = await supabase
       .from('property_progress')
@@ -109,7 +114,8 @@ export async function PATCH(req: Request) {
 
     if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

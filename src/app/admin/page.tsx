@@ -11,7 +11,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
 import { useTheme } from "next-themes";
-import { NexusMap } from "@/components/nexus-map";
 import { VisitorGlobe } from "@/components/visitor-globe";
 import { supabaseClient } from "@/lib/supabase";
 import Image from "next/image";
@@ -65,6 +64,8 @@ export interface Unit {
   price: number;
 }
 
+
+
 export interface Post {
   id: string;
   title: string;
@@ -95,12 +96,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [manualEmails, setManualEmails] = useState("");
   
-  // Property Portfolio State
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
   const [newProp, setNewProp] = useState({ name: '', location: '', developer: '', lat: 9.0, lng: 38.7, amenities: [] as string[] });
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [newUnit, setNewUnit] = useState({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000 });
   
   // Selection logic for CSV leads
   const [selectedLeadsIndices, setSelectedLeadsIndices] = useState<Set<number>>(new Set());
@@ -113,6 +111,10 @@ export default function AdminDashboard() {
 
   // CRM State
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+
+  // Property Selection & Unit Management
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [newUnit, setNewUnit] = useState({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000 });
 
   // Security State
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -130,25 +132,70 @@ export default function AdminDashboard() {
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post', id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Sync Logic
+  const [syncing, setSyncing] = useState(false);
+
+  // Dynamic Analysis State
+  const [stats, setStats] = useState({ 
+    totalLeads: 0, 
+    activeProperties: 0, 
+    campaignReach: 0,
+    growth: '+12.5%'
+  });
+
+  const toggleLeadSelection = (idx: number) => {
+    const newSet = new Set(selectedLeadsIndices);
+    if (newSet.has(idx)) newSet.delete(idx);
+    else newSet.add(idx);
+    setSelectedLeadsIndices(newSet);
+  };
+
+  const syncIntelligence = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      if (data.success) {
+        notify('success', `Intelligence Synchronized: ${data.posted} new articles integrated.`);
+        fetchPosts();
+      } else {
+        notify('error', 'Sync failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch {
+      notify('error', 'Sync operational failure.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+
+
   const fetchHistory = async () => {
     const { data } = await supabaseClient.from('campaigns').select('*').order('created_at', { ascending: false });
     setCampaignHistory(data || []);
+    if (data) {
+      const totalReach = data.reduce((acc, curr) => acc + curr.audience_size, 0);
+      setStats(prev => ({ ...prev, campaignReach: totalReach }));
+    }
   };
 
   const fetchProperties = async () => {
     const { data } = await supabaseClient.from('properties').select('*, units:property_units(*), progress:property_progress(*)').order('created_at', { ascending: false });
     setProperties(data || []);
+    setStats(prev => ({ ...prev, activeProperties: data?.length || 0 }));
   };
 
   const fetchLeads = async () => {
     const { data } = await supabaseClient.from('leads').select('*').order('created_at', { ascending: false });
     setDbLeads(data || []);
+    setStats(prev => ({ ...prev, totalLeads: data?.length || 0 }));
   };
 
   const fetchPosts = async () => {
     const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
     setPosts(data || []);
   };
+
 
   useEffect(() => {
     setMounted(true);
@@ -224,13 +271,6 @@ export default function AdminDashboard() {
       notify('success', `Manifest loaded: ${parsedLeads.length} prospects identified.`);
     };
     reader.readAsBinaryString(file);
-  };
-
-  const toggleLeadSelection = (idx: number) => {
-    const newSet = new Set(selectedLeadsIndices);
-    if (newSet.has(idx)) newSet.delete(idx);
-    else newSet.add(idx);
-    setSelectedLeadsIndices(newSet);
   };
 
   const handleBroadcast = async () => {
@@ -523,29 +563,32 @@ export default function AdminDashboard() {
                        <div className="w-12 h-12 rounded-2xl bg-brand-blue/10 text-brand-blue flex items-center justify-center mb-6">
                          <TrendingUp size={24} />
                        </div>
-                       <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)] mb-2">Growth Vector</p>
-                       <h3 className="text-4xl font-heading font-black tracking-tight text-[var(--foreground)]">+24.8%</h3>
-                       <p className="text-xs font-bold text-emerald-500 mt-2 flex items-center gap-1">
-                         <ShieldCheck size={14} /> Verified Leads Increase
-                       </p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)] mb-2">Lead Momentum</p>
+                        <h3 className="text-4xl font-heading font-black tracking-tight text-[var(--foreground)]">{stats.totalLeads}</h3>
+                        <p className="text-xs font-bold text-emerald-500 mt-2 flex items-center gap-1">
+                          <ShieldCheck size={14} /> Total Capture Records
+                        </p>
                     </div>
 
                     <div className="bg-[var(--card)] p-8 rounded-[2.5rem] border border-[var(--border)] shadow-xl relative overflow-hidden group">
                        <div className="w-12 h-12 rounded-2xl bg-brand-blue/10 text-brand-blue flex items-center justify-center mb-6">
                          <Zap size={24} />
                        </div>
-                       <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)] mb-2">Engagement CTR</p>
-                       <h3 className="text-4xl font-heading font-black tracking-tight text-[var(--foreground)]">6.4<span className="text-xl opacity-30">%</span></h3>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)] mb-2">Campaign Reach</p>
+                        <h3 className="text-4xl font-heading font-black tracking-tight text-[var(--foreground)]">{stats.campaignReach.toLocaleString()}</h3>
+                        <p className="text-xs font-bold text-brand-blue mt-2 flex items-center gap-1">
+                          <Mail size={14} /> Global Audiences
+                        </p>
                     </div>
 
                     <div className="bg-brand-blue p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden group font-black text-white">
-                       <div className="flex flex-col justify-between h-full">
-                          <div>
-                            <p className="text-[10px] uppercase tracking-widest opacity-60 mb-2">Market Position</p>
-                            <h3 className="text-4xl font-heading tracking-tight italic">PREMIUM<br/>CLASS</h3>
-                          </div>
-                          <p className="text-sm opacity-60 mt-4">Top 1% Addis Projects</p>
-                       </div>
+                        <div className="flex flex-col justify-between h-full">
+                           <div>
+                             <p className="text-[10px] uppercase tracking-widest opacity-60 mb-2">Portfolio Density</p>
+                             <h3 className="text-4xl font-heading tracking-tight italic">{stats.activeProperties} Units</h3>
+                           </div>
+                           <p className="text-sm opacity-60 mt-4">Active Managed Listings</p>
+                        </div>
                     </div>
                  </div>
 
@@ -795,9 +838,19 @@ export default function AdminDashboard() {
                  <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden shadow-sm">
                     <div className="p-8 border-b border-[var(--border)] flex justify-between items-center text-[var(--foreground)]">
                        <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3"><Edit3 size={20} className="text-brand-blue" />Market Trends (Blog)</h2>
-                        <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
-                           <Plus size={16} /> New Article
-                        </button>
+                         <div className="flex gap-2">
+                           <button 
+                             onClick={syncIntelligence}
+                             disabled={syncing}
+                             className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all border border-[var(--border)] text-[var(--foreground)] ${syncing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-500/5'}`}
+                           >
+                              <Activity size={16} className={syncing ? 'animate-spin' : ''} /> 
+                              {syncing ? 'Syncing...' : 'Sync Live Pulse'}
+                           </button>
+                           <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
+                              <Plus size={16} /> New Article
+                           </button>
+                        </div>
                     </div>
                     <div className="p-8 space-y-4">
                        {posts.length === 0 ? (
