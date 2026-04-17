@@ -125,7 +125,7 @@ export default function MarketTrendsHub() {
                         : 'text-[var(--foreground)] opacity-40 hover:opacity-100'
                     }`}
                   >
-                     {cat}s
+                     {cat === 'all' ? 'ALL' : `${cat}s`}
                   </button>
                ))}
             </div>

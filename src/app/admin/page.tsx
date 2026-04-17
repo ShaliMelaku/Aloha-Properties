@@ -140,7 +140,7 @@ export default function AdminDashboard() {
     totalLeads: 0, 
     activeProperties: 0, 
     campaignReach: 0,
-    growth: '+12.5%'
+    growth: '0%'
   });
 
   const toggleLeadSelection = (idx: number) => {
@@ -187,8 +187,30 @@ export default function AdminDashboard() {
 
   const fetchLeads = async () => {
     const { data } = await supabaseClient.from('leads').select('*').order('created_at', { ascending: false });
-    setDbLeads(data || []);
-    setStats(prev => ({ ...prev, totalLeads: data?.length || 0 }));
+    if (data) {
+      setDbLeads(data);
+      
+      // Calculate real-time growth (Last 7 days vs Previous 7 days)
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+
+      const recentLeads = data.filter(l => new Date(l.created_at || '').getTime() > sevenDaysAgo.getTime()).length;
+      const archiveLeads = data.filter(l => {
+        const d = new Date(l.created_at || '').getTime();
+        return d > fourteenDaysAgo.getTime() && d <= sevenDaysAgo.getTime();
+      }).length;
+
+      let growthStr = '0%';
+      if (archiveLeads > 0) {
+        const growth = ((recentLeads - archiveLeads) / archiveLeads) * 100;
+        growthStr = (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
+      } else if (recentLeads > 0) {
+        growthStr = '+100%';
+      }
+
+      setStats(prev => ({ ...prev, totalLeads: data.length, growth: growthStr }));
+    }
   };
 
   const fetchPosts = async () => {
@@ -592,25 +614,41 @@ export default function AdminDashboard() {
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-[var(--card)] rounded-[3rem] border border-[var(--border)] overflow-hidden p-8 md:p-12 shadow-2xl">
-                    <div className="space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-center bg-[var(--card)] rounded-[3rem] border border-[var(--border)] overflow-hidden p-8 md:p-12 shadow-2xl relative">
+                    <div className="space-y-10">
                        <div>
-                          <h2 className="text-3xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)]">Global <br/>Reach <span className="text-brand-blue">Insight.</span></h2>
-                          <p className="text-[var(--foreground)]/60 font-medium leading-relaxed max-w-sm mt-4">
-                            Interactive 3D visualization of investor hubs. Click and drag to explore the Aloha network.
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-px bg-brand-blue" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-blue">Market Reach Analysis</span>
+                          </div>
+                          <h2 className="text-4xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)] leading-none">Global <br/>Reach <span className="text-brand-blue italic">Pulse.</span></h2>
+                          <p className="text-[var(--foreground)]/60 font-medium leading-relaxed max-w-sm mt-6">
+                            Live visualization of regional investor density across the Aloha registry.
                           </p>
                        </div>
-                       <div className="space-y-4">
-                          {[{ hub: "Addis", share: "62%" }, { hub: "Dubai", share: "18%" }, { hub: "USA", share: "14%" }].map((stat, i) => (
-                            <div key={i} className="space-y-1">
-                               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40">
-                                  <span>{stat.hub}</span><span>{stat.share}</span>
-                               </div>
-                               <div className="h-1.5 w-full bg-slate-500/10 rounded-full overflow-hidden">
-                                  <motion.div initial={{ width: 0 }} animate={{ width: stat.share }} className="h-full bg-brand-blue rounded-full" />
-                               </div>
-                            </div>
-                          ))}
+                       <div className="space-y-6">
+                          {dbLeads.length > 0 ? (
+                            // DYNAMIC REACH: Aggregated from real leads
+                            Object.entries(dbLeads.reduce((acc: any, curr) => {
+                              const loc = curr.interest || 'General';
+                              acc[loc] = (acc[loc] || 0) + 1;
+                              return acc;
+                            }, {})).slice(0, 3).map(([hub, count]: [string, any], i) => {
+                              const share = Math.round((count / dbLeads.length) * 100);
+                              return (
+                                <div key={hub} className="space-y-2">
+                                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40">
+                                      <span>{hub} Hub</span><span>{share}%</span>
+                                   </div>
+                                   <div className="h-2 w-full bg-slate-500/10 rounded-full overflow-hidden">
+                                      <motion.div initial={{ width: 0 }} animate={{ width: `${share}%` }} className="h-full bg-brand-blue rounded-full shadow-[0_0_10px_#3b82f6]" />
+                                   </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-20 italic">Awaiting primary signals...</p>
+                          )}
                        </div>
                     </div>
                      <VisitorGlobe />
