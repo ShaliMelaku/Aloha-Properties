@@ -44,9 +44,11 @@ export async function GET() {
         cover_image: art.image,
         source_label: art.source.name,
         source_url: art.url,
+        // For reports, use the article URL as a downloadable reference
+        file_url: art.type === 'report' ? art.url : null,
         author_name: "Aloha Intelligence",
-        type: art.type || 'article',   // ← critical: store categorized type
-      }, { onConflict: 'slug' });       // ← use slug as conflict key (unique)
+        type: art.type || 'article',
+      }, { onConflict: 'slug' });
     }
 
     return NextResponse.json({

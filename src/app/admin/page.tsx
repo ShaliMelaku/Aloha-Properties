@@ -1110,66 +1110,63 @@ export default function AdminDashboard() {
                                  ))}
                               </div>
                            </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">PDF Report Attachment</label>
-                              <div className="flex flex-col gap-3 p-4 bg-slate-500/5 rounded-2xl border border-dashed border-brand-blue/20">
-                                 <div className="flex gap-2">
-                                    <input type="text" placeholder="Paste PDF URL or upload below" value={editingPost ? editingPost.file_url : newPost.file_url} onChange={e => editingPost ? setEditingPost({...editingPost, file_url: e.target.value}) : setNewPost({...newPost, file_url: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl border border-transparent focus:border-brand-blue outline-none text-xs font-bold text-[var(--foreground)]" />
-                                    <div className="relative">
-                                       <input 
-                                          type="file" 
-                                          accept=".pdf"
-                                          title="Upload PDF Asset"
-                                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                                          onChange={async (e) => {
-                                             const file = e.target.files?.[0];
-                                             if (!file) return;
-                                             setIsUploadingPDF(true);
-                                             try {
-                                                // Route through server API using service-role key — avoids anon bucket permission errors
-                                                const formData = new FormData();
-                                                formData.append('file', file);
-                                                formData.append('path', 'reports');
-                                                formData.append('bucket', 'blog-media');
-                                                const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
-                                                const result = await res.json();
-                                                if (!result.success) throw new Error(result.error || 'Upload failed');
-                                                if (editingPost) setEditingPost({...editingPost, file_url: result.url});
-                                                else setNewPost({...newPost, file_url: result.url});
-                                                notify('success', 'PDF uploaded successfully.');
-                                             } catch (err: unknown) { 
-                                                const message = err instanceof Error ? err.message : 'Check storage permissions';
-                                                notify('error', `Upload error: ${message}`); 
-                                             } finally {
-                                                setIsUploadingPDF(false);
-                                             }
-                                          }}
-                                       />
-                                       <button title="Upload PDF" className="h-[42px] px-6 bg-brand-blue text-white rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest min-w-[170px]">
-                                          {isUploadingPDF ? (
-                                             <>
-                                                <Activity size={14} className="animate-spin" />
-                                                Uploading...
-                                             </>
-                                          ) : (
-                                             <>
-                                                <Upload size={14}/> 
-                                                {editingPost?.file_url || newPost.file_url ? 'Replace PDF' : 'Upload PDF'}
-                                             </>
-                                          )}
-                                       </button>
-                                    </div>
-                                 </div>
-                                 {(editingPost?.file_url || newPost.file_url) && (
-                                    <div className="flex items-center justify-between text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-3 py-2 rounded-lg">
-                                       <a href={editingPost ? editingPost.file_url : newPost.file_url} target="_blank" rel="noopener noreferrer" className="truncate max-w-[220px] hover:underline flex items-center gap-1">
-                                          <Upload size={10} /> Preview PDF ↗
-                                       </a>
-                                       <button onClick={() => editingPost ? setEditingPost({...editingPost, file_url: ''}) : setNewPost({...newPost, file_url: ''})} className="text-red-500 ml-3 shrink-0">Remove</button>
-                                    </div>
-                                 )}
-                              </div>
-                           </div>
+                            <div className="space-y-2">
+                               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">PDF Report Attachment</label>
+                               <div className="flex flex-col gap-2 p-4 bg-slate-500/5 rounded-2xl border border-dashed border-brand-blue/20">
+                                  <input
+                                     type="text"
+                                     placeholder="Paste existing PDF URL (optional)"
+                                     value={editingPost ? editingPost.file_url : newPost.file_url}
+                                     onChange={e => editingPost ? setEditingPost({...editingPost, file_url: e.target.value}) : setNewPost({...newPost, file_url: e.target.value})}
+                                     className="w-full px-4 py-3 bg-[var(--background)] rounded-xl border border-transparent focus:border-brand-blue outline-none text-xs font-bold text-[var(--foreground)]"
+                                  />
+                                  <div className="relative w-full">
+                                     <input
+                                        type="file"
+                                        accept=".pdf"
+                                        title="Upload PDF Asset"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        onChange={async (e) => {
+                                           const file = e.target.files?.[0];
+                                           if (!file) return;
+                                           setIsUploadingPDF(true);
+                                           try {
+                                              const formData = new FormData();
+                                              formData.append("file", file);
+                                              formData.append("path", "reports");
+                                              formData.append("bucket", "blog-media");
+                                              const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+                                              const result = await res.json();
+                                              if (!result.success) throw new Error(result.error || "Upload failed");
+                                              if (editingPost) setEditingPost({...editingPost, file_url: result.url});
+                                              else setNewPost({...newPost, file_url: result.url});
+                                              notify("success", "PDF uploaded successfully.");
+                                           } catch (err: unknown) {
+                                              const message = err instanceof Error ? err.message : "Check storage permissions";
+                                              notify("error", `Upload error: ${message}`);
+                                           } finally {
+                                              setIsUploadingPDF(false);
+                                           }
+                                        }}
+                                     />
+                                     <button type="button" className="w-full h-[44px] bg-brand-blue text-white rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest hover:opacity-90 transition-opacity">
+                                        {isUploadingPDF ? (
+                                           <><Activity size={14} className="animate-spin" /> Uploading PDF...</>
+                                        ) : (
+                                           <><Upload size={14} /> {(editingPost?.file_url || newPost.file_url) ? "Replace PDF" : "Upload PDF File"}</> 
+                                        )}
+                                     </button>
+                                  </div>
+                                  {(editingPost?.file_url || newPost.file_url) && (
+                                     <div className="flex items-center justify-between text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20">
+                                        <a href={editingPost ? editingPost.file_url : newPost.file_url} target="_blank" rel="noopener noreferrer" className="truncate hover:underline flex items-center gap-1.5 flex-1">
+                                           <span>&#10003;</span> PDF Ready â€” Click to Preview
+                                        </a>
+                                        <button onClick={() => editingPost ? setEditingPost({...editingPost, file_url: ""}) : setNewPost({...newPost, file_url: ""})} className="text-red-400 ml-3 shrink-0 hover:text-red-300">Remove</button>
+                                     </div>
+                                  )}
+                               </div>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
