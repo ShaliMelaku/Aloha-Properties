@@ -63,7 +63,7 @@ interface Property {
 }
 
 export interface Unit {
-  id: string;
+  id?: string;
   type: string;
   beds: number;
   baths: number;
@@ -801,7 +801,14 @@ export default function AdminDashboard() {
                                          <input type="number" placeholder="Price" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
                                        </div>
                                     </div>
-                                   <button type="button" onClick={() => { if (!newUnit.type || !newUnit.price) return; setNewProp({ ...newProp, units: [...newProp.units, { ...newUnit }] }); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); }} className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-brand-blue hover:text-white transition-all">Add Unit Type to Draft</button>
+                                   <button type="button" onClick={() => { 
+                                     if (!newUnit.type || !newUnit.price) return; 
+                                     setNewProp({ ...newProp, units: [...newProp.units, { ...newUnit }] }); 
+                                     setNewUnit({ 
+                                       type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, 
+                                       variety_img: '', is_sold: false, discount_percentage: 0, downpayment_percentage: 0 
+                                     }); 
+                                   }} className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-brand-blue hover:text-white transition-all">Add Unit Type to Draft</button>
                                  </div>
 
                                  <button onClick={handleCreateProperty} disabled={uploadingImage} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-2 hover:shadow-brand-blue/20 transition-all">
@@ -817,8 +824,8 @@ export default function AdminDashboard() {
                             <div className="col-span-full py-12 text-center opacity-40 italic">Decrypting Registry...</div>
                          ) : properties.map((prop) => {
                            const progress = prop.progress?.[0];
-                           const discount = (prop as unknown as Record<string, unknown>).discount_percentage as number | undefined;
-                           const paySchedule = (prop as unknown as Record<string, unknown>).payment_schedule as string | undefined;
+                           const discount = prop.discount_percentage;
+                           const paySchedule = prop.payment_schedule;
                            return (
                             <div key={prop.id} className="bg-slate-500/5 border border-white/5 rounded-3xl overflow-hidden hover:border-brand-blue/30 transition-all group flex flex-col shadow-lg">
                                <div className="p-6 flex-1 relative">
@@ -881,7 +888,18 @@ export default function AdminDashboard() {
                                                     <p className="text-[10px] font-black text-brand-blue mt-1">{formatPrice(unit.price)}</p>
                                                  </div>
                                                  <div className="flex gap-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); setEditingUnit(unit); setNewUnit({ type: unit.type, beds: unit.beds, baths: unit.baths, sqm: unit.sqm, price: unit.price, variety_img: unit.variety_img || '', is_sold: !!unit.is_sold }); setSelectedPropertyId(prop.id); }} title="Edit Unit" className="p-1.5 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors"><Edit3 size={12}/></button>
+                                                    <button onClick={(e) => { 
+                                                       e.stopPropagation(); 
+                                                       setEditingUnit(unit); 
+                                                       setNewUnit({ 
+                                                         type: unit.type, beds: unit.beds, baths: unit.baths, 
+                                                         sqm: unit.sqm, price: unit.price, variety_img: unit.variety_img || '', 
+                                                         is_sold: !!unit.is_sold,
+                                                         discount_percentage: unit.discount_percentage || 0,
+                                                         downpayment_percentage: unit.downpayment_percentage || 0
+                                                       }); 
+                                                       setSelectedPropertyId(prop.id); 
+                                                     }} title="Edit Unit" className="p-1.5 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors"><Edit3 size={12}/></button>
                                                     <button onClick={async (e) => { e.stopPropagation(); if (!confirm(`Delete ${unit.type}?`)) return; try { const { error } = await supabaseClient.from('property_units').delete().eq('id', unit.id); if (!error) { notify('success', 'Unit purged.'); fetchProperties(); } else throw error; } catch { notify('error', 'Sync failure.'); } }} title="Delete Unit" className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={12}/></button>
                                                  </div>
                                               </div>
@@ -1296,7 +1314,13 @@ export default function AdminDashboard() {
                         <div className="flex justify-between items-center mb-4">
                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">{editingUnit ? 'Edit Unit Type' : 'Add New Unit Types'}</h4>
                            {editingUnit && (
-                             <button onClick={() => { setEditingUnit(null); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); }} className="text-[9px] font-black text-brand-blue uppercase hover:underline">Cancel Edit</button>
+                             <button onClick={() => { 
+                               setEditingUnit(null); 
+                               setNewUnit({ 
+                                 type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, 
+                                 variety_img: '', is_sold: false, discount_percentage: 0, downpayment_percentage: 0 
+                               }); 
+                             }} className="text-[9px] font-black text-brand-blue uppercase hover:underline">Cancel Edit</button>
                            )}
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
