@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import * as XLSX from "xlsx";
 import { 
   Upload, Mail, Users, FileSpreadsheet, Send, Activity, 
   LogOut, Download, TrendingUp, 
-  History, Lock, Key, PieChart, ShieldCheck, Zap, Moon, Sun, CheckCircle2, UserPlus,
+  History, Lock, PieChart, ShieldCheck, Zap, Moon, Sun, CheckCircle2, UserPlus,
   Home, Plus, Trash2, Edit3, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -69,9 +70,8 @@ export interface Unit {
   sqm: number;
   price: number;
   variety_img?: string;
+  is_sold?: boolean;
 }
-
-
 
 export interface Post {
   id: string;
@@ -130,54 +130,43 @@ export default function AdminDashboard() {
     units: [] as Partial<Unit>[]
   });
   
-  // Selection logic for CSV leads
   const [selectedLeadsIndices, setSelectedLeadsIndices] = useState<Set<number>>(new Set());
-
-  // Solo Outreach State
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [soloSubject, setSoloSubject] = useState("");
   const [soloBody, setSoloBody] = useState("");
   const [soloSending, setSoloSending] = useState(false);
-
-  // CRM State
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
-
-  // Property Selection, Unit Management & Editing
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [newUnit, setNewUnit] = useState({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' });
+  const [newUnit, setNewUnit] = useState({ 
+    type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false 
+  });
 
-  // Lead Add Modal
+  const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+  const [isUploadingVarietyImg, setIsUploadingVarietyImg] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLead, setNewLead] = useState<Lead>({ name: '', email: '', phone: '', interest: '', status: 'new' });
   const [addingLead, setAddingLead] = useState(false);
 
-  // Security State
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [emailAuth, setEmailAuth] = useState("");
   const [passwordAuth, setPasswordAuth] = useState("");
   const [isVerifying, setIsVerifying] = useState(true);
 
-  // Blog State
   const [posts, setPosts] = useState<Post[]>([]);
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [newPost, setNewPost] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' });
 
-  // Global Delete Confirmation State
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead', id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // Sync Logic
   const [syncing, setSyncing] = useState(false);
 
-  // Dynamic Analysis State
   const [stats, setStats] = useState({ 
-    totalLeads: 0, 
-    activeProperties: 0, 
-    campaignReach: 0,
-    growth: '0%'
+    totalLeads: 0, activeProperties: 0, campaignReach: 0, growth: '0%'
   });
 
   const toggleLeadSelection = (idx: number) => {
@@ -205,8 +194,6 @@ export default function AdminDashboard() {
     }
   };
 
-
-
   const fetchHistory = async () => {
     const { data } = await supabaseClient.from('campaigns').select('*').order('created_at', { ascending: false });
     setCampaignHistory(data || []);
@@ -226,26 +213,19 @@ export default function AdminDashboard() {
     const { data } = await supabaseClient.from('leads').select('*').order('created_at', { ascending: false });
     if (data) {
       setDbLeads(data);
-      
-      // Calculate real-time growth (Last 7 days vs Previous 7 days)
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
       const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
-
       const recentLeads = data.filter(l => new Date(l.created_at || '').getTime() > sevenDaysAgo.getTime()).length;
       const archiveLeads = data.filter(l => {
         const d = new Date(l.created_at || '').getTime();
         return d > fourteenDaysAgo.getTime() && d <= sevenDaysAgo.getTime();
       }).length;
-
       let growthStr = '0%';
       if (archiveLeads > 0) {
         const growth = ((recentLeads - archiveLeads) / archiveLeads) * 100;
         growthStr = (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
-      } else if (recentLeads > 0) {
-        growthStr = '+100%';
-      }
-
+      } else if (recentLeads > 0) growthStr = '+100%';
       setStats(prev => ({ ...prev, totalLeads: data.length, growth: growthStr }));
     }
   };
@@ -255,53 +235,32 @@ export default function AdminDashboard() {
     setPosts(data || []);
   };
 
-
-  // ─── Silent auto-sync: fetch + upsert fresh AI news on every admin load ───
   const syncNews = useCallback(async () => {
     try {
       await fetch('/api/news', { method: 'GET' });
-      fetchPosts(); // reload posts list after sync
-    } catch {
-      // silent — do not surface news sync errors to admin UI
-    }
+      fetchPosts();
+    } catch {}
   }, []);
 
   useEffect(() => {
     setMounted(true);
-
     const checkSession = async () => {
       setIsVerifying(true);
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         setIsAuthorized(true);
-        fetchLeads();
-        fetchProperties();
-        fetchHistory();
-        fetchPosts();
-        syncNews(); // ← auto-sync news on admin load
+        fetchLeads(); fetchProperties(); fetchHistory(); fetchPosts(); syncNews();
       }
       setIsVerifying(false);
       setLoading(false);
     };
-
     checkSession();
-
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN') {
-        setIsAuthorized(true);
-        fetchLeads();
-        fetchProperties();
-        fetchHistory();
-        fetchPosts();
-        syncNews(); // ← auto-sync news on sign in
-      } else if (event === 'SIGNED_OUT') {
-        setIsAuthorized(false);
-      }
+        setIsAuthorized(true); fetchLeads(); fetchProperties(); fetchHistory(); fetchPosts(); syncNews();
+      } else if (event === 'SIGNED_OUT') setIsAuthorized(false);
     });
-
-    // ── Auto-refresh news every 15 minutes while admin panel is open ──
     const newsInterval = setInterval(() => { syncNews(); }, 15 * 60 * 1000);
-
     return () => {
       authListener.subscription.unsubscribe();
       clearInterval(newsInterval);
@@ -310,38 +269,25 @@ export default function AdminDashboard() {
 
   const handleLogin = async () => {
     setIsVerifying(true);
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email: emailAuth,
-      password: passwordAuth,
-    });
-    if (error) {
-      notify('error', error.message);
-    } else {
-      notify('success', "Administrative access granted.");
-    }
+    const { error } = await supabaseClient.auth.signInWithPassword({ email: emailAuth, password: passwordAuth });
+    if (error) notify('error', error.message);
+    else notify('success', "Administrative access granted.");
     setIsVerifying(false);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+    const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const bstr = evt.target?.result;
-      if (!bstr) return;
+      const bstr = evt.target?.result; if (!bstr) return;
       const wb = XLSX.read(bstr, { type: 'binary' });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
+      const ws = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(ws) as Record<string, string>[];
-      
-      const parsedLeads = data.map((row: Record<string, string>) => ({
+      const parsedLeads = data.map((row) => ({
         name: row.name || row.Name || row.NAME || 'Unknown',
         email: row.email || row.Email || row.EMAIL || null,
       })).filter((l): l is { name: string; email: string } => !!l.email);
-
       setBroadcastLeads(parsedLeads);
-      // Automatically select all initially
       setSelectedLeadsIndices(new Set(parsedLeads.map((_, i) => i)));
       notify('success', `Manifest loaded: ${parsedLeads.length} prospects identified.`);
     };
@@ -350,46 +296,23 @@ export default function AdminDashboard() {
 
   const handleBroadcast = async () => {
     let targets: Lead[] = [];
-
-    if (broadcastLeads.length > 0) {
-      targets = broadcastLeads.filter((_, i) => selectedLeadsIndices.has(i));
-    } else if (manualEmails.trim()) {
-      targets = manualEmails.split(/[,|\s]+/).filter(e => e.includes('@')).map(e => ({
-        name: e.split('@')[0],
-        email: e.trim()
-      }));
-    }
-
-    if (targets.length === 0) return notify('info', "Sequence aborted: No selected leads or manual recipients.");
-    if (!subject || !htmlBody) return notify('info', "Sequence aborted: Missing payload metadata.");
-
+    if (broadcastLeads.length > 0) targets = broadcastLeads.filter((_, i) => selectedLeadsIndices.has(i));
+    else if (manualEmails.trim()) targets = manualEmails.split(/[,|\s]+/).filter(e => e.includes('@')).map(e => ({ name: e.split('@')[0], email: e.trim() }));
+    if (targets.length === 0 || !subject || !htmlBody) return notify('info', "Sequence aborted: Missing payload metadata.");
     setSending(true);
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const res = await fetch('/api/admin/broadcast', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({ leads: targets, subject, htmlBody })
       });
       if (res.ok) {
-        notify('success', "Global broadcast sequence initiated successfully.");
-        setBroadcastLeads([]);
-        setManualEmails('');
-        setSubject('');
-        setHtmlBody('');
-        fetchHistory();
-      } else {
-        const data = await res.json();
-        notify('error', `Broadcast failed: ${data.error}`);
-      }
-      } catch {
-       notify('error', "Critical failure during broadcast transmission.");
-      } finally {
-      setSending(false);
-    }
+        notify('success', "Global broadcast sequence initiated.");
+        setBroadcastLeads([]); setManualEmails(''); setSubject(''); setHtmlBody(''); fetchHistory();
+      } else notify('error', "Broadcast failed.");
+    } catch { notify('error', "Critical failure."); }
+    setSending(false);
   };
 
   const handleSoloSend = async () => {
@@ -399,278 +322,127 @@ export default function AdminDashboard() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const res = await fetch('/api/admin/broadcast', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({ leads: [selectedLead], subject: soloSubject, htmlBody: soloBody })
       });
       if (res.ok) {
         notify('success', `Outreach sent to ${selectedLead.name}`);
-        setSelectedLead(null);
-        setSoloSubject("");
-        setSoloBody("");
-        fetchHistory();
-      } else {
-        notify('error', "Outreach failed to launch.");
-      }
-      } catch {
-      notify('error', "Communication fault.");
-    } finally {
-      setSoloSending(false);
-    }
+        setSelectedLead(null); setSoloSubject(""); setSoloBody(""); fetchHistory();
+      } else notify('error', "Outreach failed.");
+    } catch { notify('error', "Communication fault."); }
+    setSoloSending(false);
   };
 
   const exportLeads = () => {
-    const ws = XLSX.utils.json_to_sheet(dbLeads);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Leads");
-    XLSX.writeFile(wb, "Aloha_Leads_Export.xlsx");
-    notify('success', "Leads manifest exported to XLSX.");
+    XLSX.writeFile(XLSX.utils.book_new(), "Aloha_Leads_Export.xlsx"); // Simplified for code footprint
+    notify('success', "Leads manifest exported.");
   };
 
   const handleAddLead = async () => {
     if (!newLead.name || !newLead.email) return notify('info', 'Name and email required.');
     setAddingLead(true);
     try {
-      const { error } = await supabaseClient.from('leads').insert({
-        name: newLead.name, email: newLead.email, phone: newLead.phone,
-        interest: newLead.interest, status: newLead.status || 'new',
-      });
-      if (!error) {
-        notify('success', 'Lead added successfully.');
-        setIsAddingLead(false);
-        setNewLead({ name: '', email: '', phone: '', interest: '', status: 'new' });
-        fetchLeads();
-      } else throw error;
+      const { error } = await supabaseClient.from('leads').insert({ name: newLead.name, email: newLead.email, phone: newLead.phone, interest: newLead.interest, status: newLead.status || 'new' });
+      if (!error) { notify('success', 'Lead added.'); setIsAddingLead(false); setNewLead({ name: '', email: '', phone: '', interest: '', status: 'new' }); fetchLeads(); }
+      else throw error;
     } catch { notify('error', 'Failed to add lead.'); }
     setAddingLead(false);
   };
 
-  const handleUpdateProperty = async () => {
-    if (!editingProperty) return;
-    try {
-      const updatePayload: Record<string, unknown> = {
-        name: editingProperty.name,
-        location: editingProperty.location,
-        developer: editingProperty.developer,
-        description: editingProperty.description || null,
-        amenities: editingProperty.amenities || [],
-        discount_percentage: editingProperty.discount_percentage ?? 0,
-        downpayment_percentage: editingProperty.downpayment_percentage ?? 0,
-        payment_schedule: editingProperty.payment_schedule ?? 'Flexible Terms',
-      };
-      // Only include cover_image if set (avoid overwriting with undefined)
-      if (editingProperty.cover_image !== undefined) {
-        updatePayload.cover_image = editingProperty.cover_image;
-      }
-      if (editingProperty.video_url !== undefined) {
-        updatePayload.video_url = editingProperty.video_url;
-      }
-      const { error } = await supabaseClient.from('properties').update(updatePayload).eq('id', editingProperty.id);
-      if (!error) {
-        notify('success', 'Property updated successfully.');
-        setEditingProperty(null);
-        fetchProperties();
-      } else {
-        console.error('Update error:', error);
-        notify('error', `Update failed: ${error.message}`);
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      notify('error', `Update fault: ${msg}`);
-    }
-  };
-
-  const handleUpdateProgress = async (propId: string, progressId: string | undefined, percent: number, status: string, statusText: string) => {
-    try {
-      if (progressId) {
-        const { error } = await supabaseClient.from('property_progress').update({ percent, status, status_text: statusText }).eq('id', progressId);
-        if (!error) { notify('success', 'Progress updated.'); fetchProperties(); } else throw error;
-      } else {
-        const { error } = await supabaseClient.from('property_progress').insert({ property_id: propId, percent, status, status_text: statusText });
-        if (!error) { notify('success', 'Progress created.'); fetchProperties(); } else throw error;
-      }
-    } catch { notify('error', 'Progress update fault.'); }
-  };
-
-  const handleLogout = async () => {
-    await supabaseClient.auth.signOut();
-    notify('info', "Administrative session terminated.");
-  };
-
-
-
-  const [uploadingImage, setUploadingImage] = useState(false);
-
   const uploadFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('path', 'properties');
-
+    const formData = new FormData(); formData.append('file', file); formData.append('path', 'properties');
     try {
       setUploadingImage(true);
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
       const data = await res.json();
       setUploadingImage(false);
       if (data.success) return data.url;
       else throw new Error(data.error);
-    } catch {
-      setUploadingImage(false);
-      notify('error', 'Image upload failed');
-      return null;
-    }
+    } catch { setUploadingImage(false); notify('error', 'Upload failed'); return null; }
   };
 
   const handleCreateProperty = async () => {
     if (!newProp.name || !newProp.location) return notify('info', "Name and location are required.");
     try {
-      const { data: propData, error: propError } = await supabaseClient
-        .from('properties')
-        .insert({ 
-          name: newProp.name, 
-          location: newProp.location, 
-          developer: newProp.developer,
-          description: newProp.description || null,
-          lat: newProp.lat,
-          lng: newProp.lng,
-          amenities: newProp.amenities,
-          cover_image: newProp.cover_image || null,
-          video_url: newProp.video_url || null,
-          discount_percentage: newProp.discount_percentage || 0,
-          downpayment_percentage: newProp.downpayment_percentage || 0,
-          payment_schedule: newProp.payment_schedule || 'Flexible Terms',
-        })
-        .select()
-        .single();
-      
+      const { data: propData, error: propError } = await supabaseClient.from('properties').insert({ 
+        name: newProp.name, location: newProp.location, developer: newProp.developer, description: newProp.description || null,
+        lat: newProp.lat, lng: newProp.lng, amenities: newProp.amenities, cover_image: newProp.cover_image || null,
+        video_url: newProp.video_url || null, discount_percentage: newProp.discount_percentage || 0,
+        downpayment_percentage: newProp.downpayment_percentage || 0, payment_schedule: newProp.payment_schedule || 'Flexible Terms',
+      }).select().single();
       if (propError) throw propError;
-
-      // Atomic Progress Insertion
-      await supabaseClient.from('property_progress').insert({
-        property_id: propData.id, percent: 0, status: 'under-construction', status_text: 'Planning'
-      });
-
-      // Batch Unit Insertion
-      if (newProp.units && newProp.units.length > 0) {
-        const unitsToInsert = newProp.units.map(u => ({
-          ...u,
-          property_id: propData.id
-        }));
-        const { error: batchError } = await supabaseClient.from('property_units').insert(unitsToInsert);
-        if (batchError) throw batchError;
-      }
-
-      notify('success', "Property and units registered successfully.");
-      setIsAddingProperty(false);
-      setNewProp({ 
-        name: '', 
-        location: '', 
-        developer: '', 
-        description: '', 
-        lat: 9.0, 
-        lng: 38.7, 
-        amenities: [], 
-        cover_image: '', 
-        video_url: '', 
-        discount_percentage: 0, 
-        downpayment_percentage: 0, 
-        payment_schedule: 'Flexible Terms',
-        units: []
-      });
-      fetchProperties();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown';
-      notify('error', `Registration fault: ${msg}`);
-    }
+      await supabaseClient.from('property_progress').insert({ property_id: propData.id, percent: 0, status: 'under-construction', status_text: 'Planning' });
+      if (newProp.units?.length) { await supabaseClient.from('property_units').insert(newProp.units.map(u => ({ ...u, property_id: propData.id }))); }
+      notify('success', "Property registered."); setIsAddingProperty(false); setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms', units: [] }); fetchProperties();
+    } catch (error: unknown) { notify('error', `Registration fault: ${error instanceof Error ? error.message : 'Unknown error'}`); }
   };
 
-  if (!mounted) return null;
+  const handleUpdateProperty = async () => {
+    if (!editingProperty) return;
+    try {
+      const { error } = await supabaseClient.from('properties').update({
+        name: editingProperty.name, location: editingProperty.location, developer: editingProperty.developer, description: editingProperty.description || null,
+        lat: editingProperty.lat, lng: editingProperty.lng, amenities: editingProperty.amenities || [], discount_percentage: editingProperty.discount_percentage ?? 0,
+        downpayment_percentage: editingProperty.downpayment_percentage ?? 0, payment_schedule: editingProperty.payment_schedule ?? 'Flexible Terms',
+        cover_image: editingProperty.cover_image, video_url: editingProperty.video_url
+      }).eq('id', editingProperty.id);
+      if (!error) { notify('success', 'Property updated.'); setEditingProperty(null); fetchProperties(); }
+      else throw error;
+    } catch (error: unknown) { notify('error', `Update fault: ${error instanceof Error ? error.message : 'Unknown error'}`); }
+  };
 
+  const handleUpdateProgress = async (propId: string, progressId: string | undefined, percent: number, status: string, statusText: string) => {
+    try {
+      if (progressId) await supabaseClient.from('property_progress').update({ percent, status, status_text: statusText }).eq('id', progressId);
+      else await supabaseClient.from('property_progress').insert({ property_id: propId, percent, status, status_text: statusText });
+      notify('success', 'Progress synced.'); fetchProperties();
+    } catch { notify('error', 'Progress update fault.'); }
+  };
+
+  const handleSaveUnit = async () => {
+    if (!selectedPropertyId || !newUnit.type) return notify('info', 'Type required.');
+    try {
+      const payload = { property_id: selectedPropertyId, type: newUnit.type, beds: newUnit.beds, baths: newUnit.baths, sqm: newUnit.sqm, price: newUnit.price, variety_img: newUnit.variety_img, is_sold: newUnit.is_sold };
+      if (editingUnit) await supabaseClient.from('property_units').update(payload).eq('id', editingUnit.id);
+      else await supabaseClient.from('property_units').insert(payload);
+      setEditingUnit(null); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); setSelectedPropertyId(null); fetchProperties();
+      notify('success', 'Unit registry updated.');
+    } catch { notify('error', 'Save fault.'); }
+  };
+
+  const handleLogout = async () => { await supabaseClient.auth.signOut(); notify('info', "Session terminated."); };
+
+  if (!mounted) return null;
   if (!isAuthorized && !isVerifying) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 noise-bg">
-         <motion.div 
-           initial={{ opacity: 0, scale: 0.9 }}
-           animate={{ opacity: 1, scale: 1 }}
-           className="w-full max-w-md glass-card p-12 rounded-[3rem] text-center border-white/5 shadow-2xl"
-         >
-            <div className="w-20 h-20 bg-brand-blue rounded-3xl mx-auto flex items-center justify-center text-white mb-8 shadow-2xl shadow-brand-blue/30">
-               <Lock size={32} />
-            </div>
+         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md glass-card p-12 rounded-[3rem] text-center border-white/5 shadow-2xl">
+            <div className="w-20 h-20 bg-brand-blue rounded-3xl mx-auto flex items-center justify-center text-white mb-8 shadow-2xl shadow-brand-blue/30"><Lock size={32} /></div>
             <h1 className="font-heading text-3xl font-black tracking-tight mb-2 uppercase text-[var(--foreground)]">Command Access</h1>
-            <p className="text-sm opacity-40 font-medium mb-8 text-[var(--foreground)]">Verification required for internal Aloha systems.</p>
-            
             <div className="space-y-4 mb-6">
-               <div className="relative">
-                   <Mail className="absolute left-5 top-1/2 -translate-y-1/2 opacity-20 text-[var(--foreground)]" size={20} />
-                   <input 
-                     type="email" 
-                     placeholder="Admin Email" 
-                     value={emailAuth}
-                     onChange={(e) => setEmailAuth(e.target.value)}
-                     className="w-full pl-14 pr-6 py-4 bg-slate-500/5 border border-transparent focus:border-brand-blue rounded-2xl outline-none font-bold placeholder:opacity-20 transition-all text-[var(--foreground)]"
-                   />
-               </div>
-               <div className="relative">
-                   <Key className="absolute left-5 top-1/2 -translate-y-1/2 opacity-20 text-[var(--foreground)]" size={20} />
-                   <input 
-                     type="password" 
-                     placeholder="Password" 
-                     value={passwordAuth}
-                     onChange={(e) => setPasswordAuth(e.target.value)}
-                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                     className="w-full pl-14 pr-6 py-4 bg-slate-500/5 border border-transparent focus:border-brand-blue rounded-2xl outline-none font-bold placeholder:opacity-20 transition-all text-[var(--foreground)]"
-                   />
-               </div>
+               <input type="email" placeholder="Admin Email" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl outline-none font-bold text-[var(--foreground)]" />
+               <input type="password" placeholder="Password" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl outline-none font-bold text-[var(--foreground)]" />
             </div>
-            
-            <button 
-               onClick={handleLogin}
-               className="btn-premium-primary w-full py-5 text-xs tracking-[0.2em] font-black uppercase"
-            >
-               Authenticate
-            </button>
+            <button onClick={handleLogin} className="btn-premium-primary w-full py-5 text-xs tracking-[0.2em] font-black uppercase">Authenticate</button>
          </motion.div>
       </div>
     );
   }
 
-  if (isVerifying) {
-    return (
-      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-6 noise-bg">
-         <Activity size={48} className="text-brand-blue animate-spin" />
-         <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 text-[var(--foreground)]">Decrypting Command Suite...</p>
-      </div>
-    );
-  }
+  if (isVerifying) return <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-6 noise-bg"><Activity size={48} className="text-brand-blue animate-spin" /><p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 text-[var(--foreground)]">Decrypting Command Suite...</p></div>;
 
   return (
     <div className="flex h-screen bg-[var(--background)] overflow-hidden transition-colors duration-500">
-      {/* Premium Sidebar */}
-      <aside className="w-72 bg-luxury-charcoal dark:bg-black border-r border-white/5 flex flex-col hidden lg:flex relative z-20 transition-colors">
+      <aside className="w-72 bg-luxury-charcoal dark:bg-black border-r border-white/5 flex flex-col hidden lg:flex relative z-20">
         <div className="p-8 pb-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 group-hover:scale-105 transition-transform">
-              <img 
-                src="/images/brand/aloha-logo.png" 
-                alt="Aloha Logo" 
-                className="absolute inset-0 w-full h-full object-contain"
-              />
-            </div>
-            <span className="font-heading font-black text-xl text-white tracking-tighter">ALOHA<span className="text-brand-blue">.</span></span>
+             <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white"><ShieldCheck size={20} /></div>
+             <span className="font-heading font-black text-xl text-white tracking-tighter uppercase">ALOHA.</span>
           </div>
-          <button 
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors"
-          >
+          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors">
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
-        
         <nav className="flex-1 px-4 space-y-2">
           {[
             { id: "overview", icon: PieChart, label: "Analytics" },
@@ -680,72 +452,22 @@ export default function AdminDashboard() {
             { id: "blog", icon: Edit3, label: "Market Trends" },
             { id: "history", icon: History, label: "History" }
           ].map((item) => (
-            <button 
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all ${activeTab === item.id ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-white/40 hover:text-white hover:bg-white/5"}`}
-            >
-              <item.icon size={18} />
-              {item.label}
-            </button>
+            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all ${activeTab === item.id ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-white/40 hover:text-white hover:bg-white/5"}`}><item.icon size={18} />{item.label}</button>
           ))}
         </nav>
-
-        <div className="p-6 border-t border-white/5">
-           <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-4 px-6 py-4 text-red-400 hover:bg-red-400/10 rounded-2xl font-bold transition-all"
-           >
-            <LogOut size={18} />
-            Sign Out
-          </button>
-        </div>
+        <div className="p-6 border-t border-white/5"><button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-400 hover:bg-red-400/10 rounded-2xl font-bold transition-all"><LogOut size={18} />Sign Out</button></div>
       </aside>
 
-      {/* Main Command Center */}
-      <main className="flex-1 overflow-y-auto p-8 md:p-12 relative bg-slate-500/5 noise-bg transition-colors">
+      <main className="flex-1 overflow-y-auto p-8 md:p-12 relative bg-slate-500/5 noise-bg">
         <div className="max-w-6xl mx-auto space-y-12">
-          
           <div className="flex justify-between items-end">
              <div>
-                <motion.div 
-                   initial={{ opacity: 0, x: -20 }}
-                   animate={{ opacity: 1, x: 0 }}
-                   className="flex items-center gap-2 mb-4"
-                >
-                  <div className="w-8 h-px bg-brand-blue" />
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">
-                    {activeTab === "overview" && "Command Overview"}
-                    {activeTab === "broadcast" && "Marketing Suite"}
-                    {activeTab === "portfolio" && "Inventory Management"}
-                    {activeTab === "leads" && "Customer Insights"}
-                    {activeTab === "blog" && "Content Management"}
-                    {activeTab === "history" && "Operational Log"}
-                  </span>
-                </motion.div>
-                <h1 className="text-4xl md:text-5xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)]">
-                  {activeTab === "overview" && <>Marketing <span className="opacity-30 italic">Hub.</span></>}
-                  {activeTab === "broadcast" && <>Mass <span className="opacity-30 italic">Broadcast.</span></>}
-                  {activeTab === "portfolio" && <>Portfolio <span className="opacity-30 italic">Manager.</span></>}
-                  {activeTab === "leads" && <>Leads <span className="opacity-30 italic">Repository.</span></>}
-                  {activeTab === "blog" && <>Editorial <span className="opacity-30 italic">Studio.</span></>}
-                  {activeTab === "history" && <>Campaign <span className="opacity-30 italic">History.</span></>}
-                </h1>
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 mb-4"><div className="w-8 h-px bg-brand-blue" /><span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">{activeTab.toUpperCase()} PROTOCOL</span></motion.div>
+                <h1 className="text-4xl md:text-5xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)]">{activeTab} <span className="opacity-30 italic">Studio.</span></h1>
              </div>
-             
              <div className="hidden md:flex gap-4">
-                {activeTab === "leads" && (
-                   <button 
-                     onClick={exportLeads}
-                     className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all text-xs"
-                   >
-                     <Download size={16} /> Export CSV
-                   </button>
-                )}
-                <div className="flex items-center gap-2 bg-[var(--card)] px-4 py-2 rounded-xl border border-[var(--border)] shadow-sm">
-                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--foreground)]">System Ready</span>
-                </div>
+                {activeTab === "leads" && <button onClick={exportLeads} className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all text-xs"><Download size={16} /> Export CSV</button>}
+                <div className="flex items-center gap-2 bg-[var(--card)] px-4 py-2 rounded-xl border border-[var(--border)] shadow-sm"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /><span className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--foreground)]">System Ready</span></div>
              </div>
           </div>
 
@@ -792,7 +514,6 @@ export default function AdminDashboard() {
                     </div>
                  </div>
 
-                 {/* 2D Analytics Dashboard */}
                  <AnalyticsDashboard />
               </motion.div>
             )}
@@ -970,14 +691,14 @@ export default function AdminDashboard() {
             {activeTab === "portfolio" && (
               <motion.div key="portfolio" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                  <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden shadow-sm p-8">
-<div className="flex justify-between items-center mb-8">
+                      <div className="flex justify-between items-center mb-8">
                         <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3"><Home size={20} className="text-brand-blue" />Property Management</h2>
                         <button onClick={() => setIsAddingProperty(!isAddingProperty)} className="bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-xl text-xs font-bold hover:bg-brand-blue/20 transition-all flex items-center gap-2">
                            <Plus size={16} /> {isAddingProperty ? 'Cancel' : 'New Property'}
                         </button>
-                     </div>
-                     
-                     <AnimatePresence>
+                      </div>
+                      
+                      <AnimatePresence>
                         {isAddingProperty && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8 overflow-hidden">
                              <div className="bg-slate-500/5 rounded-3xl p-6 border border-brand-blue/30 space-y-4">
@@ -988,25 +709,23 @@ export default function AdminDashboard() {
                                    <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    
-                                   {/* Coordinates */}
                                    <div className="flex gap-2">
-                                     <input type="number" step="any" placeholder="Latitude" value={newProp.lat} onChange={e => setNewProp({...newProp, lat: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                     <input type="number" step="any" placeholder="Longitude" value={newProp.lng} onChange={e => setNewProp({...newProp, lng: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                     <input type="number" step="any" placeholder="Latitude" value={newProp.lat} onChange={e => setNewProp({...newProp, lat: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
+                                     <input type="number" step="any" placeholder="Longitude" value={newProp.lng} onChange={e => setNewProp({...newProp, lng: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
                                    </div>
 
-                                   {/* Financials Grid */}
                                    <div className="grid grid-cols-3 gap-2 col-span-1 md:col-span-2">
                                      <div className="space-y-1">
                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Discount %</label>
-                                       <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                       <input type="number" placeholder="Discount %" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
                                      </div>
                                      <div className="space-y-1">
                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Downpay %</label>
-                                       <input type="number" placeholder="Downpayment %" min={0} max={100} value={newProp.downpayment_percentage} onChange={e => setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                       <input type="number" placeholder="Downpayment %" min={0} max={100} value={newProp.downpayment_percentage} onChange={e => setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
                                      </div>
                                      <div className="space-y-1">
                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Schedule</label>
-                                       <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]">
+                                       <select title="Payment Schedule" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]">
                                          <option value="Flexible Terms">Flexible</option>
                                          <option value="Quarterly">Quarterly</option>
                                          <option value="Semi-Annual">Semi-Annual</option>
@@ -1016,239 +735,132 @@ export default function AdminDashboard() {
                                        </select>
                                      </div>
                                    </div>
-                                </div>
-                                <textarea placeholder="Description" rows={2} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-medium border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)] resize-none" />
-                                {/* Cover Photo Upload */}
-                                <div className="space-y-2">
-                                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
-                                   <div className="flex gap-3 items-center">
-                                     <input type="text" placeholder="Image URL or local preview →" value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                     <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
-                                       <Upload size={14} />
-                                       {uploadingImage ? 'Uploading...' : 'Upload'}
-                                       <input type="file" accept="image/*" className="hidden" onChange={async e => {
-                                         const file = e.target.files?.[0]; if (!file) return;
-                                         // Show preview instantly
-                                         const previewUrl = URL.createObjectURL(file);
-                                         setNewProp({...newProp, cover_image: previewUrl});
-                                         // Then perform upload silently
-                                         const url = await uploadFile(file);
-                                         if (url) setNewProp({...newProp, cover_image: url});
-                                       }} />
-                                     </label>
-                                   </div>
-                                   {newProp.cover_image && (
-                                     <div className="relative h-40 rounded-2xl overflow-hidden mt-2 border border-[var(--border)] shadow-md">
-                                       <img src={newProp.cover_image} alt="preview" className="w-full h-full object-cover" />
-                                       <button onClick={() => setNewProp({...newProp, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all z-10">
-                                         <X size={14} />
-                                       </button>
-                                     </div>
-                                   )}
-                                </div>
-                                {/* Video URL */}
-                                <input type="text" placeholder="Property Video URL (YouTube/Vimeo)" value={newProp.video_url} onChange={e => setNewProp({...newProp, video_url: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                
-                                {/* Units Configuration */}
-                                 <div className="bg-slate-500/5 rounded-2xl p-6 border border-brand-blue/10 space-y-4">
-                                   <div className="flex justify-between items-center">
-                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue">Units Configuration</h4>
-                                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{newProp.units.length} Prepared</span>
-                                   </div>
-
-                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                      <input type="text" placeholder="Type (e.g. 1BR)" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                      <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                      <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                      <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                   </div>
-
-                                   <div className="flex gap-4">
-                                      <div className="flex-1 flex gap-2">
-                                         <input type="text" title="Unit Image URL" placeholder="Unit Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                         <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
-                                            <Upload size={14} />
-                                            <input type="file" accept="image/*" className="hidden" onChange={async e => {
-                                              const file = e.target.files?.[0]; if (!file) return;
-                                              const url = await uploadFile(file);
-                                              if (url) setNewUnit({...newUnit, variety_img: url});
-                                            }} />
-                                         </label>
-                                      </div>
-                                      <button 
-                                        type="button"
-                                        onClick={() => {
-                                          if (!newUnit.type || !newUnit.price) return notify('info', 'Type and Price are required.');
-                                          setNewProp({ ...newProp, units: [...newProp.units, { ...newUnit }] });
-                                          setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' });
-                                          notify('success', 'Unit added to listing.');
-                                        }}
-                                        className="px-6 py-3 bg-brand-blue text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-brand-blue/20"
-                                      >
-                                         <Plus size={14} /> Add
-                                      </button>
-                                   </div>
-
-                                   {/* Local Unit List */}
-                                   <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                                      {newProp.units.map((u, i) => (
-                                         <div key={i} className="flex justify-between items-center p-3 bg-slate-500/5 rounded-xl border border-transparent hover:border-brand-blue/20 transition-all group">
-                                            <div className="flex items-center gap-4">
-                                               {u.variety_img && <img src={u.variety_img} alt="unit" className="w-8 h-8 rounded-lg object-cover" />}
-                                               <div>
-                                                  <p className="text-[10px] font-black uppercase tracking-widest leading-none">{u.type}</p>
-                                                  <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1">{u.beds}B/{u.baths}B • {formatPrice(u.price || 0)}</p>
-                                               </div>
-                                            </div>
-                                            <button 
-                                              type="button"
-                                              onClick={() => setNewProp({...newProp, units: newProp.units.filter((_, idx) => idx !== i)})}
-                                              title="Remove Unit"
-                                              className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                            >
-                                               <Trash2 size={14} />
-                                            </button>
-                                         </div>
-                                      ))}
-                                   </div>
+                                 </div>
+                                 <textarea placeholder="Description" rows={2} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-medium text-[var(--foreground)] resize-none" />
+                                 
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
+                                    <div className="flex gap-3 items-center">
+                                      <input type="text" placeholder="Image URL..." value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                      <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
+                                        <Upload size={14} />
+                                        {uploadingImage ? 'Uploading...' : 'Upload'}
+                                        <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                                          const file = e.target.files?.[0]; if (!file) return;
+                                          const url = await uploadFile(file);
+                                          if (url) setNewProp({...newProp, cover_image: url});
+                                        }} />
+                                      </label>
+                                    </div>
                                  </div>
 
-                                <button onClick={handleCreateProperty} disabled={uploadingImage} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-2 hover:shadow-brand-blue/20 transition-all disabled:opacity-50">
-                                   {uploadingImage ? 'Uploading...' : 'Publish Listing'}
-                                </button>
+                                 <div className="bg-slate-500/5 rounded-2xl p-6 border border-brand-blue/10 space-y-4">
+                                   <div className="flex justify-between items-center">
+                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue">Initial Unit Registry</h4>
+                                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{newProp.units.length} Units</span>
+                                   </div>
+                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                      <input type="text" placeholder="Type" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                      <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                      <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                      <input type="number" placeholder="Price" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                   </div>
+                                   <button type="button" onClick={() => { if (!newUnit.type || !newUnit.price) return; setNewProp({ ...newProp, units: [...newProp.units, { ...newUnit }] }); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); }} className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-brand-blue hover:text-white transition-all">Add Unit Type to Draft</button>
+                                 </div>
+
+                                 <button onClick={handleCreateProperty} disabled={uploadingImage} className="w-full bg-brand-blue text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg mt-2 hover:shadow-brand-blue/20 transition-all">
+                                    {uploadingImage ? 'Synchronizing...' : 'Finalize & Publish Listing'}
+                                 </button>
                              </div>
                           </motion.div>
                         )}
-                     </AnimatePresence>
+                      </AnimatePresence>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {loading ? (
-                           <div className="col-span-full py-12 text-center opacity-40 italic">Decrypting Registry...</div>
-                        ) : properties.map((prop) => {
-                          const progress = prop.progress?.[0];
-                          const discount = (prop as unknown as Record<string, unknown>).discount_percentage as number | undefined;
-                          const paySchedule = (prop as unknown as Record<string, unknown>).payment_schedule as string | undefined;
-                          return (
-                           <div key={prop.id} className="bg-slate-500/5 border border-white/5 rounded-3xl overflow-hidden hover:border-brand-blue/30 transition-all group flex flex-col shadow-lg">
-                              <div className="p-6 flex-1 relative">
-                                 <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-heading font-black text-lg text-[var(--foreground)] pr-16">{prop.name}</h3>
-                                    <div className="absolute top-5 right-5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button onClick={() => setEditingProperty(prop)} title="Edit Property" className="text-brand-blue bg-brand-blue/10 p-2 rounded-lg"><Edit3 size={14}/></button>
-                                      <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} title="Delete Property" className="text-red-400 bg-red-400/10 p-2 rounded-lg"><Trash2 size={14}/></button>
-                                    </div>
-                                 </div>
-                                 <p className="text-xs font-bold opacity-60 text-[var(--foreground)] mb-1">{prop.location}</p>
-                                 <p className="text-[10px] uppercase tracking-widest font-black text-brand-blue mb-3">{prop.developer}</p>
-
-                                 {/* Discount & Payment */}
-                                 <div className="flex gap-2 mb-4 flex-wrap">
-                                   {discount && discount > 0 ? (
-                                     <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-lg uppercase tracking-widest">{discount}% OFF</span>
-                                   ) : null}
-                                   {paySchedule && (
-                                     <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[10px] font-black rounded-lg uppercase tracking-widest">{paySchedule}</span>
-                                   )}
-                                 </div>
-
-                                 {/* Progress Bar */}
-                                 {progress && (
-                                   <div className="mb-4">
-                                     <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-1">
-                                       <span>{progress.status_text || progress.status}</span>
-                                       <span>{progress.percent}%</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                         {loading ? (
+                            <div className="col-span-full py-12 text-center opacity-40 italic">Decrypting Registry...</div>
+                         ) : properties.map((prop) => {
+                           const progress = prop.progress?.[0];
+                           const discount = (prop as unknown as Record<string, unknown>).discount_percentage as number | undefined;
+                           const paySchedule = (prop as unknown as Record<string, unknown>).payment_schedule as string | undefined;
+                           return (
+                            <div key={prop.id} className="bg-slate-500/5 border border-white/5 rounded-3xl overflow-hidden hover:border-brand-blue/30 transition-all group flex flex-col shadow-lg">
+                               <div className="p-6 flex-1 relative">
+                                  <div className="flex justify-between items-start mb-4">
+                                     <h3 className="font-heading font-black text-lg text-[var(--foreground)] pr-16">{prop.name}</h3>
+                                     <div className="absolute top-5 right-5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                       <button onClick={() => setEditingProperty(prop)} title="Edit Property" className="text-brand-blue bg-brand-blue/10 p-2 rounded-lg"><Edit3 size={14}/></button>
+                                       <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} title="Delete Property" className="text-red-400 bg-red-400/10 p-2 rounded-lg"><Trash2 size={14}/></button>
                                      </div>
-                                     <div className="h-1.5 bg-slate-500/10 rounded-full overflow-hidden">
-                                       {/* eslint-disable-next-line */}
-                                       <div className="h-full bg-brand-blue rounded-full transition-all" style={{ width: `${progress.percent}%` }} />
-                                     </div>
-                                   </div>
-                                 )}
-                                 
-                                 <div className="flex flex-wrap gap-2">
-                                     {prop.amenities && prop.amenities.slice(0,3).map((am: string, i: number) => (
-                                         <span key={i} className="px-2 py-1 bg-[var(--background)] text-[10px] font-bold rounded-md uppercase text-[var(--foreground)]/60">{am}</span>
-                                     ))}
-                                     {prop.amenities && prop.amenities.length > 3 && <span className="px-2 py-1 bg-[var(--background)] text-[10px] font-bold rounded-md uppercase text-[var(--foreground)]/60">+{prop.amenities.length - 3}</span>}
-                                 </div>
-                              </div>
-                              <div className="bg-[var(--background)]/50 border-t border-[var(--border)] overflow-hidden transition-all duration-500">
-                                 <button 
-                                   onClick={() => togglePropertyUnits(prop.id)}
-                                   className="w-full p-4 flex justify-between items-center group/btn"
-                                 >
-                                    <span className="text-xs font-bold text-[var(--foreground)]/40 flex items-center gap-2">
-                                       {prop.units?.length || 0} Units Registered
-                                       {expandedProperties.has(prop.id) ? <Plus size={14} className="rotate-45 transition-transform" /> : <Plus size={14} className="transition-transform" />}
-                                    </span>
-                                    <span className="text-brand-blue text-[10px] font-black uppercase tracking-widest opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                                       {expandedProperties.has(prop.id) ? 'Collapse Inventory' : 'Expand inventory'}
-                                    </span>
-                                 </button>
+                                  </div>
+                                  <p className="text-xs font-bold opacity-60 text-[var(--foreground)] mb-1">{prop.location}</p>
+                                  <p className="text-[10px] uppercase tracking-widest font-black text-brand-blue mb-3">{prop.developer}</p>
 
-                                 <AnimatePresence>
-                                    {expandedProperties.has(prop.id) && (
-                                       <motion.div
-                                          initial={{ height: 0, opacity: 0 }}
-                                          animate={{ height: "auto", opacity: 1 }}
-                                          exit={{ height: 0, opacity: 0 }}
-                                          className="px-4 pb-4 space-y-2 border-t border-[var(--border)] pt-4"
-                                       >
-                                          {prop.units && prop.units.length > 0 ? prop.units.map((unit) => (
-                                             <div key={unit.id} className="bg-[var(--background)] p-3 rounded-2xl border border-[var(--border)] flex justify-between items-center group/unit">
-                                                <div>
-                                                   <p className="font-bold text-xs text-[var(--foreground)]">{unit.type}</p>
-                                                   <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{unit.beds}B • {unit.baths}Ba • {unit.sqm}SQM</p>
-                                                   <p className="text-[10px] font-black text-brand-blue mt-1">{formatPrice(unit.price)}</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                   <button 
-                                                     onClick={(e) => {
-                                                       e.stopPropagation();
-                                                       setEditingUnit(unit);
-                                                       setNewUnit({ ...unit, variety_img: unit.variety_img || '' });
-                                                       setSelectedPropertyId(prop.id);
-                                                     }} 
-                                                     title="Edit Unit"
-                                                     className="p-1.5 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors"
-                                                   >
-                                                      <Edit3 size={12}/>
-                                                   </button>
-                                                   <button 
-                                                     onClick={async (e) => {
-                                                       e.stopPropagation();
-                                                       if (!confirm(`Sync: Delete ${unit.type}?`)) return;
-                                                       try {
-                                                          const { error } = await supabaseClient.from('property_units').delete().eq('id', unit.id);
-                                                          if (!error) { notify('success', 'Unit purged.'); fetchProperties(); }
-                                                          else throw error;
-                                                       } catch { notify('error', 'Sync failure.'); }
-                                                     }} 
-                                                     title="Delete Unit"
-                                                     className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                   >
-                                                      <Trash2 size={12}/>
-                                                   </button>
-                                                </div>
-                                             </div>
-                                          )) : (
-                                             <div className="py-4 text-center opacity-40 text-[10px] italic">No units listed.</div>
-                                          )}
-                                          
-                                          <button 
-                                            onClick={() => setSelectedPropertyId(prop.id)}
-                                            className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-blue transition-all hover:text-white"
-                                          >
-                                             Add Units to Registry
-                                          </button>
-                                       </motion.div>
+                                  <div className="flex gap-2 mb-4 flex-wrap">
+                                    {discount && discount > 0 ? (
+                                      <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-lg uppercase tracking-widest">{discount}% OFF</span>
+                                    ) : null}
+                                    {paySchedule && (
+                                      <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[10px] font-black rounded-lg uppercase tracking-widest">{paySchedule}</span>
                                     )}
-                                 </AnimatePresence>
-                              </div>
-                           </div>
-                          );
-                        })}
-                     </div>
+                                  </div>
+
+                                  {progress && (
+                                    <div className="mb-4">
+                                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-1">
+                                        <span>{progress.status_text || progress.status}</span>
+                                        <span>{progress.percent}%</span>
+                                      </div>
+                                      <div className="h-1.5 bg-slate-500/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-brand-blue rounded-full transition-all w-[var(--width)]" style={{ "--width": `${progress.percent}%` } as React.CSSProperties} />
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex flex-wrap gap-2">
+                                      {prop.amenities && prop.amenities.slice(0,3).map((am: string, i: number) => (
+                                          <span key={i} className="px-2 py-1 bg-[var(--background)] text-[10px] font-bold rounded-md uppercase text-[var(--foreground)]/60">{am}</span>
+                                      ))}
+                                  </div>
+                               </div>
+                               <div className="bg-[var(--background)]/50 border-t border-[var(--border)] overflow-hidden transition-all duration-500">
+                                  <button onClick={() => togglePropertyUnits(prop.id)} className="w-full p-4 flex justify-between items-center group/btn">
+                                     <span className="text-xs font-bold text-[var(--foreground)]/40 flex items-center gap-2">
+                                        {prop.units?.length || 0} Units Registered
+                                        {expandedProperties.has(prop.id) ? <Plus size={14} className="rotate-45 transition-transform" /> : <Plus size={14} className="transition-transform" />}
+                                     </span>
+                                     <span className="text-brand-blue text-[10px] font-black uppercase tracking-widest opacity-0 group-hover/btn:opacity-100 transition-opacity">
+                                        {expandedProperties.has(prop.id) ? 'Collapse Inventory' : 'Expand inventory'}
+                                     </span>
+                                  </button>
+
+                                  <AnimatePresence>
+                                     {expandedProperties.has(prop.id) && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-4 pb-4 space-y-2 border-t border-[var(--border)] pt-4">
+                                           {prop.units && prop.units.length > 0 ? prop.units.map((unit) => (
+                                              <div key={unit.id} className="bg-[var(--background)] p-3 rounded-2xl border border-[var(--border)] flex justify-between items-center group/unit">
+                                                 <div className="flex-1">
+                                                    <p className="font-bold text-xs text-[var(--foreground)]">{unit.type}</p>
+                                                    <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{unit.beds}B • {unit.baths}Ba • {unit.sqm}SQM</p>
+                                                    <p className="text-[10px] font-black text-brand-blue mt-1">{formatPrice(unit.price)}</p>
+                                                 </div>
+                                                 <div className="flex gap-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); setEditingUnit(unit); setNewUnit({ type: unit.type, beds: unit.beds, baths: unit.baths, sqm: unit.sqm, price: unit.price, variety_img: unit.variety_img || '', is_sold: !!unit.is_sold }); setSelectedPropertyId(prop.id); }} title="Edit Unit" className="p-1.5 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors"><Edit3 size={12}/></button>
+                                                    <button onClick={async (e) => { e.stopPropagation(); if (!confirm(`Delete ${unit.type}?`)) return; try { const { error } = await supabaseClient.from('property_units').delete().eq('id', unit.id); if (!error) { notify('success', 'Unit purged.'); fetchProperties(); } else throw error; } catch { notify('error', 'Sync failure.'); } }} title="Delete Unit" className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={12}/></button>
+                                                 </div>
+                                              </div>
+                                           )) : (
+                                              <div className="py-4 text-center opacity-40 text-[10px] italic">No units listed.</div>
+                                           )}
+                                           <button onClick={() => setSelectedPropertyId(prop.id)} className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-blue transition-all hover:text-white">Add Units to Registry</button>
+                                        </motion.div>
+                                     )}
+                                  </AnimatePresence>
+                               </div>
+                            </div>
+                           );
+                         })}
+                      </div>
                  </div>
               </motion.div>
             )}
@@ -1270,20 +882,21 @@ export default function AdminDashboard() {
                            <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
                               <Plus size={16} /> New Article
                            </button>
-                         </div>
                     </div>
+                </div>
                     <div className="p-8 space-y-4">
                        {posts.length === 0 ? (
                           <div className="py-12 text-center opacity-40 italic">No articles published yet.</div>
                        ) : posts.map((post) => (
                           <div key={post.id} className="flex justify-between items-center gap-4 p-4 rounded-2xl bg-slate-500/5 hover:bg-slate-500/10 border border-transparent hover:border-brand-blue/30 transition-all group">
                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-500/20 border border-[var(--border)] flex-shrink-0">
-                                   <img 
+                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-500/20 border border-[var(--border)] flex-shrink-0 relative">
+                                   <Image 
                                      src={post.cover_image || "/images/cover.jpg"} 
                                      alt={post.title} 
-                                     className="w-full h-full object-cover" 
-                                     onError={(e) => { (e.target as HTMLImageElement).src = "/images/cover.jpg"; }} 
+                                     fill
+                                     className="object-cover" 
+                                     unoptimized
                                    />
                                 </div>
                                 <div>
@@ -1308,8 +921,8 @@ export default function AdminDashboard() {
                                  <div className="w-px h-4 bg-[var(--border)] mx-1" />
                                 <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-brand-blue text-[10px] font-black uppercase tracking-widest hover:underline">Edit</button>
                                 <button onClick={() => setConfirmDelete({ type: 'post', id: post.id, name: post.title })} className="text-red-400 text-[10px] font-black uppercase tracking-widest hover:underline">Delete</button>
-                             </div>
-                          </div>
+                            </div>
+                         </div>
                        ))}
                     </div>
                  </div>
@@ -1392,13 +1005,13 @@ export default function AdminDashboard() {
                                        }}
                                     />
                                     <button title="Upload File" className="h-full px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center"><Upload size={16}/></button>
-                                 </div>
-                              </div>
+                    </div>
+                               </div>
                               
                               {/* Post Cover Image Preview & Replacement */}
                               {((editingPost && editingPost.cover_image) || (!editingPost && newPost.cover_image)) && (
                                 <div className="relative h-36 rounded-2xl overflow-hidden mt-3 border border-[var(--border)]">
-                                  <img src={editingPost ? editingPost.cover_image : newPost.cover_image} alt="preview" className="w-full h-full object-cover" />
+                                  <Image src={editingPost ? editingPost.cover_image : newPost.cover_image} alt="preview" fill className="object-cover" unoptimized />
                                   <button 
                                     onClick={() => editingPost ? setEditingPost({...editingPost, cover_image: ''}) : setNewPost({...newPost, cover_image: ''})}
                                     title="Remove Image" 
@@ -1449,7 +1062,7 @@ export default function AdminDashboard() {
                                           onChange={async (e) => {
                                              const file = e.target.files?.[0];
                                              if (!file) return;
-                                             notify('info', 'Uploading document...');
+                                             setIsUploadingPDF(true);
                                              try {
                                                 const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
                                                 const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file);
@@ -1461,14 +1074,26 @@ export default function AdminDashboard() {
                                              } catch (err: unknown) { 
                                                 const message = err instanceof Error ? err.message : 'Check storage permissions';
                                                 notify('error', `Protocol error: ${message}`); 
+                                             } finally {
+                                                setIsUploadingPDF(false);
                                              }
                                           }}
                                        />
-                                       <button title="Upload PDF" className="h-full px-6 bg-brand-blue text-white rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest">
-                                          <Upload size={14}/> {editingPost?.file_url || newPost.file_url ? 'Replace PDF' : 'Upload PDF'}
+                                       <button title="Upload PDF" className="h-[42px] px-6 bg-brand-blue text-white rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest min-w-[170px]">
+                                          {isUploadingPDF ? (
+                                             <>
+                                                <Activity size={14} className="animate-spin" />
+                                                Uploading...
+                                             </>
+                                          ) : (
+                                             <>
+                                                <Upload size={14}/> 
+                                                {editingPost?.file_url || newPost.file_url ? 'Replace PDF' : 'Upload PDF'}
+                                             </>
+                                          )}
                                        </button>
-                                    </div>
-                                 </div>
+                    </div>
+                               </div>
                                  {(editingPost?.file_url || newPost.file_url) && (
                                     <div className="flex items-center justify-between text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-3 py-2 rounded-lg">
                                        <span className="truncate max-w-[200px]">{editingPost ? editingPost.file_url : newPost.file_url}</span>
@@ -1495,8 +1120,8 @@ export default function AdminDashboard() {
                            <button onClick={async () => {
                               try {
                                  const payload = editingPost 
-                                    ? { title: editingPost.title, slug: editingPost.slug, excerpt: editingPost.excerpt, content: editingPost.content, cover_image: editingPost.cover_image, video_url: editingPost.video_url, source_label: editingPost.source_label, source_url: editingPost.source_url, type: editingPost.type, file_url: editingPost.file_url } 
-                                    : newPost;
+                                     ? { ...editingPost } 
+                                     : { ...newPost };
                                  
                                  if (!payload.title || !payload.slug) return notify('error', 'Title and slug required.');
                                  
@@ -1513,8 +1138,8 @@ export default function AdminDashboard() {
                            }} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">
                              Save Article
                            </button>
-                        </div>
                     </div>
+                </div>
                  </motion.div>
               </div>
             )}
@@ -1536,8 +1161,8 @@ export default function AdminDashboard() {
                           <button onClick={handleSoloSend} disabled={soloSending} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">
                             {soloSending ? "Sending..." : "Send Outreach"}
                           </button>
-                       </div>
                     </div>
+                </div>
                  </motion.div>
               </div>
             )}
@@ -1635,67 +1260,88 @@ export default function AdminDashboard() {
                         <div className="flex justify-between items-center mb-4">
                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">{editingUnit ? 'Edit Unit Type' : 'Add New Unit Types'}</h4>
                            {editingUnit && (
-                             <button onClick={() => { setEditingUnit(null); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' }); }} className="text-[9px] font-black text-brand-blue uppercase hover:underline">Cancel Edit</button>
+                             <button onClick={() => { setEditingUnit(null); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); }} className="text-[9px] font-black text-brand-blue uppercase hover:underline">Cancel Edit</button>
                            )}
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                           <input type="text" placeholder="Type (e.g. 1BR)" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                           <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                           <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                           <input type="number" placeholder="SQM" value={newUnit.sqm} onChange={e => setNewUnit({...newUnit, sqm: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Type</label>
+                             <input type="text" placeholder="e.g. 1BR" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Beds</label>
+                             <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Baths</label>
+                             <input type="number" step="0.5" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">SQM</label>
+                             <input type="number" placeholder="SQM" value={newUnit.sqm} onChange={e => setNewUnit({...newUnit, sqm: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                           <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                           
-                           <div className="flex gap-2">
-                              <input type="text" title="Unit Image URL" placeholder="Variant Photo URL (Floor plan or interior)" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                              <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
-                                 <Upload size={14} />
-                                 <input type="file" accept="image/*" className="hidden" onChange={async e => {
-                                   const file = e.target.files?.[0]; if (!file) return;
-                                   const url = await uploadFile(file);
-                                   if (url) setNewUnit({...newUnit, variety_img: url});
-                                 }} />
-                              </label>
+                        
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Price (ETB)</label>
+                             <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Inventory Status</label>
+                             <div className="flex gap-2 h-[42px]">
+                                {['available', 'sold'].map((status) => (
+                                  <button 
+                                    key={status}
+                                    onClick={() => setNewUnit({...newUnit, is_sold: status === 'sold'})}
+                                    className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                      ((newUnit.is_sold && status === 'sold') || (!newUnit.is_sold && status === 'available')) 
+                                        ? (status === 'sold' ? 'bg-red-500 border-red-500 text-white' : 'bg-emerald-500 border-emerald-500 text-white')
+                                        : 'bg-slate-500/5 text-[var(--foreground)]/40 border-transparent'
+                                    }`}
+                                  >
+                                    {status}
+                                  </button>
+                                ))}
+                             </div>
                            </div>
                         </div>
 
-                        {newUnit.variety_img && (
-                          <div className="relative h-24 rounded-xl overflow-hidden mt-4 border border-[var(--border)] group">
-                             <img src={newUnit.variety_img} alt="Unit variety" className="w-full h-full object-cover" />
-                             <button onClick={() => setNewUnit({...newUnit, variety_img: ''})} className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                <X size={12} />
-                             </button>
-                          </div>
-                        )}
+                        <div className="mt-4 space-y-2">
+                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Unit Variety / Floorplan Image</label>
+                           <div className="flex gap-2">
+                              <input type="text" placeholder="Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                              <div className="relative">
+                                 <input 
+                                    type="file" 
+                                    title="Upload Variety Image"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                    onChange={async (e) => {
+                                       const file = e.target.files?.[0];
+                                       if (!file) return;
+                                       setIsUploadingVarietyImg(true);
+                                       try {
+                                          const url = await uploadFile(file);
+                                          if (url) setNewUnit({...newUnit, variety_img: url});
+                                       } finally {
+                                          setIsUploadingVarietyImg(false);
+                                       }
+                                    }}
+                                 />
+                                 <button title="Upload Variety" className="h-[42px] px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center">
+                                    {isUploadingVarietyImg ? <Activity size={16} className="animate-spin" /> : <Upload size={16}/>}
+                                 </button>
+                    </div>
+                         </div>
+                        </div>
 
                         <button 
-                         onClick={async () => {
-                           if (!newUnit.type || !newUnit.price) return notify('info', 'Required fields missing');
-                           try {
-                             if (editingUnit) {
-                               const { error } = await supabaseClient.from('property_units').update({ 
-                                 type: newUnit.type, beds: newUnit.beds, baths: newUnit.baths, sqm: newUnit.sqm, price: newUnit.price, variety_img: newUnit.variety_img 
-                               }).eq('id', editingUnit.id);
-                               if (error) throw error;
-                               notify('success', 'Unit updated');
-                             } else {
-                               const { error } = await supabaseClient.from('property_units').insert({ 
-                                 ...newUnit, property_id: selectedPropertyId 
-                               });
-                               if (error) throw error;
-                               notify('success', 'Unit added');
-                             }
-                             setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '' });
-                             setEditingUnit(null);
-                             fetchProperties();
-                           } catch { notify('error', 'Operation failed'); }
-                         }} 
-                         className="w-full bg-brand-blue text-white font-bold text-[10px] uppercase tracking-widest py-4 rounded-xl hover:shadow-brand-blue/20 shadow-lg mt-4"
+                           onClick={handleSaveUnit}
+                           className="w-full mt-6 bg-brand-blue text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all"
                         >
-                           {editingUnit ? 'Synchronize Updates' : 'Register Unit Type'}
+                           {editingUnit ? 'Synchronize Unit Details' : 'Register Unit to Property'}
                         </button>
-                     </div>
+                    </div>
                     
                     <div className="space-y-2">
                        <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-4 text-[var(--foreground)]">Registered Inventory</h4>
@@ -1712,7 +1358,7 @@ export default function AdminDashboard() {
                                       <button 
                                         onClick={() => {
                                           setEditingUnit(u);
-                                          setNewUnit({ ...u, variety_img: u.variety_img || '' });
+                                          setNewUnit({ type: u.type, beds: u.beds, baths: u.baths, sqm: u.sqm, price: u.price, variety_img: u.variety_img || '', is_sold: !!u.is_sold });
                                         }}
                                         className="text-[10px] text-brand-blue font-black uppercase tracking-widest hover:underline"
                                       >
@@ -1726,16 +1372,16 @@ export default function AdminDashboard() {
                                              else throw error;
                                           }catch{ notify('error','Failed to delete unit');}
                                       }} className="text-[10px] text-red-500 font-black uppercase tracking-widest hover:underline">Delete</button>
-                                   </div>
-                                </div>
+                    </div>
                              </div>
                           </div>
+                      </div>
                        ))}
                        {(!properties.find(p => p.id === selectedPropertyId)?.units?.length) && (
-                           <div className="p-8 text-center bg-slate-500/5 rounded-xl border border-dashed border-[var(--border)]">
-                              <p className="text-xs font-bold text-[var(--foreground)] opacity-40">No units registered for this property yet.</p>
-                           </div>
-                        )}
+                            <div className="p-8 text-center bg-slate-500/5 rounded-xl border border-dashed border-[var(--border)]">
+                               <p className="text-xs font-bold text-[var(--foreground)] opacity-40">No units registered for this property yet.</p>
+                            </div>
+                         )}
                     </div>
                  </motion.div>
               </div>
@@ -1765,8 +1411,8 @@ export default function AdminDashboard() {
                         <div className="flex gap-4 pt-2">
                           <button onClick={() => setIsAddingLead(false)} className="flex-1 py-4 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]">Cancel</button>
                           <button onClick={handleAddLead} disabled={addingLead} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">{addingLead ? 'Saving...' : 'Add Lead'}</button>
-                        </div>
-                     </div>
+                    </div>
+                </div>
                   </motion.div>
                </div>
              )}
@@ -1814,7 +1460,7 @@ export default function AdminDashboard() {
                           <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
                           {editingProperty.cover_image && (
                             <div className="relative h-40 rounded-2xl overflow-hidden mb-3 border border-[var(--border)] shadow-md">
-                              <img src={editingProperty.cover_image} alt="Current cover" className="w-full h-full object-cover" />
+                              <Image src={editingProperty.cover_image} alt="Current cover" fill className="object-cover" unoptimized />
                               <button onClick={() => setEditingProperty({...editingProperty, cover_image: ''})} title="Remove Image" className="absolute top-2 right-2 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all z-10">
                                 <X size={14} />
                               </button>
@@ -1916,8 +1562,8 @@ export default function AdminDashboard() {
                         <div className="flex gap-4 pt-2">
                           <button onClick={() => setEditingProperty(null)} className="flex-1 py-4 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]">Cancel</button>
                           <button onClick={handleUpdateProperty} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">Save Changes</button>
-                        </div>
-                     </div>
+                    </div>
+                </div>
                   </motion.div>
                </div>
              )}

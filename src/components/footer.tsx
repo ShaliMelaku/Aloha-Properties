@@ -63,7 +63,7 @@ export function Footer() {
 
         <div className="pt-8 border-t border-slate-500/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-[10px] font-black uppercase tracking-widest opacity-30">
-            © {new Date().getFullYear()} Aloha Real Estate Marketing And Events PLC
+            © {new Date().getFullYear()} Aloha Real Estate Marketing And Event Communications PLC
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue">
             Addis Ababa, Ethiopia

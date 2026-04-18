@@ -3,16 +3,19 @@ import { supabase } from '@/lib/supabase';
 
 export interface SupabaseUnit {
   id: string;
+  property_id: string;
   type: string;
   beds: number;
   baths: number;
   sqm: number;
   price: number;
-  variety_img: string;
+  variety_img: string; // Floorplan image
+  is_sold: boolean;
 }
 
 export interface SupabaseProgress {
   id: string;
+  property_id: string;
   percent: number;
   status: string;
   status_text: string;
@@ -22,11 +25,17 @@ export interface SupabaseProgress {
 export interface SupabaseProperty {
   id: string;
   name: string;
+  developer: string; // Added
   location: string;
-  developer: string;
-  lat: number;
-  lng: number;
+  cover_image: string; // Standardized
+  lat: number; // Added
+  lng: number; // Added
+  price_start?: number;
+  pay_schedule?: string;
   amenities: string[];
+  discount_percentage?: number; // Added
+  downpayment_percentage?: number; // Added
+  description?: string;
   units: SupabaseUnit[];
   progress: SupabaseProgress[];
 }
