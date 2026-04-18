@@ -352,16 +352,24 @@ export default function AdminDashboard() {
     setAddingLead(false);
   };
 
-  const uploadFile = async (file: File) => {
-    const formData = new FormData(); formData.append('file', file); formData.append('path', 'properties');
+  const uploadFile = async (file: File, bucket: string = 'aloha-assets', path: string = 'properties') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('path', path);
+    formData.append('bucket', bucket);
     try {
       setUploadingImage(true);
       const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
       const data = await res.json();
       setUploadingImage(false);
-      if (data.success) return data.url;
-      else throw new Error(data.error);
-    } catch { setUploadingImage(false); notify('error', 'Upload failed'); return null; }
+      if (data.success) return data.url as string;
+      else throw new Error(data.error || 'Upload error');
+    } catch (err: unknown) {
+      setUploadingImage(false);
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      notify('error', msg);
+      return null;
+    }
   };
 
   const handleCreateProperty = async () => {
@@ -1106,7 +1114,7 @@ export default function AdminDashboard() {
                               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">PDF Report Attachment</label>
                               <div className="flex flex-col gap-3 p-4 bg-slate-500/5 rounded-2xl border border-dashed border-brand-blue/20">
                                  <div className="flex gap-2">
-                                    <input type="text" placeholder="PDF URL" value={editingPost ? editingPost.file_url : newPost.file_url} onChange={e => editingPost ? setEditingPost({...editingPost, file_url: e.target.value}) : setNewPost({...newPost, file_url: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl border border-transparent focus:border-brand-blue outline-none text-xs font-bold text-[var(--foreground)]" />
+                                    <input type="text" placeholder="Paste PDF URL or upload below" value={editingPost ? editingPost.file_url : newPost.file_url} onChange={e => editingPost ? setEditingPost({...editingPost, file_url: e.target.value}) : setNewPost({...newPost, file_url: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl border border-transparent focus:border-brand-blue outline-none text-xs font-bold text-[var(--foreground)]" />
                                     <div className="relative">
                                        <input 
                                           type="file" 
@@ -1118,16 +1126,20 @@ export default function AdminDashboard() {
                                              if (!file) return;
                                              setIsUploadingPDF(true);
                                              try {
-                                                const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-                                                const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file);
-                                                if (error) throw error;
-                                                const { data: { publicUrl } } = supabaseClient.storage.from('blog-media').getPublicUrl(data.path);
-                                                if (editingPost) setEditingPost({...editingPost, file_url: publicUrl});
-                                                else setNewPost({...newPost, file_url: publicUrl});
-                                                notify('success', 'PDF synchronization successful.');
+                                                // Route through server API using service-role key — avoids anon bucket permission errors
+                                                const formData = new FormData();
+                                                formData.append('file', file);
+                                                formData.append('path', 'reports');
+                                                formData.append('bucket', 'blog-media');
+                                                const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+                                                const result = await res.json();
+                                                if (!result.success) throw new Error(result.error || 'Upload failed');
+                                                if (editingPost) setEditingPost({...editingPost, file_url: result.url});
+                                                else setNewPost({...newPost, file_url: result.url});
+                                                notify('success', 'PDF uploaded successfully.');
                                              } catch (err: unknown) { 
                                                 const message = err instanceof Error ? err.message : 'Check storage permissions';
-                                                notify('error', `Protocol error: ${message}`); 
+                                                notify('error', `Upload error: ${message}`); 
                                              } finally {
                                                 setIsUploadingPDF(false);
                                              }
@@ -1146,12 +1158,14 @@ export default function AdminDashboard() {
                                              </>
                                           )}
                                        </button>
-                    </div>
-                               </div>
+                                    </div>
+                                 </div>
                                  {(editingPost?.file_url || newPost.file_url) && (
                                     <div className="flex items-center justify-between text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-3 py-2 rounded-lg">
-                                       <span className="truncate max-w-[200px]">{editingPost ? editingPost.file_url : newPost.file_url}</span>
-                                       <button onClick={() => editingPost ? setEditingPost({...editingPost, file_url: ''}) : setNewPost({...newPost, file_url: ''})} className="text-red-500">Remove</button>
+                                       <a href={editingPost ? editingPost.file_url : newPost.file_url} target="_blank" rel="noopener noreferrer" className="truncate max-w-[220px] hover:underline flex items-center gap-1">
+                                          <Upload size={10} /> Preview PDF ↗
+                                       </a>
+                                       <button onClick={() => editingPost ? setEditingPost({...editingPost, file_url: ''}) : setNewPost({...newPost, file_url: ''})} className="text-red-500 ml-3 shrink-0">Remove</button>
                                     </div>
                                  )}
                               </div>
