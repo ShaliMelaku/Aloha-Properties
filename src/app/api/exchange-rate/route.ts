@@ -19,7 +19,7 @@ export async function GET() {
 
   try {
     const response = await fetch("https://api.frankfurter.dev/v2/latest?base=USD&symbols=ETB", {
-      next: { revalidate: 3600 } // Next.js level fetch caching
+      next: { revalidate: 86400 } // Enforce 24-hour revalidation for daily sync
     });
     
     if (!response.ok) throw new Error("API Unreachable");
@@ -34,7 +34,7 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         rate: rate,
-        source: "Frankfurter API (Live)",
+        source: "Frankfurter API (Live/Daily)",
         timestamp: new Date().toISOString()
       });
     } else {
@@ -43,8 +43,8 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ 
       success: false, 
-      rate: cachedRate || 156.91, // Fallback to last known good or hardcoded baseline
+      rate: cachedRate || 157.00, // Updated Baseline April 2026 (~157 ETB)
       error: "Using fallback data due to connectivity issues" 
-    }, { status: 200 }); // Status 200 even on fallback to prevent UI breakage
+    }, { status: 200 });
   }
 }

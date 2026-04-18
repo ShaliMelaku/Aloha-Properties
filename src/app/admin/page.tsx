@@ -71,6 +71,8 @@ export interface Unit {
   price: number;
   variety_img?: string;
   is_sold?: boolean;
+  discount_percentage?: number;
+  downpayment_percentage?: number;
 }
 
 export interface Post {
@@ -140,7 +142,8 @@ export default function AdminDashboard() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [newUnit, setNewUnit] = useState({ 
-    type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false 
+    type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false,
+    discount_percentage: 0, downpayment_percentage: 0
   });
 
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
@@ -402,10 +405,19 @@ export default function AdminDashboard() {
   const handleSaveUnit = async () => {
     if (!selectedPropertyId || !newUnit.type) return notify('info', 'Type required.');
     try {
-      const payload = { property_id: selectedPropertyId, type: newUnit.type, beds: newUnit.beds, baths: newUnit.baths, sqm: newUnit.sqm, price: newUnit.price, variety_img: newUnit.variety_img, is_sold: newUnit.is_sold };
+      const payload = { 
+        property_id: selectedPropertyId, type: newUnit.type, beds: newUnit.beds, baths: newUnit.baths, 
+        sqm: newUnit.sqm, price: newUnit.price, variety_img: newUnit.variety_img, is_sold: newUnit.is_sold,
+        discount_percentage: newUnit.discount_percentage, downpayment_percentage: newUnit.downpayment_percentage
+      };
       if (editingUnit) await supabaseClient.from('property_units').update(payload).eq('id', editingUnit.id);
       else await supabaseClient.from('property_units').insert(payload);
-      setEditingUnit(null); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); setSelectedPropertyId(null); fetchProperties();
+      setEditingUnit(null); 
+      setNewUnit({ 
+        type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false,
+        discount_percentage: 0, downpayment_percentage: 0
+      }); 
+      setSelectedPropertyId(null); fetchProperties();
       notify('success', 'Unit registry updated.');
     } catch { notify('error', 'Save fault.'); }
   };
@@ -704,10 +716,22 @@ export default function AdminDashboard() {
                              <div className="bg-slate-500/5 rounded-3xl p-6 border border-brand-blue/30 space-y-4">
                                  <h3 className="text-sm font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Register New Listing</h3>
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                   <input type="text" placeholder="Property Name *" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                   <input type="text" placeholder="Location *" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                   <input type="text" placeholder="Developer" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                                   <input type="text" placeholder="Amenities (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   <div className="space-y-1">
+                                     <label className="text-[10px] font-black uppercase opacity-40 ml-2">Property Name *</label>
+                                     <input type="text" placeholder="Building Name" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   </div>
+                                   <div className="space-y-1">
+                                     <label className="text-[10px] font-black uppercase opacity-40 ml-2">Location *</label>
+                                     <input type="text" placeholder="City / Area" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   </div>
+                                   <div className="space-y-1">
+                                     <label className="text-[10px] font-black uppercase opacity-40 ml-2">Developer</label>
+                                     <input type="text" placeholder="Authorized Entity" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   </div>
+                                   <div className="space-y-1">
+                                     <label className="text-[10px] font-black uppercase opacity-40 ml-2">Amenities</label>
+                                     <input type="text" placeholder="comma separated" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                   </div>
                                    
                                    <div className="flex gap-2">
                                      <input type="number" step="any" placeholder="Latitude" value={newProp.lat} onChange={e => setNewProp({...newProp, lat: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
@@ -759,12 +783,24 @@ export default function AdminDashboard() {
                                       <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue">Initial Unit Registry</h4>
                                       <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{newProp.units.length} Units</span>
                                    </div>
-                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                      <input type="text" placeholder="Type" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
-                                      <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
-                                      <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
-                                      <input type="number" placeholder="Price" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
-                                   </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                       <div className="space-y-1">
+                                         <label className="text-[9px] font-black uppercase opacity-40 ml-1">Type</label>
+                                         <input type="text" placeholder="Type" value={newUnit.type} onChange={e => setNewUnit({...newUnit, type: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                       </div>
+                                       <div className="space-y-1">
+                                         <label className="text-[9px] font-black uppercase opacity-40 ml-1">Beds</label>
+                                         <input type="number" placeholder="Beds" value={newUnit.beds} onChange={e => setNewUnit({...newUnit, beds: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                       </div>
+                                       <div className="space-y-1">
+                                         <label className="text-[9px] font-black uppercase opacity-40 ml-1">Baths</label>
+                                         <input type="number" placeholder="Baths" value={newUnit.baths} onChange={e => setNewUnit({...newUnit, baths: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                       </div>
+                                       <div className="space-y-1">
+                                         <label className="text-[9px] font-black uppercase opacity-40 ml-1">Base Price</label>
+                                         <input type="number" placeholder="Price" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                       </div>
+                                    </div>
                                    <button type="button" onClick={() => { if (!newUnit.type || !newUnit.price) return; setNewProp({ ...newProp, units: [...newProp.units, { ...newUnit }] }); setNewUnit({ type: '', beds: 1, baths: 1, sqm: 50, price: 2000000, variety_img: '', is_sold: false }); }} className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-brand-blue hover:text-white transition-all">Add Unit Type to Draft</button>
                                  </div>
 
@@ -1282,11 +1318,22 @@ export default function AdminDashboard() {
                            </div>
                         </div>
                         
-                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                            <div className="space-y-1">
-                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Price (ETB)</label>
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Base Price (ETB)</label>
                              <input type="number" placeholder="Price (ETB)" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                            </div>
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Discount %</label>
+                             <input type="number" min={0} max={100} placeholder="0" value={newUnit.discount_percentage} onChange={e => setNewUnit({...newUnit, discount_percentage: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
+                           <div className="space-y-1">
+                             <label className="text-[9px] font-black uppercase opacity-40 ml-2">Downpayment %</label>
+                             <input type="number" min={0} max={100} placeholder="0" value={newUnit.downpayment_percentage} onChange={e => setNewUnit({...newUnit, downpayment_percentage: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                           </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                            <div className="space-y-1">
                              <label className="text-[9px] font-black uppercase opacity-40 ml-2">Inventory Status</label>
                              <div className="flex gap-2 h-[42px]">
@@ -1305,34 +1352,28 @@ export default function AdminDashboard() {
                                 ))}
                              </div>
                            </div>
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Unit Variety / Floorplan Image</label>
-                           <div className="flex gap-2">
-                              <input type="text" placeholder="Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                              <div className="relative">
-                                 <input 
-                                    type="file" 
-                                    title="Upload Variety Image"
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                                    onChange={async (e) => {
-                                       const file = e.target.files?.[0];
-                                       if (!file) return;
-                                       setIsUploadingVarietyImg(true);
-                                       try {
-                                          const url = await uploadFile(file);
-                                          if (url) setNewUnit({...newUnit, variety_img: url});
-                                       } finally {
-                                          setIsUploadingVarietyImg(false);
-                                       }
-                                    }}
-                                 />
-                                 <button title="Upload Variety" className="h-[42px] px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center">
-                                    {isUploadingVarietyImg ? <Activity size={16} className="animate-spin" /> : <Upload size={16}/>}
-                                 </button>
-                    </div>
-                         </div>
+                           <div className="space-y-1">
+                              <label className="text-[9px] font-black uppercase opacity-40 ml-2">Unit Variety Image</label>
+                              <div className="flex gap-2">
+                                <input type="text" placeholder="Image URL" value={newUnit.variety_img} onChange={e => setNewUnit({...newUnit, variety_img: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                                <div className="relative">
+                                   <input 
+                                      type="file" 
+                                      title="Upload Variety"
+                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                      onChange={async (e) => {
+                                         const file = e.target.files?.[0]; if (!file) return;
+                                         setIsUploadingVarietyImg(true);
+                                         try { const url = await uploadFile(file); if (url) setNewUnit({...newUnit, variety_img: url}); }
+                                         finally { setIsUploadingVarietyImg(false); }
+                                      }}
+                                   />
+                                   <button title="Upload" className="h-[42px] px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center">
+                                      {isUploadingVarietyImg ? <Activity size={16} className="animate-spin" /> : <Upload size={16}/>}
+                                   </button>
+                                </div>
+                              </div>
+                           </div>
                         </div>
 
                         <button 
@@ -1358,7 +1399,7 @@ export default function AdminDashboard() {
                                       <button 
                                         onClick={() => {
                                           setEditingUnit(u);
-                                          setNewUnit({ type: u.type, beds: u.beds, baths: u.baths, sqm: u.sqm, price: u.price, variety_img: u.variety_img || '', is_sold: !!u.is_sold });
+                                          setNewUnit({ type: u.type, beds: u.beds, baths: u.baths, sqm: u.sqm, price: u.price, variety_img: u.variety_img || '', is_sold: !!u.is_sold, discount_percentage: u.discount_percentage || 0, downpayment_percentage: u.downpayment_percentage || 0 });
                                         }}
                                         className="text-[10px] text-brand-blue font-black uppercase tracking-widest hover:underline"
                                       >

@@ -14,8 +14,8 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-// Default conversion rate: 1 USD = 120 ETB
-const USD_RATE = 120;
+// Default conversion rate: 1 USD = 157.00 ETB (Official Market April 2026)
+const USD_RATE = 157.00;
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -26,7 +26,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     return "ETB";
   });
 
-  const [usdRate, setUsdRate] = useState(120); // Fallback base
+  const [usdRate, setUsdRate] = useState(157.00); // Updated Baseline
 
   // Fetch dynamic NBE rate on mount
   React.useEffect(() => {
