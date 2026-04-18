@@ -1,33 +1,50 @@
 import { NextResponse } from "next/server";
 
-// This is a server-side route that simulates fetching from NBE.
-// In a real production scenario with specific NBE API access, 
-// this would use a secure fetch with an API key.
-// For now, it provides a realistic dynamic rate that fluctuates 
-// around the known NBE indicative rate (~128 at the moment).
+// Cache valid for 12 hours
+let cachedRate: number | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 12 * 60 * 60 * 1000; 
 
 export async function GET() {
-  try {
-    // Simulate a slight delay as if fetching from an external source
-    // await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Logic: Base rate + random fluctuation to simulate daily updates
-    // if the real NBE site is unreachable or doesn't have a JSON API.
-    const baseRate = 156.91;
-    const fluctuation = (Math.random() - 0.5) * 1.5; // +/- 0.75
-    const indicativeRate = baseRate + fluctuation;
-
+  const now = Date.now();
+  
+  if (cachedRate && (now - lastFetchTime < CACHE_DURATION)) {
     return NextResponse.json({
       success: true,
-      rate: parseFloat(indicativeRate.toFixed(2)),
-      source: "National Bank of Ethiopia (Indicative Data Proxy)",
-      timestamp: new Date().toISOString()
+      rate: cachedRate,
+      source: "Frankfurter API (Cached)",
+      timestamp: new Date(lastFetchTime).toISOString()
     });
+  }
+
+  try {
+    const response = await fetch("https://api.frankfurter.dev/v2/latest?base=USD&symbols=ETB", {
+      next: { revalidate: 3600 } // Next.js level fetch caching
+    });
+    
+    if (!response.ok) throw new Error("API Unreachable");
+    
+    const data = await response.json();
+    const rate = data.rates.ETB;
+    
+    if (rate) {
+      cachedRate = rate;
+      lastFetchTime = now;
+      
+      return NextResponse.json({
+        success: true,
+        rate: rate,
+        source: "Frankfurter API (Live)",
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      throw new Error("Invalid Data");
+    }
   } catch (error) {
     return NextResponse.json({ 
       success: false, 
-      rate: 125, // Conservative fallback
-      error: "Failed to reach NBE clearing house" 
-    }, { status: 500 });
+      rate: cachedRate || 156.91, // Fallback to last known good or hardcoded baseline
+      error: "Using fallback data due to connectivity issues" 
+    }, { status: 200 }); // Status 200 even on fallback to prevent UI breakage
   }
 }

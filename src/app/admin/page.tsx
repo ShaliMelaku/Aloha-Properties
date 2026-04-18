@@ -98,6 +98,14 @@ export default function AdminDashboard() {
   const [campaignHistory, setCampaignHistory] = useState<Campaign[]>([]);
   const [broadcastLeads, setBroadcastLeads] = useState<Lead[]>([]);
   const [subject, setSubject] = useState("");
+  const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
+
+  const togglePropertyUnits = (id: string) => {
+    const next = new Set(expandedProperties);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedProperties(next);
+  };
   const [htmlBody, setHtmlBody] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -1164,9 +1172,78 @@ export default function AdminDashboard() {
                                      {prop.amenities && prop.amenities.length > 3 && <span className="px-2 py-1 bg-[var(--background)] text-[10px] font-bold rounded-md uppercase text-[var(--foreground)]/60">+{prop.amenities.length - 3}</span>}
                                  </div>
                               </div>
-                              <div className="bg-[var(--background)]/50 p-4 border-t border-[var(--border)] flex justify-between items-center">
-                                 <span className="text-xs font-bold text-[var(--foreground)]/40">{prop.units?.length || 0} Units</span>
-                                 <button onClick={() => setSelectedPropertyId(prop.id)} className="text-brand-blue text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">Manage <MoreVertical size={14}/></button>
+                              <div className="bg-[var(--background)]/50 border-t border-[var(--border)] overflow-hidden transition-all duration-500">
+                                 <button 
+                                   onClick={() => togglePropertyUnits(prop.id)}
+                                   className="w-full p-4 flex justify-between items-center group/btn"
+                                 >
+                                    <span className="text-xs font-bold text-[var(--foreground)]/40 flex items-center gap-2">
+                                       {prop.units?.length || 0} Units Registered
+                                       {expandedProperties.has(prop.id) ? <Plus size={14} className="rotate-45 transition-transform" /> : <Plus size={14} className="transition-transform" />}
+                                    </span>
+                                    <span className="text-brand-blue text-[10px] font-black uppercase tracking-widest opacity-0 group-hover/btn:opacity-100 transition-opacity">
+                                       {expandedProperties.has(prop.id) ? 'Collapse Inventory' : 'Expand inventory'}
+                                    </span>
+                                 </button>
+
+                                 <AnimatePresence>
+                                    {expandedProperties.has(prop.id) && (
+                                       <motion.div
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: "auto", opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          className="px-4 pb-4 space-y-2 border-t border-[var(--border)] pt-4"
+                                       >
+                                          {prop.units && prop.units.length > 0 ? prop.units.map((unit) => (
+                                             <div key={unit.id} className="bg-[var(--background)] p-3 rounded-2xl border border-[var(--border)] flex justify-between items-center group/unit">
+                                                <div>
+                                                   <p className="font-bold text-xs text-[var(--foreground)]">{unit.type}</p>
+                                                   <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{unit.beds}B • {unit.baths}Ba • {unit.sqm}SQM</p>
+                                                   <p className="text-[10px] font-black text-brand-blue mt-1">{formatPrice(unit.price)}</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                   <button 
+                                                     onClick={(e) => {
+                                                       e.stopPropagation();
+                                                       setEditingUnit(unit);
+                                                       setNewUnit({ ...unit, variety_img: unit.variety_img || '' });
+                                                       setSelectedPropertyId(prop.id);
+                                                     }} 
+                                                     title="Edit Unit"
+                                                     className="p-1.5 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors"
+                                                   >
+                                                      <Edit3 size={12}/>
+                                                   </button>
+                                                   <button 
+                                                     onClick={async (e) => {
+                                                       e.stopPropagation();
+                                                       if (!confirm(`Sync: Delete ${unit.type}?`)) return;
+                                                       try {
+                                                          const { error } = await supabaseClient.from('property_units').delete().eq('id', unit.id);
+                                                          if (!error) { notify('success', 'Unit purged.'); fetchProperties(); }
+                                                          else throw error;
+                                                       } catch { notify('error', 'Sync failure.'); }
+                                                     }} 
+                                                     title="Delete Unit"
+                                                     className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                   >
+                                                      <Trash2 size={12}/>
+                                                   </button>
+                                                </div>
+                                             </div>
+                                          )) : (
+                                             <div className="py-4 text-center opacity-40 text-[10px] italic">No units listed.</div>
+                                          )}
+                                          
+                                          <button 
+                                            onClick={() => setSelectedPropertyId(prop.id)}
+                                            className="w-full py-2 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-blue transition-all hover:text-white"
+                                          >
+                                             Add Units to Registry
+                                          </button>
+                                       </motion.div>
+                                    )}
+                                 </AnimatePresence>
                               </div>
                            </div>
                           );
@@ -1214,7 +1291,21 @@ export default function AdminDashboard() {
                                    <p className="text-[10px] uppercase font-black tracking-widest opacity-40 mt-1">/{post.slug} • {new Date(post.created_at).toLocaleDateString()}</p>
                                 </div>
                              </div>
-                             <div className="flex gap-4">
+                             <div className="flex gap-4 items-center">
+                                 {post.file_url ? (
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full border border-brand-blue/20">
+                                       <FileSpreadsheet size={10} />
+                                       <span className="text-[9px] font-black uppercase tracking-widest leading-none">PDF Attached</span>
+                                    </div>
+                                 ) : (
+                                    <button 
+                                      onClick={() => { setEditingPost(post); setIsAddingPost(true); }}
+                                      className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/30 hover:text-brand-blue flex items-center gap-1.5 group/add"
+                                    >
+                                       <Plus size={10} className="group-hover/add:rotate-90 transition-transform" /> Add Report
+                                    </button>
+                                 )}
+                                 <div className="w-px h-4 bg-[var(--border)] mx-1" />
                                 <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-brand-blue text-[10px] font-black uppercase tracking-widest hover:underline">Edit</button>
                                 <button onClick={() => setConfirmDelete({ type: 'post', id: post.id, name: post.title })} className="text-red-400 text-[10px] font-black uppercase tracking-widest hover:underline">Delete</button>
                              </div>
