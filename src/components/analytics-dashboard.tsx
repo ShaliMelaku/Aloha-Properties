@@ -19,6 +19,15 @@ interface LeadRecord {
   status?: string;
 }
 
+interface VisitorRecord {
+  id: string;
+  country: string;
+  country_code: string;
+  device_type: string;
+  browser: string;
+  created_at: string;
+}
+
 // Static lookup for interest → city label
 const INTEREST_CITY: Record<string, string> = {
   "Addis Ababa": "Addis Ababa",
@@ -43,12 +52,12 @@ const CHANNEL_COLORS: Record<string, string> = {
 
 const PIE_COLORS = ["#3B82F6", "#10B981", "#A855F7", "#F59E0B", "#EF4444", "#06B6D4"];
 
-type TabId = "leads" | "channels" | "regions";
+type TabId = "leads" | "traffic" | "countries";
 
 const TABS: { id: TabId; label: string; icon: typeof BarChart3 }[] = [
   { id: "leads", label: "Lead Trend", icon: TrendingUp },
-  { id: "channels", label: "Channels", icon: BarChart3 },
-  { id: "regions", label: "Regions", icon: PieIcon },
+  { id: "traffic", label: "Traffic Pulse", icon: Activity },
+  { id: "countries", label: "Global Reach", icon: Globe2 },
 ];
 
 function buildLeadTrend(leads: LeadRecord[]) {
@@ -78,16 +87,42 @@ function buildChannels(leads: LeadRecord[]) {
     .sort((a, b) => b.value - a.value);
 }
 
-function buildRegions(leads: LeadRecord[]) {
+function buildTrafficTrend(visitors: VisitorRecord[]) {
+  const days: Record<string, number> = {};
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const key = d.toLocaleDateString("en-US", { weekday: "short" });
+    days[key] = 0;
+    visitors.forEach((v) => {
+      const vt = new Date(v.created_at).toDateString();
+      if (vt === d.toDateString()) days[key]++;
+    });
+  }
+  return Object.entries(days).map(([day, count]) => ({ day, count }));
+}
+
+function buildCountries(visitors: VisitorRecord[]) {
   const map: Record<string, number> = {};
-  leads.forEach((l) => {
-    const reg = l.interest || "General";
-    map[reg] = (map[reg] || 0) + 1;
+  visitors.forEach((v) => {
+    const code = v.country_code || "UN";
+    map[code] = (map[code] || 0) + 1;
   });
+  
+  // Country code to flag helper
+  const getFlag = (code: string) => {
+    return code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+  };
+
   return Object.entries(map)
-    .map(([name, value], i) => ({ name: INTEREST_CITY[name] || name, value, color: PIE_COLORS[i % PIE_COLORS.length] }))
+    .map(([code, value], i) => ({ 
+      name: code, 
+      label: `${getFlag(code)} ${code}`,
+      value, 
+      color: PIE_COLORS[i % PIE_COLORS.length] 
+    }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 6);
+    .slice(0, 8);
 }
 
 // Custom Tooltip
@@ -104,29 +139,55 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>("leads");
   const [leads, setLeads] = useState<LeadRecord[]>([]);
+  const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
+  const [activeVisitors, setActiveVisitors] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabaseClient
-      .from("leads")
-      .select("created_at, source, interest, status")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setLeads(data || []);
-        setLoading(false);
-      });
+    const fetchData = async () => {
+      const [leadsRes, visitorsRes] = await Promise.all([
+        supabaseClient.from("leads").select("created_at, source, interest, status").order("created_at", { ascending: false }),
+        supabaseClient.from("visitors").select("*").order("created_at", { ascending: false }).limit(1000)
+      ]);
+
+      setLeads(leadsRes.data || []);
+      setVisitors(visitorsRes.data || []);
+      
+      // Calculate active today
+      const today = new Date().toDateString();
+      const todayCount = (visitorsRes.data || []).filter(v => new Date(v.created_at).toDateString() === today).length;
+      setActiveVisitors(todayCount);
+      
+      setLoading(false);
+    };
+
+    fetchData();
+
+    // Real-time subscription for visitors
+    const channel = supabaseClient
+      .channel("live-traffic")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "visitors" }, (payload) => {
+        const newVisitor = payload.new as VisitorRecord;
+        setVisitors(prev => [newVisitor, ...prev]);
+        setActiveVisitors(prev => prev + 1);
+      })
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
   }, []);
 
   const trendData = buildLeadTrend(leads);
-  const channelData = buildChannels(leads);
-  const regionData = buildRegions(leads);
+  const trafficData = buildTrafficTrend(visitors);
+  const countryData = buildCountries(visitors);
 
   const totalLeads = leads.length;
-  const thisWeek = trendData[trendData.length - 1]?.count ?? 0;
-  const prevWeek = trendData[trendData.length - 2]?.count ?? 0;
-  const growth = prevWeek > 0 ? (((thisWeek - prevWeek) / prevWeek) * 100).toFixed(1) : thisWeek > 0 ? "100" : "0";
-  const qualified = leads.filter((l) => l.status === "qualified" || l.status === "closed").length;
-  const convRate = totalLeads > 0 ? ((qualified / totalLeads) * 100).toFixed(1) : "0";
+  const totalTraffic = visitors.length;
+  const convRate = totalTraffic > 0 ? ((totalLeads / totalTraffic) * 100).toFixed(1) : "0";
+  const acquisitionGrowth = trendData.length >= 2 
+    ? (((trendData[trendData.length - 1].count - trendData[trendData.length - 2].count) / (trendData[trendData.length - 2].count || 1)) * 100).toFixed(1)
+    : "0";
 
   return (
     <div className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] overflow-hidden shadow-2xl">
@@ -155,9 +216,9 @@ export function AnalyticsDashboard() {
             className="grid grid-cols-3 gap-4"
           >
             {[
-              { label: "Total Leads", value: totalLeads, icon: Users, color: "text-brand-blue" },
-              { label: "WoW Growth", value: `${parseFloat(growth) >= 0 ? "+" : ""}${growth}%`, icon: TrendingUp, color: "text-emerald-500" },
-              { label: "Conv. Rate", value: `${convRate}%`, icon: Zap, color: "text-amber-500" },
+              { label: "Active Today", value: activeVisitors, icon: Users, color: "text-emerald-500" },
+              { label: "Total Reach", value: totalTraffic, icon: Globe2, color: "text-brand-blue" },
+              { label: "Conv. Index", value: `${convRate}%`, icon: Zap, color: "text-amber-500" },
             ].map((kpi, idx) => (
               <motion.div 
                 key={kpi.label} 
@@ -223,74 +284,39 @@ export function AnalyticsDashboard() {
               </motion.div>
             )}
 
-            {activeTab === "channels" && (
-              <motion.div key="channels" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-6">Lead Acquisition by Channel</p>
-                {channelData.length === 0 ? (
-                  <div className="h-64 flex items-center justify-center opacity-30">
-                    <p className="text-xs font-black uppercase tracking-widest">No channel data yet</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={channelData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 40 }}>
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: "var(--foreground)", opacity: 0.6, fontWeight: 900 }} axisLine={false} tickLine={false} />
-                        <Tooltip
-                          cursor={{ fill: "rgba(59,130,246,0.05)" }}
-                          content={({ active, payload, label }) =>
-                            active && payload?.length ? (
-                              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 shadow-xl text-xs">
-                                <p className="font-black text-brand-blue uppercase">{label}</p>
-                                <p className="font-bold">{payload[0].value} leads</p>
-                              </div>
-                            ) : null
-                          }
-                        />
-                        <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                          {channelData.map((c, i) => (
-                            <Cell key={i} fill={c.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <div className="space-y-3">
-                      {channelData.map((c) => {
-                        const pct = Math.round((c.value / Math.max(1, totalLeads)) * 100);
-                        return (
-                          <div key={c.name} className="flex items-center justify-between p-3 bg-slate-500/5 rounded-xl">
-                            <div className="flex items-center gap-3">
-                              {/* eslint-disable-next-line react/forbid-dom-props */}
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                              <span className="text-xs font-black uppercase tracking-widest text-[var(--foreground)]/60">{c.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {/* eslint-disable-next-line react/forbid-dom-props */}
-                              <span className="text-sm font-black" style={{ color: c.color }}>{pct}%</span>
-                              <ArrowUpRight size={12} className="text-[var(--foreground)]/20" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+            {activeTab === "traffic" && (
+              <motion.div key="traffic" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-6">7-Day Visitor Intensity Trend</p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={trafficData} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="trafficGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: "var(--foreground)", opacity: 0.4, fontWeight: 900 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--foreground)", opacity: 0.4, fontWeight: 900 }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="count" stroke="#10B981" strokeWidth={2.5} fill="url(#trafficGrad)" dot={{ fill: "#10B981", r: 3 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </motion.div>
             )}
 
-            {activeTab === "regions" && (
-              <motion.div key="regions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-6">Lead Distribution by Region / Interest</p>
-                {regionData.length === 0 ? (
+            {activeTab === "countries" && (
+              <motion.div key="countries" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 mb-6">Global Reach Distribution by Country</p>
+                {countryData.length === 0 ? (
                   <div className="h-64 flex items-center justify-center opacity-30">
-                    <p className="text-xs font-black uppercase tracking-widest">No region data yet</p>
+                    <p className="text-xs font-black uppercase tracking-widest">Awaiting visitor metrics...</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                     <ResponsiveContainer width="100%" height={240}>
                       <PieChart>
-                        <Pie data={regionData} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={3} dataKey="value">
-                          {regionData.map((_, i) => (
+                        <Pie data={countryData} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={3} dataKey="value">
+                          {countryData.map((_, i) => (
                             <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                           ))}
                         </Pie>
@@ -299,42 +325,24 @@ export function AnalyticsDashboard() {
                             active && payload?.length ? (
                               <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 text-xs shadow-xl">
                                 <p className="font-black text-brand-blue">{payload[0].name}</p>
-                                <p className="font-bold">{payload[0].value} leads</p>
+                                <p className="font-bold">{payload[0].value} visitors</p>
                               </div>
                             ) : null
                           }
                         />
-                        <Legend
-                          formatter={(value) => (
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
-                               {value}
-                            </span>
-                          )}
-                        />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="space-y-3">
-                      {regionData.map((r, i) => {
-                        const pct = Math.round((r.value / Math.max(1, totalLeads)) * 100);
+                    <div className="grid grid-cols-2 gap-3">
+                      {countryData.map((r, i) => {
+                        const pct = Math.round((r.value / Math.max(1, totalTraffic)) * 100);
                         return (
-                          <div key={r.name} className="flex items-center gap-3">
-                            <MapPin size={14} style={{ color: PIE_COLORS[i % PIE_COLORS.length] }} />
-                            <div className="flex-1">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/60">{r.name}</span>
-                                {/* eslint-disable-next-line react/forbid-dom-props */}
-                                <span className="text-[10px] font-black" style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}>{pct}%</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-slate-500/10 rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${pct}%` }}
-                                  transition={{ duration: 1, delay: i * 0.1 }}
-                                  className="h-full rounded-full"
-                                  style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
-                                />
-                              </div>
+                          <div key={r.name} className="p-4 bg-slate-500/5 rounded-2xl border border-[var(--border)]">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xl">{r.label?.split(' ')[0]}</span>
+                              <span className="text-[10px] font-black text-brand-blue">{pct}%</span>
                             </div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{r.name}</p>
+                            <p className="text-sm font-bold mt-1">{r.value} Hits</p>
                           </div>
                         );
                       })}

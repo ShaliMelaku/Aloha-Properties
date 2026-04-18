@@ -5,72 +5,51 @@ import { supabaseClient } from "@/lib/supabase";
 
 export function VisitorTracker() {
   useEffect(() => {
-    const trackVisitor = async () => {
+    // Unique session check using sessionStorage
+    const SESSION_KEY = "aloha_visit_tracked";
+    const hasTracked = sessionStorage.getItem(SESSION_KEY);
+
+    if (hasTracked) return;
+
+    const trackVisit = async () => {
       try {
-        // 1. Unique Visitor ID (localStorage)
-        let visitorId = localStorage.getItem("aloha_visitor_id");
-        if (!visitorId) {
-          visitorId = crypto.randomUUID();
-          localStorage.setItem("aloha_visitor_id", visitorId);
-        }
+        // 1. Fetch Geolocation Data (Country Level)
+        const geoRes = await fetch("https://ip-api.com/json/?fields=status,country,countryCode");
+        const geoData = await geoRes.json();
 
-        // 2. Silent IP-based Geolocation (Fallback)
-        let geoData = {
-          city: "Unknown",
-          country_name: "Unknown",
-          region: "Unknown",
-          latitude: 0,
-          longitude: 0
-        };
+        if (geoData.status !== "success") return;
 
-        try {
-          const res = await fetch("https://ipapi.co/json/");
-          if (res.ok) geoData = await res.json();
-        } catch (e) {
-          console.warn("IP-Geo silent fail:", e);
-        }
+        // 2. Identify Device/Browser (Simple parsing)
+        const ua = navigator.userAgent;
+        let deviceType = "Desktop";
+        if (/tablet|ipad|playbook|silk/i.test(ua)) deviceType = "Tablet";
+        else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated/i.test(ua)) deviceType = "Mobile";
 
-        // 3. Browser High-Accuracy Geolocation (Prompted on Access)
-        const getBrowserGeo = (): Promise<GeolocationPosition | null> => {
-           return new Promise((resolve) => {
-              if (!navigator.geolocation) {
-                 resolve(null);
-                 return;
-              }
-              navigator.geolocation.getCurrentPosition(
-                 (pos) => resolve(pos),
-                 () => resolve(null),
-                 { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-              );
-           });
-        };
+        let browser = "Other";
+        if (ua.includes("Chrome")) browser = "Chrome";
+        else if (ua.includes("Firefox")) browser = "Firefox";
+        else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+        else if (ua.includes("Edge")) browser = "Edge";
 
-        const browserPos = await getBrowserGeo();
-        const hasBrowserPermission = !!browserPos;
-
-        // 4. Persistence to Supabase
-        await supabaseClient.from("visitor_logs").insert({
-          visitor_id: visitorId,
-          country: geoData.country_name,
-          city: browserPos ? "High-Accuracy Verified" : geoData.city,
-          region: geoData.region,
-          latitude: browserPos ? browserPos.coords.latitude : geoData.latitude,
-          longitude: browserPos ? browserPos.coords.longitude : geoData.longitude,
-          browser_geolocated: hasBrowserPermission,
-          user_agent: navigator.userAgent,
-          session_id: sessionStorage.getItem("aloha_session_id") || (() => {
-            const sid = crypto.randomUUID();
-            sessionStorage.setItem("aloha_session_id", sid);
-            return sid;
-          })()
+        // 3. Log to Supabase
+        const { error } = await supabaseClient.from("visitors").insert({
+          country: geoData.country,
+          country_code: geoData.countryCode,
+          device_type: deviceType,
+          browser: browser
         });
 
-      } catch (error) {
-        console.error("Tracking fault:", error);
+        if (!error) {
+          sessionStorage.setItem(SESSION_KEY, "true");
+        }
+      } catch (err) {
+        console.error("Aloha Analytics Error:", err);
       }
     };
 
-    trackVisitor();
+    // Delay slightly to prioritize core LCP
+    const timer = setTimeout(trackVisit, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   return null; // Invisible component
