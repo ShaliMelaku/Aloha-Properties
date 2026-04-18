@@ -58,6 +58,9 @@ interface Property {
   discount_percentage?: number;
   downpayment_percentage?: number;
   payment_schedule?: string;
+  air_quality_index?: number;
+  urban_heat_index?: number;
+  env_risk_level?: string;
   units?: Unit[];
   progress?: PropertyProgress[];
 }
@@ -129,6 +132,9 @@ export default function AdminDashboard() {
     discount_percentage: 0, 
     downpayment_percentage: 0, 
     payment_schedule: 'Flexible Terms',
+    air_quality_index: 50,
+    urban_heat_index: 0,
+    env_risk_level: 'Low',
     units: [] as Partial<Unit>[]
   });
   
@@ -380,11 +386,12 @@ export default function AdminDashboard() {
         lat: newProp.lat, lng: newProp.lng, amenities: newProp.amenities, cover_image: newProp.cover_image || null,
         video_url: newProp.video_url || null, discount_percentage: newProp.discount_percentage || 0,
         downpayment_percentage: newProp.downpayment_percentage || 0, payment_schedule: newProp.payment_schedule || 'Flexible Terms',
+        air_quality_index: newProp.air_quality_index || 50, urban_heat_index: newProp.urban_heat_index || 0, env_risk_level: newProp.env_risk_level || 'Low'
       }).select().single();
       if (propError) throw propError;
       await supabaseClient.from('property_progress').insert({ property_id: propData.id, percent: 0, status: 'under-construction', status_text: 'Planning' });
       if (newProp.units?.length) { await supabaseClient.from('property_units').insert(newProp.units.map(u => ({ ...u, property_id: propData.id }))); }
-      notify('success', "Property registered."); setIsAddingProperty(false); setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms', units: [] }); fetchProperties();
+      notify('success', "Property registered."); setIsAddingProperty(false); setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms', air_quality_index: 50, urban_heat_index: 0, env_risk_level: 'Low', units: [] }); fetchProperties();
     } catch (error: unknown) { notify('error', `Registration fault: ${error instanceof Error ? error.message : 'Unknown error'}`); }
   };
 
@@ -395,7 +402,8 @@ export default function AdminDashboard() {
         name: editingProperty.name, location: editingProperty.location, developer: editingProperty.developer, description: editingProperty.description || null,
         lat: editingProperty.lat, lng: editingProperty.lng, amenities: editingProperty.amenities || [], discount_percentage: editingProperty.discount_percentage ?? 0,
         downpayment_percentage: editingProperty.downpayment_percentage ?? 0, payment_schedule: editingProperty.payment_schedule ?? 'Flexible Terms',
-        cover_image: editingProperty.cover_image, video_url: editingProperty.video_url
+        cover_image: editingProperty.cover_image, video_url: editingProperty.video_url,
+        air_quality_index: editingProperty.air_quality_index ?? 50, urban_heat_index: editingProperty.urban_heat_index ?? 0, env_risk_level: editingProperty.env_risk_level ?? 'Low'
       }).eq('id', editingProperty.id);
       if (!error) { notify('success', 'Property updated.'); setEditingProperty(null); fetchProperties(); }
       else throw error;
@@ -770,6 +778,27 @@ export default function AdminDashboard() {
                                  </div>
                                  <textarea placeholder="Description" rows={2} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-medium text-[var(--foreground)] resize-none" />
                                  
+                                 <div className="bg-slate-500/5 rounded-2xl p-6 border border-emerald-500/10 space-y-4">
+                                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2">Environmental Data</h4>
+                                   <div className="grid grid-cols-3 gap-4">
+                                     <div className="space-y-1">
+                                       <label className="text-[9px] font-black uppercase opacity-40 ml-1">Air Quality Index</label>
+                                       <input type="number" placeholder="AQI" value={newProp.air_quality_index} onChange={e => setNewProp({...newProp, air_quality_index: parseInt(e.target.value)||50})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                     </div>
+                                     <div className="space-y-1">
+                                       <label className="text-[9px] font-black uppercase opacity-40 ml-1">Urban Heat (0-100)</label>
+                                       <input type="number" min={0} max={100} placeholder="Heat Index" value={newProp.urban_heat_index} onChange={e => setNewProp({...newProp, urban_heat_index: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                                     </div>
+                                     <div className="space-y-1">
+                                       <label className="text-[9px] font-black uppercase opacity-40 ml-1">Risk Level</label>
+                                       <select value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]">
+                                         <option value="Low">Low</option>
+                                         <option value="Moderate">Moderate</option>
+                                         <option value="High">High</option>
+                                       </select>
+                                     </div>
+                                   </div>
+                                 </div>                                 
                                  <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
                                     <div className="flex gap-3 items-center">
@@ -1532,6 +1561,29 @@ export default function AdminDashboard() {
                         </div>
                         {/* Description */}
                         <textarea placeholder="Description" rows={2} value={editingProperty.description || ''} onChange={e => setEditingProperty({...editingProperty, description: e.target.value})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-medium border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)] resize-none" />
+                        
+                        {/* Environmental Data Additions */}
+                        <div className="bg-slate-500/5 rounded-2xl p-6 border border-emerald-500/10 space-y-4">
+                           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2">Environmental Data</h4>
+                           <div className="grid grid-cols-3 gap-4">
+                             <div className="space-y-1">
+                               <label className="text-[9px] font-black uppercase opacity-40 ml-1">Air Quality Index</label>
+                               <input type="number" placeholder="AQI" value={editingProperty.air_quality_index ?? 50} onChange={e => setEditingProperty({...editingProperty, air_quality_index: parseInt(e.target.value)||50})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                             </div>
+                             <div className="space-y-1">
+                               <label className="text-[9px] font-black uppercase opacity-40 ml-1">Urban Heat (0-100)</label>
+                               <input type="number" min={0} max={100} placeholder="Heat Index" value={editingProperty.urban_heat_index ?? 0} onChange={e => setEditingProperty({...editingProperty, urban_heat_index: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
+                             </div>
+                             <div className="space-y-1">
+                               <label className="text-[9px] font-black uppercase opacity-40 ml-1">Risk Level</label>
+                               <select value={editingProperty.env_risk_level ?? 'Low'} onChange={e => setEditingProperty({...editingProperty, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]">
+                                 <option value="Low">Low</option>
+                                 <option value="Moderate">Moderate</option>
+                                 <option value="High">High</option>
+                               </select>
+                             </div>
+                           </div>
+                         </div>
                         {/* Cover Image — Upload or Replace */}
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>

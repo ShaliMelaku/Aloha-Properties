@@ -30,15 +30,6 @@ interface VisitorRecord {
   created_at: string;
 }
 
-interface ApodData {
-  title: string;
-  url: string | null;
-  hdurl?: string | null;
-  explanation: string;
-  copyright: string;
-  date: string;
-}
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CHANNEL_COLORS: Record<string, string> = {
   organic: "#10B981", direct: "#3B82F6", instagram: "#E1306C",
@@ -146,16 +137,7 @@ export function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
-  const [apod, setApod] = useState<ApodData | null>(null);
   const channelRef = useRef<ReturnType<typeof supabaseClient.channel> | null>(null);
-
-  // ── NASA APOD fetch ───────────────────────────────────────────────────────
-  useEffect(() => {
-    fetch("/api/nasa/apod")
-      .then((r) => r.json())
-      .then((d) => { if (d.success && d.url) setApod(d); })
-      .catch(() => {/* silent — UI degrades gracefully */});
-  }, []);
 
   // ── Analytics fetch ──────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -225,14 +207,9 @@ export function AnalyticsDashboard() {
   return (
     <div className="relative rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
 
-      {/* ── Cosmic Background (NASA APOD) ── */}
+      {/* ── Luxury Background ── */}
       <div className="absolute inset-0 z-0">
-        {apod?.url ? (
-          <img src={apod.url} alt={apod.title} className="w-full h-full object-cover opacity-[0.12]" />
-        ) : (
-          /* Fallback: animated gradient */
-          <div className="w-full h-full bg-gradient-to-br from-slate-950 via-indigo-950/60 to-slate-950" />
-        )}
+        <div className="w-full h-full bg-gradient-to-br from-slate-950 via-indigo-950/60 to-slate-950" />
         {/* Overlay grid */}
         <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
         {/* Bottom fade */}
@@ -264,15 +241,6 @@ export function AnalyticsDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* NASA APOD badge */}
-              {apod && (
-                <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                  <Telescope size={12} className="text-indigo-400" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300">
-                    NASA · {apod.title.slice(0, 22)}…
-                  </span>
-                </div>
-              )}
               <button
                 onClick={fetchData}
                 disabled={loading}
@@ -503,22 +471,6 @@ export function AnalyticsDashboard() {
             </AnimatePresence>
           )}
         </div>
-
-        {/* NASA APOD Footer */}
-        {apod && (
-          <div className="px-10 py-5 border-t border-white/5 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <Star size={11} className="text-indigo-400 shrink-0" />
-              <p className="text-[9px] font-black uppercase tracking-widest text-white/20">
-                NASA · {apod.title} · {apod.date}
-              </p>
-            </div>
-            <a href={apod.hdurl || apod.url || "#"} target="_blank" rel="noopener noreferrer"
-               className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-400/60 hover:text-indigo-300 transition-colors">
-              <Download size={10} /> HD Image
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

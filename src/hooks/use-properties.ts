@@ -33,9 +33,12 @@ export interface SupabaseProperty {
   price_start?: number;
   pay_schedule?: string;
   amenities: string[];
-  discount_percentage?: number; // Added
-  downpayment_percentage?: number; // Added
+  discount_percentage?: number; 
+  downpayment_percentage?: number; 
   description?: string;
+  air_quality_index?: number; // Added
+  urban_heat_index?: number;  // Added
+  env_risk_level?: string;    // Added
   units: SupabaseUnit[];
   progress: SupabaseProgress[];
 }

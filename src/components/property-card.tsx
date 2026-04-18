@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductProgress, calculateDiscount, getLoanPercentage } from "@/data/mock-db";
 import { SupabaseProperty } from "@/hooks/use-properties";
-import { ChevronDown, MapPin, HardHat, BedDouble, Bath, Maximize, Banknote, ArrowRight, LayoutGrid } from "lucide-react";
+import { ChevronDown, MapPin, HardHat, BedDouble, Bath, Maximize, Banknote, ArrowRight, LayoutGrid, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";
+import { EnvironmentalSafetyDialog } from "@/components/environmental-safety-dialog";
 
 export function PropertyCard({ property, index }: { property: SupabaseProperty, index: number }) {
   const { formatPrice } = useCurrency();
@@ -16,6 +17,7 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
   const [unitIdx, setUnitIdx] = useState(0);
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
+  const [showSafety, setShowSafety] = useState(false);
 
   const unit = property.units?.[unitIdx] || property.units?.[0];
   
@@ -152,22 +154,30 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
         </div>
 
         {/* Actions */}
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-5 gap-3 mb-3">
+          <button 
+            onClick={() => setShowSafety(true)}
+            title="Environmental & Safety Intelligence"
+            className="col-span-1 flex items-center justify-center aspect-square rounded-2xl border border-[var(--border)] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-colors group/eco"
+          >
+            <ShieldCheck size={20} className="opacity-40 group-hover/eco:text-emerald-500 group-hover/eco:opacity-100 transition-colors" />
+          </button>
           <button 
             onClick={() => setAccordionOpen(!accordionOpen)}
             title="Toggle Payment Plans"
-            className="col-span-1 flex items-center justify-center aspect-square rounded-2xl border border-[var(--border)] hover:bg-slate-500/5 transition-colors"
+            className="col-span-4 flex items-center justify-between px-6 rounded-2xl border border-[var(--border)] hover:bg-slate-500/5 transition-colors"
           >
-            <Banknote size={20} className={accordionOpen ? 'text-brand-blue' : 'opacity-40'} />
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Financing Plans</span>
+            <Banknote size={18} className={accordionOpen ? 'text-brand-blue' : 'opacity-40'} />
           </button>
-          <Link 
+        </div>
+        <Link 
             href="#contact"
-            className="col-span-4 btn-premium-primary w-full flex items-center justify-center gap-2 group/btn"
-          >
+            className="btn-premium-primary w-full flex items-center justify-center gap-2 group/btn"
+        >
              Secure Inquiry
              <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-          </Link>
-        </div>
+        </Link>
 
         {/* Expandable Payment Plans */}
         <AnimatePresence>
@@ -203,6 +213,10 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
           )}
         </AnimatePresence>
       </div>
+
+      {showSafety && (
+        <EnvironmentalSafetyDialog property={property} onClose={() => setShowSafety(false)} />
+      )}
     </motion.div>
   );
 }
