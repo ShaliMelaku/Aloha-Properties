@@ -1693,7 +1693,7 @@ export default function AdminDashboard() {
            </AnimatePresence>
 
            <div className="text-center opacity-20 py-8 border-t border-[var(--border)]">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--foreground)]">Powered by Resend Engine & Supabase Global Grid</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--foreground)]">Aloha Properties Admin Hub</p>
            </div>
         </div>
       </main>
