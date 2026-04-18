@@ -149,21 +149,31 @@ export function AnalyticsDashboard() {
           </div>
 
           {/* KPI Chips */}
-          <div className="grid grid-cols-3 gap-4">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="grid grid-cols-3 gap-4"
+          >
             {[
               { label: "Total Leads", value: totalLeads, icon: Users, color: "text-brand-blue" },
               { label: "WoW Growth", value: `${parseFloat(growth) >= 0 ? "+" : ""}${growth}%`, icon: TrendingUp, color: "text-emerald-500" },
               { label: "Conv. Rate", value: `${convRate}%`, icon: Zap, color: "text-amber-500" },
-            ].map((kpi) => (
-              <div key={kpi.label} className="bg-slate-500/5 rounded-2xl p-4 border border-[var(--border)]">
+            ].map((kpi, idx) => (
+              <motion.div 
+                key={kpi.label} 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + idx * 0.1 }}
+                className="bg-slate-500/5 rounded-2xl p-4 border border-[var(--border)]"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <kpi.icon size={14} className={kpi.color} />
                   <p className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/40">{kpi.label}</p>
                 </div>
                 <p className={`text-xl font-black tracking-tight ${kpi.color}`}>{kpi.value}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Tab Switcher */}
@@ -295,8 +305,11 @@ export function AnalyticsDashboard() {
                           }
                         />
                         <Legend
-                          {/* eslint-disable-next-line react/forbid-dom-props */}
-                          formatter={(value) => <span style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>{value}</span>}
+                          formatter={(value) => (
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                               {value}
+                            </span>
+                          )}
                         />
                       </PieChart>
                     </ResponsiveContainer>

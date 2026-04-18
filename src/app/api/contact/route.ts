@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabase } from '@/lib/supabase';
 import { renderEmailTemplate } from '@/lib/email-template';
+import { syncToHubSpot } from '@/lib/hubspot-service';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_mock_key');
 
@@ -21,6 +22,9 @@ export async function POST(req: Request) {
         
       if (dbError) {
         console.error("Database insert failed:", dbError);
+      } else {
+        // Parallel sync to HubSpot - catch errors to not block the user response
+        syncToHubSpot({ name, email, interest, message }).catch(err => console.error("HS Sync fail:", err));
       }
     }
 

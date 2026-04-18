@@ -159,17 +159,10 @@ export default function MarketTrendsHub() {
                         transition={{ delay: idx * 0.05 }}
                         className="group relative flex flex-col bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden hover:border-brand-blue/40 transition-all hover:shadow-2xl h-full"
                      >
-                        <div className="aspect-[16/10] relative overflow-hidden">
-                           <img 
-                             src={pub.cover_image || 'https://images.unsplash.com/photo-1460472178825-e5240623abe5?auto=format&fit=crop&q=80'} 
-                             alt={pub.title} 
-                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                           />
-                           <div className="absolute top-6 left-6">
-                              <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-black/40 text-white backdrop-blur-md border border-white/20 flex items-center gap-2`}>
-                                 {pub.type === 'report' ? <FileText size={10} /> : <BookOpen size={10} />} {pub.type}
-                              </span>
-                           </div>
+                        <div className="p-6 pb-2 border-b border-[var(--border)] bg-slate-500/5">
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-black/40 text-white backdrop-blur-md border border-white/20 flex items-center w-fit gap-2`}>
+                                {pub.type === 'report' ? <FileText size={10} /> : <BookOpen size={10} />} {pub.type}
+                            </span>
                         </div>
 
                         <div className="p-8 flex-1 flex flex-col">

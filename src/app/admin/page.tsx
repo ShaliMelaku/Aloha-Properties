@@ -6,7 +6,7 @@ import {
   Upload, Mail, Users, FileSpreadsheet, Send, Activity, 
   LogOut, Download, TrendingUp, 
   History, Lock, Key, PieChart, ShieldCheck, Zap, Moon, Sun, CheckCircle2, UserPlus,
-  Home, Plus, Trash2, Edit3, MoreVertical, X
+  Home, Plus, Trash2, Edit3, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
