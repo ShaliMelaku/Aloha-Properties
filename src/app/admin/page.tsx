@@ -774,10 +774,10 @@ export default function AdminDashboard() {
                                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Cover Photo</label>
                                     <div className="flex gap-3 items-center">
                                       <input type="text" placeholder="Image URL..." value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]" />
-                                      <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all">
+                                      <label className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer transition-all ${uploadingImage ? 'bg-brand-blue text-white bg-progress-stripes shadow-inner pointer-events-none' : 'bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20'}`}>
                                         <Upload size={14} />
                                         {uploadingImage ? 'Uploading...' : 'Upload'}
-                                        <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                                        <input type="file" accept="image/*" className="hidden" disabled={uploadingImage} onChange={async e => {
                                           const file = e.target.files?.[0]; if (!file) return;
                                           const url = await uploadFile(file);
                                           if (url) setNewProp({...newProp, cover_image: url});
@@ -1098,6 +1098,7 @@ export default function AdminDashboard() {
                                  {['article', 'report', 'guide'].map((t) => (
                                     <button 
                                       key={t}
+                                      type="button"
                                       onClick={() => editingPost ? setEditingPost({...editingPost, type: t as 'article' | 'report' | 'guide'}) : setNewPost({...newPost, type: t as 'article' | 'report' | 'guide'})}
                                       className={`flex-1 py-3 rounded-xl border text-[10px] uppercase font-black tracking-widest transition-all ${
                                         (editingPost ? editingPost.type : newPost.type) === t 
@@ -1149,7 +1150,7 @@ export default function AdminDashboard() {
                                            }
                                         }}
                                      />
-                                     <button type="button" className="w-full h-[44px] bg-brand-blue text-white rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest hover:opacity-90 transition-opacity">
+                                     <button type="button" disabled={isUploadingPDF} className={`w-full h-[44px] rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest transition-all ${isUploadingPDF ? 'bg-brand-blue-deep text-white bg-progress-stripes shadow-inner cursor-wait' : 'bg-brand-blue text-white hover:opacity-90'}`}>
                                         {isUploadingPDF ? (
                                            <><Activity size={14} className="animate-spin" /> Uploading PDF...</>
                                         ) : (
@@ -1403,7 +1404,7 @@ export default function AdminDashboard() {
                                          finally { setIsUploadingVarietyImg(false); }
                                       }}
                                    />
-                                   <button title="Upload" className="h-[42px] px-4 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center">
+                                   <button title="Upload" disabled={isUploadingVarietyImg} className={`h-[42px] px-4 rounded-xl flex items-center justify-center transition-all ${isUploadingVarietyImg ? 'bg-brand-blue text-white bg-progress-stripes pointer-events-none' : 'bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20'}`}>
                                       {isUploadingVarietyImg ? <Activity size={16} className="animate-spin" /> : <Upload size={16}/>}
                                    </button>
                                 </div>
@@ -1544,9 +1545,9 @@ export default function AdminDashboard() {
                           )}
                           <div className="flex gap-3 items-center">
                             <input type="text" placeholder="Image URL or local preview" value={editingProperty.cover_image || ''} onChange={e => setEditingProperty({...editingProperty, cover_image: e.target.value})} className="flex-1 px-4 py-3 bg-slate-500/5 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                            <label className="flex items-center gap-2 px-4 py-3 bg-brand-blue/10 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-brand-blue/20 transition-all whitespace-nowrap">
+                            <label className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer transition-all whitespace-nowrap ${uploadingImage ? 'bg-brand-blue text-white bg-progress-stripes shadow-inner pointer-events-none' : 'bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20'}`}>
                               <Upload size={14} />{uploadingImage ? 'Uploading...' : 'Replace Photo'}
-                              <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                              <input type="file" accept="image/*" className="hidden" disabled={uploadingImage} onChange={async e => {
                                 const file = e.target.files?.[0]; if (!file) return;
                                 const previewUrl = URL.createObjectURL(file);
                                 setEditingProperty({...editingProperty, cover_image: previewUrl});

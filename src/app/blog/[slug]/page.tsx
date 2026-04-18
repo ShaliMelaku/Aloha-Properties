@@ -109,9 +109,27 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                         <a 
                           href={post.source_url} 
                           target="_blank" 
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 bg-white text-brand-blue px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-transform"
                         >
                            {post.source_label || 'View Source'} <ExternalLink size={12} />
+                        </a>
+                     </div>
+                  )}
+
+                  {post.file_url && (
+                     <div className="p-8 bg-slate-900 border border-slate-800 text-white rounded-[2rem] shadow-2xl relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-brand-blue/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                        <p className="text-[10px] font-black w-fit uppercase tracking-widest text-emerald-400 mb-4 bg-emerald-500/10 px-3 py-1 rounded-lg">Exclusive Asset</p>
+                        <h4 className="text-xl font-heading font-black mb-3 leading-tight">{post.type === 'report' ? 'Download Full Report' : 'Download Complete Guide'}</h4>
+                        <p className="text-xs text-white/50 font-medium leading-relaxed mb-6">Get the detailed PDF asset including comprehensive data points and high-resolution visuals.</p>
+                        <a 
+                          href={post.file_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-brand-blue text-white w-full justify-center px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue-deep transition-all shadow-lg shadow-brand-blue/20"
+                        >
+                           Preview & Download PDF <ExternalLink size={12} />
                         </a>
                      </div>
                   )}

@@ -62,10 +62,13 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-slate-500/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-30">
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-30 text-center md:text-left">
             © {new Date().getFullYear()} Aloha Real Estate Marketing And Event Communications PLC
           </div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-50 text-center">
+            Developed by <span className="text-brand-blue">Shalom Melaku</span> | shalieth101@gmail.com | +251934132115
+          </div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-80">
             Addis Ababa, Ethiopia
           </div>
         </div>
