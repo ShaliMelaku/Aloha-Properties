@@ -179,7 +179,7 @@ export default function MarketTrendsHub() {
                                alt={pub.title} 
                                fill
                                className="object-cover group-hover:scale-105 transition-transform duration-700"
-                               unoptimized
+                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
                              />
                              <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
@@ -322,7 +322,13 @@ export default function MarketTrendsHub() {
                            </div>
                         ) : selectedPost.cover_image && (
                            <div className="relative aspect-[21/9] rounded-3xl overflow-hidden mb-12 border border-[var(--border)] shadow-xl">
-                               <img src={selectedPost.cover_image} alt={selectedPost.title} className="absolute inset-0 w-full h-full object-cover" />
+                               <Image 
+                                 src={selectedPost.cover_image} 
+                                 alt={selectedPost.title} 
+                                 fill
+                                 className="object-cover" 
+                                 sizes="(max-width: 1200px) 100vw, 1200px"
+                               />
                            </div>
                         )}
                         <div className="prose prose-luxury lg:prose-xl text-[var(--foreground)]">

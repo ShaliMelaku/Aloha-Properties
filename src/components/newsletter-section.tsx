@@ -22,7 +22,7 @@ export function NewsletterSection() {
         body: JSON.stringify({ 
           name: "Newsletter Subscriber", 
           email, 
-          interest: "Market Intelligence", 
+          interest: "Market Insights", 
           message: "Opted-in for Market Trends newsletter from the footer section.",
           source: "newsletter"
         })
@@ -30,7 +30,7 @@ export function NewsletterSection() {
 
       if (res.ok) {
         setSubscribed(true);
-        notify("success", "Intelligence Secured: You are now on the exclusive list.");
+        notify("success", "Insights Secured: You are now on the exclusive list.");
       } else {
         notify("error", "Network issue. Please try again.");
       }

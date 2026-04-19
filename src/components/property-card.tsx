@@ -58,13 +58,13 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
       </div>
 
       <div className="relative h-72 w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
-        <img 
+        <Image 
           src={unit.variety_img || property.cover_image || "/images/cover.jpg"} 
           alt={unit.type} 
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "/images/cover.jpg";
-          }}
+          fill
+          className="object-cover transition-transform duration-1000 group-hover:scale-110" 
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          unoptimized={true} // Set to true if external images fail optimization or to false for max speed if domains are whitelisted
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-transparent to-transparent opacity-80" />
         

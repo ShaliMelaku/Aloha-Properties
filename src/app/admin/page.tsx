@@ -10,6 +10,7 @@ import {
   Home, Plus, Trash2, Edit3, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { convertToWebP } from "@/utils/media-utils";
 import { useStatus } from "@/context/status-context";
 import { useCurrency } from "@/context/currency-context";
 import { useTheme } from "next-themes";
@@ -352,8 +353,17 @@ export default function AdminDashboard() {
   };
 
   const uploadFile = async (file: File, bucket: string = 'aloha-assets', path: string = 'properties') => {
+    // Convert images to WebP for maximum performance before upload
+    let fileToUpload = file;
+    if (file.type.startsWith('image/')) {
+      try {
+        fileToUpload = await convertToWebP(file);
+      } catch {
+        // If conversion fails, upload the original
+      }
+    }
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', fileToUpload);
     formData.append('path', path);
     formData.append('bucket', bucket);
     try {
@@ -964,7 +974,7 @@ export default function AdminDashboard() {
                               <Activity size={16} className={syncing ? 'animate-spin' : ''} /> 
                               {syncing ? 'Syncing...' : 'Sync Live Pulse'}
                            </button>
-                           <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
+                           <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
                               <Plus size={16} /> New Article
                            </button>
                     </div>
@@ -1150,28 +1160,28 @@ export default function AdminDashboard() {
                                         accept=".pdf"
                                         title="Upload PDF Asset"
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        onChange={async (e) => {
-                                           const file = e.target.files?.[0];
-                                           if (!file) return;
-                                           setIsUploadingPDF(true);
-                                           try {
-                                              const formData = new FormData();
-                                              formData.append("file", file);
-                                              formData.append("path", "reports");
-                                              formData.append("bucket", "blog-media");
-                                              const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-                                              const result = await res.json();
-                                              if (!result.success) throw new Error(result.error || "Upload failed");
-                                              if (editingPost) setEditingPost({...editingPost, file_url: result.url});
-                                              else setNewPost({...newPost, file_url: result.url});
-                                              notify("success", "PDF uploaded successfully.");
-                                           } catch (err: unknown) {
-                                              const message = err instanceof Error ? err.message : "Check storage permissions";
-                                              notify("error", `Upload error: ${message}`);
-                                           } finally {
-                                              setIsUploadingPDF(false);
-                                           }
-                                        }}
+                                        onChange={async (e) => {
+                                           const file = e.target.files?.[0];
+                                           if (!file) return;
+                                           setIsUploadingPDF(true);
+                                           try {
+                                              const pdfForm = new FormData();
+                                              pdfForm.append("file", file);
+                                              pdfForm.append("path", "reports");
+                                              pdfForm.append("bucket", "blog-media");
+                                              const res = await fetch("/api/admin/upload", { method: "POST", body: pdfForm });
+                                              const result = await res.json();
+                                              if (!result.success) throw new Error(result.error || "Upload failed");
+                                              if (editingPost) setEditingPost({...editingPost, file_url: result.url});
+                                              else setNewPost({...newPost, file_url: result.url});
+                                              notify("success", "PDF uploaded successfully.");
+                                           } catch (err) {
+                                              const message = err instanceof Error ? err.message : "Check storage permissions";
+                                              notify("error", "Upload error: " + message);
+                                           } finally {
+                                              setIsUploadingPDF(false);
+                                           }
+                                        }}
                                      />
                                      <button type="button" disabled={isUploadingPDF} className={`w-full h-[44px] rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest transition-all ${isUploadingPDF ? 'bg-brand-blue-deep text-white bg-progress-stripes shadow-inner cursor-wait' : 'bg-brand-blue text-white hover:opacity-90'}`}>
                                         {isUploadingPDF ? (
@@ -1221,10 +1231,17 @@ export default function AdminDashboard() {
                                  if (!error) {
                                     notify('success', 'Article saved.');
                                     setIsAddingPost(false);
-                                    setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' });
+                                    setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false });
                                     fetchPosts();
-                                 } else throw error;
-                              } catch { notify('error', 'Failed to save.'); }
+                                 } else {
+                                    console.error("Save error:", error);
+                                    if (error.code === '42703') {
+                                        notify('error', 'Database out of sync. Please run the provided SQL script to enable Soft-Delete.');
+                                    } else throw error;
+                                 }
+                              } catch (err: unknown) { 
+                                 notify('error', 'Failed to save article. Check your connection or schema.'); 
+                              }
                            }} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">
                              Save Article
                            </button>
@@ -1737,8 +1754,15 @@ export default function AdminDashboard() {
                                    else if (confirmDelete.type === 'lead') fetchLeads();
                                    else fetchPosts();
                                    setConfirmDelete(null);
-                                } else throw error;
-                             } catch { notify('error', 'Purge fault.'); }
+                                } else {
+                                   console.error("Purge error:", error);
+                                   if (error.code === '42703') {
+                                       notify('error', 'Schema Mismatch: Please run the recovery SQL script in Supabase.');
+                                   } else throw error;
+                                }
+                             } catch (err: unknown) { 
+                                notify('error', 'Purge fault. Internal database error.'); 
+                             }
                              setIsDeleting(false);
                           }} 
                           className="flex-1 py-3 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20"

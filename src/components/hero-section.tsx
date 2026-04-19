@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,12 +47,18 @@ export function HeroSection() {
            initial={{ scale: 1.2, filter: "blur(20px)" }}
            animate={{ scale: 1, filter: "blur(0px)" }}
            transition={{ duration: 2, ease: "easeOut" }}
-           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-           style={{ 
-             backgroundImage: `url('${heroImageUrl}')`,
-             '--hero-bg': `url('${heroImageUrl}')` 
-           } as React.CSSProperties}
-        />
+           className="absolute inset-0"
+        >
+          <Image
+            src={heroImageUrl}
+            alt="Aloha Properties Luxury Estate"
+            fill
+            priority
+            quality={85}
+            className="object-cover"
+            sizes="100vw"
+          />
+        </motion.div>
         <div className="absolute inset-0 bg-black/30 dark:bg-black/50 transition-colors duration-700" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[var(--background)]/80 via-[var(--background)]/20 to-transparent" />
       </motion.div>

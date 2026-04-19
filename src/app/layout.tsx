@@ -6,6 +6,7 @@ import { StatusProvider } from "@/context/status-context";
 import { CurrencyProvider } from "@/context/currency-context";
 import { ComparisonProvider } from "@/context/comparison-context";
 import { VisitorTracker } from "@/components/visitor-tracker";
+import { BackToTop } from "@/components/back-to-top";
 
 const outfit = Outfit({
   variable: "--font-outfit",

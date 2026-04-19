@@ -47,10 +47,12 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group relative z-10" aria-label="Aloha Properties Home">
               <div className="relative w-10 h-10 group-hover:scale-105 transition-transform">
-                <img 
+                <Image 
                   src="/images/brand/aloha-logo.png" 
                   alt="Aloha Properties Logo" 
-                  className="absolute inset-0 w-full h-full object-contain"
+                  fill
+                  priority
+                  className="object-contain"
                 />
               </div>
               <span className={`font-heading text-xl font-black tracking-tighter transition-all duration-500 ${scrolled ? "text-[var(--foreground)]" : "text-white drop-shadow-md"}`}>

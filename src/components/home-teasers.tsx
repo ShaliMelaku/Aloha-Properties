@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, BookOpen, LayoutGrid, MessageSquare, X, ExternalLink, Clock, Newspaper } from "lucide-react";
 import Image from "next/image";
@@ -27,6 +27,28 @@ interface NewsArticle {
 }
 
 export function VisionTeaser() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Front card — full intensity tilt
+  const rotateXFront = useTransform(mouseY, [-0.5, 0.5], [12, -12]);
+  const rotateYFront = useTransform(mouseX, [-0.5, 0.5], [-12, 12]);
+  // Back-left card — exaggerated Y for strong parallax
+  const rotateXBackL = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
+  const rotateYBackL = useTransform(mouseX, [-0.5, 0.5], [-20, 20]);
+  // Back-right card — inverted Y for depth separation
+  const rotateXBackR = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
+  const rotateYBackR = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+  const handleMouseLeave = () => { mouseX.set(0); mouseY.set(0); };
+
   return (
     <section className="py-20 md:py-32 px-6 bg-[var(--background)] overflow-hidden">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-20">
@@ -41,69 +63,157 @@ export function VisionTeaser() {
             <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-blue">Aloha Vision</span>
           </div>
           <h2 className="text-4xl sm:text-5xl md:text-7xl font-heading font-black tracking-tighter leading-[0.9]">
-             DEFINING <br />
-             <span className="opacity-30 italic">LUXURY.</span>
+            DEFINING <br />
+            <span className="opacity-30 italic">LUXURY.</span>
           </h2>
           <p className="text-base md:text-lg opacity-60 font-medium leading-relaxed max-w-md mx-auto md:mx-0">
-             From bespoke placement to global investment standards, discover how we are reshaping the Addis Ababa skyline.
+            From bespoke placement to global investment standards, discover how we are reshaping the Addis Ababa skyline.
           </p>
           <Link href="/about" className="btn-premium-primary text-xs tracking-wider uppercase inline-flex items-center gap-2 group">
-             Our Journey <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
+            Our Journey <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
           </Link>
         </motion.div>
 
-        {/* Poker Card Stack */}
-        <div className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center overflow-hidden rounded-[2rem]">
-          {/* Card 1 (Back Left) */}
+        {/* Interactive Poker Card Stack */}
+        <div
+          ref={containerRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center"
+          style={{ perspective: '1200px', cursor: 'crosshair' }}
+        >
+          {/* Card 1 — Back Left */}
           <motion.div
             initial={{ opacity: 0, x: 50, rotate: 0 }}
             whileInView={{ opacity: 1, x: -55, rotate: -10 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            style={{ rotateX: rotateXBackL, rotateY: rotateYBackL, position: 'absolute', zIndex: 10 }}
+            className="aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group"
           >
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
-              alt="Luxury Property Back"
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
+              alt="Luxury Residence"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              sizes="(max-width: 768px) 50vw, 30vw"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <p className="text-white/70 text-[10px] font-medium italic leading-snug">&quot;Architecture is where art meets science.&quot;</p>
+            </div>
           </motion.div>
-          {/* Card 2 (Back Right) */}
+
+          {/* Card 2 — Back Right */}
           <motion.div
             initial={{ opacity: 0, x: -50, rotate: 0 }}
             whileInView={{ opacity: 1, x: 55, rotate: 10 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-            className="absolute aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+            style={{ rotateX: rotateXBackR, rotateY: rotateYBackR, position: 'absolute', zIndex: 10 }}
+            className="aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group"
           >
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80"
-              alt="Luxury Property Right"
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
+              alt="Luxury Interior"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              sizes="(max-width: 768px) 50vw, 30vw"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <p className="text-white/70 text-[10px] font-medium italic leading-snug">&quot;The finest homes are silent poetry.&quot;</p>
+            </div>
           </motion.div>
-          {/* Card 3 (Center Front) — always visible */}
+
+          {/* Card 3 — Center Front (primary) */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0, rotate: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="absolute aspect-[4/5] w-52 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 z-20"
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+            style={{ rotateX: rotateXFront, rotateY: rotateYFront, position: 'absolute', zIndex: 20 }}
+            whileHover={{ scale: 1.03 }}
+            className="aspect-[4/5] w-52 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 group"
           >
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80"
-              alt="Aloha Luxury Focus"
-              className="absolute inset-0 w-full h-full object-cover"
+              alt="Aloha Signature Property"
+              fill
+              priority
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              sizes="(max-width: 768px) 60vw, 40vw"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
             <div className="absolute bottom-5 md:bottom-8 left-5 md:left-8 right-5 md:right-8">
-               <div className="w-8 md:w-12 h-1 bg-brand-blue mb-3 md:mb-4" />
-                <p className="text-white text-sm md:text-lg font-heading font-black tracking-tight leading-tight">&quot;Integrity is the bedrock of our investment strategy.&quot;</p>
+              <div className="w-8 md:w-12 h-1 bg-brand-blue mb-3 md:mb-4" />
+              <p className="text-white text-sm md:text-lg font-heading font-black tracking-tight leading-tight">
+                &quot;Integrity is the bedrock of our investment strategy.&quot;
+              </p>
             </div>
           </motion.div>
         </div>
       </div>
     </section>
+  );
+}
+
+// Interactive property poker card with 3D mouse-tracking tilt and unique quote
+function PropertyPokerCard({ prop, idx }: { prop: PartialProperty; idx: number }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [8, -8]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-8, 8]);
+
+  const QUOTES = [
+    '"Crafted for the visionary few."',
+    '"Where heritage meets modern luxury."',
+    '"The art of living, elevated."',
+  ];
+  const FALLBACKS = [
+    'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80',
+  ];
+  const imgSrc = prop.cover_image || prop.images?.[0] || FALLBACKS[idx % FALLBACKS.length];
+  const quote = QUOTES[idx % QUOTES.length];
+
+  return (
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: idx * 0.1 }}
+      onMouseMove={(e) => {
+        const rect = cardRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+        mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+      }}
+      onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
+      style={{ rotateX, rotateY, perspective: 1000 }}
+      whileHover={{ scale: 1.03, boxShadow: '0 32px 64px rgba(0,0,0,0.45)' }}
+      className="group relative aspect-[3/4] rounded-[2.5rem] overflow-hidden cursor-pointer"
+    >
+      <Image
+        src={imgSrc}
+        alt={prop.name}
+        fill
+        className="object-cover group-hover:scale-110 transition-transform duration-700"
+        sizes="(max-width: 768px) 100vw, 33vw"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      <div className="absolute bottom-8 left-8 right-8">
+        <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-1">{prop.location}</p>
+        <h4 className="text-2xl font-heading font-black text-white tracking-tight mb-3">{prop.name}</h4>
+        <p className="text-xs text-white/60 italic font-medium leading-snug
+          translate-y-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0
+          transition-all duration-500 ease-out">{quote}</p>
+      </div>
+      <Link href={`/portfolio?id=${prop.id}`} className="absolute inset-0 z-10" />
+    </motion.div>
   );
 }
 
@@ -118,7 +228,6 @@ export function PortfolioTeaser() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(3);
-      
       if (data) setProperties(data);
       setLoading(false);
     }
@@ -129,51 +238,23 @@ export function PortfolioTeaser() {
     <section className="py-32 px-6 bg-slate-500/5 border-y border-[var(--border)]">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
         <div className="max-w-xl text-left">
-           <h2 className="text-4xl md:text-6xl font-heading font-black tracking-tighter mb-4 text-[var(--foreground)]">
-              CURATED <br />
-              <span className="opacity-30 italic">COLLECTIONS.</span>
-           </h2>
-           <p className="opacity-60 font-medium text-[var(--foreground)]">A selection of premium high-performance units from the Aloha Registry.</p>
+          <h2 className="text-4xl md:text-6xl font-heading font-black tracking-tighter mb-4 text-[var(--foreground)]">
+            CURATED <br />
+            <span className="opacity-30 italic">COLLECTIONS.</span>
+          </h2>
+          <p className="opacity-60 font-medium text-[var(--foreground)]">A selection of premium high-performance units from the Aloha Registry.</p>
         </div>
         <Link href="/portfolio" className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-blue text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-brand-blue/20">
-           Enter Registry <LayoutGrid size={16} className="group-hover:rotate-12 transition-transform" />
+          Enter Registry <LayoutGrid size={16} className="group-hover:rotate-12 transition-transform" />
         </Link>
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
         {loading ? (
-          [1,2,3].map(i => <div key={i} className="aspect-[3/4] rounded-[2.5rem] bg-slate-500/10 animate-pulse" />)
-        ) : properties.map((prop, idx) => {
-          // Unique fallback images so cards are never identical
-          const fallbacks = [
-            "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80",
-          ];
-          const imgSrc = prop.cover_image || prop.images?.[0] || fallbacks[idx % fallbacks.length];
-          return (
-            <motion.div 
-              key={prop.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="group relative aspect-[3/4] rounded-[2.5rem] overflow-hidden"
-            >
-              <img 
-                src={imgSrc} 
-                alt={prop.name} 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-1">{prop.location}</p>
-                 <h4 className="text-2xl font-heading font-black text-white tracking-tight">{prop.name}</h4>
-              </div>
-              <Link href={`/portfolio?id=${prop.id}`} className="absolute inset-0 z-10" />
-            </motion.div>
-          );
-        })}
+          [1, 2, 3].map(i => <div key={i} className="aspect-[3/4] rounded-[2.5rem] bg-slate-500/10 animate-pulse" />)
+        ) : properties.map((prop, idx) => (
+          <PropertyPokerCard key={prop.id} prop={prop} idx={idx} />
+        ))}
       </div>
     </section>
   );
@@ -226,10 +307,12 @@ function NewsStoryModal({ article, onClose }: { article: NewsArticle; onClose: (
             </div>
           ) : article.image ? (
             <div className="relative w-full h-52 sm:h-64 flex-shrink-0 overflow-hidden">
-              <img
+              <Image
                 src={article.image}
                 alt={article.title}
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 640px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
               {/* Breaking badge on image */}
@@ -411,10 +494,12 @@ export function TrendsTeaser() {
                   {/* Cover image */}
                   {topArticle.image && (
                     <div className="relative h-48 sm:h-64 w-full overflow-hidden flex-shrink-0">
-                      <img
+                      <Image
                         src={topArticle.image}
                         alt={topArticle.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 800px"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-black/20 to-transparent" />
                     </div>
@@ -469,7 +554,13 @@ export function TrendsTeaser() {
                     {/* Thumbnail */}
                     {art.image && (
                       <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                        <img src={art.image} alt={art.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <Image 
+                          src={art.image} 
+                          alt={art.title} 
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500" 
+                          sizes="80px"
+                        />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
