@@ -9,6 +9,10 @@ import { ChevronDown, MapPin, HardHat, BedDouble, Bath, Maximize, Banknote, Arro
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";
+import { X } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const PropertyMap = dynamic(() => import("./property-map"), { ssr: false });
 
 export function PropertyCard({ property, index }: { property: SupabaseProperty, index: number }) {
   const { formatPrice } = useCurrency();
@@ -16,6 +20,7 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
   const [unitIdx, setUnitIdx] = useState(0);
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
 
   const unit = property.units?.[unitIdx] || property.units?.[0];
   
@@ -82,10 +87,10 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
             <h3 className="font-heading text-2xl font-black tracking-tight mb-1 group-hover:text-brand-blue transition-colors">
               {property.name}
             </h3>
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+            <button onClick={() => setMapOpen(true)} className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-brand-blue transition-colors text-left" title="View Property on Map">
               <MapPin size={12} className="text-brand-blue" />
               {property.location}
-            </div>
+            </button>
           </div>
         </div>
 
@@ -203,6 +208,34 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
           )}
         </AnimatePresence>
       </div>
+
+      {/* Map Modal overlay strictly contained to the card for neat aesthetics */}
+      <AnimatePresence>
+        {mapOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col p-4"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-white font-black uppercase text-xs tracking-widest flex items-center gap-2 drop-shadow-md">
+                <MapPin size={14} className="text-brand-blue" /> Location
+              </div>
+              <button onClick={() => setMapOpen(false)} className="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors drop-shadow-md">
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 rounded-[1.5rem] overflow-hidden border border-white/20 shadow-2xl relative">
+              <PropertyMap lat={property.lat} lng={property.lng} name={property.name} location={property.location} />
+            </div>
+            <div className="mt-4 p-4 rounded-2xl bg-black/60 text-white/80 text-[10px] font-bold tracking-wider leading-relaxed border border-white/10 backdrop-blur-md drop-shadow-md">
+              Precise location for '{property.name}' at {property.location}.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </motion.div>
   );
 }

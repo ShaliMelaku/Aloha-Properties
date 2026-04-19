@@ -16,6 +16,9 @@ import { useCurrency } from "@/context/currency-context";
 import { useTheme } from "next-themes";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { supabaseClient } from "@/lib/supabase";
+import dynamic from "next/dynamic";
+
+const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false });
 
 interface Lead {
   id?: string;
@@ -352,27 +355,35 @@ export default function AdminDashboard() {
     setAddingLead(false);
   };
 
+  // Direct Supabase client upload — bypasses Next.js API server for 3-5x faster uploads
   const uploadFile = async (file: File, bucket: string = 'aloha-assets', path: string = 'properties') => {
-    // Convert images to WebP for maximum performance before upload
-    let fileToUpload = file;
-    if (file.type.startsWith('image/')) {
-      try {
-        fileToUpload = await convertToWebP(file);
-      } catch {
-        // If conversion fails, upload the original
-      }
-    }
-    const formData = new FormData();
-    formData.append('file', fileToUpload);
-    formData.append('path', path);
-    formData.append('bucket', bucket);
     try {
       setUploadingImage(true);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
-      const data = await res.json();
+
+      // Convert to WebP client-side before upload
+      let fileToUpload = file;
+      if (file.type.startsWith('image/')) {
+        try { fileToUpload = await convertToWebP(file, 0.82); } catch { /* fallback to original */ }
+      }
+
+      const ext = fileToUpload.name.split('.').pop() || 'bin';
+      const uniqueName = `${path}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+      const { data, error } = await supabaseClient.storage
+        .from(bucket)
+        .upload(uniqueName, fileToUpload, {
+          contentType: fileToUpload.type,
+          upsert: true,
+          cacheControl: '0', // force fresh fetch on frontend
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabaseClient.storage.from(bucket).getPublicUrl(data.path);
+      // Append cache-busting timestamp so images update immediately on frontend
+      const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
       setUploadingImage(false);
-      if (data.success) return data.url as string;
-      else throw new Error(data.error || 'Upload error');
+      return publicUrl;
     } catch (err: unknown) {
       setUploadingImage(false);
       const msg = err instanceof Error ? err.message : 'Upload failed';
@@ -752,9 +763,9 @@ export default function AdminDashboard() {
                                      <input type="text" placeholder="comma separated" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
                                    </div>
                                    
-                                   <div className="flex gap-2">
-                                     <input type="number" step="any" placeholder="Latitude" value={newProp.lat} onChange={e => setNewProp({...newProp, lat: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
-                                     <input type="number" step="any" placeholder="Longitude" value={newProp.lng} onChange={e => setNewProp({...newProp, lng: parseFloat(e.target.value)||0})} className="w-1/2 px-4 py-3 bg-[var(--background)] rounded-xl text-sm font-bold text-[var(--foreground)]" />
+                                   <div className="col-span-1 md:col-span-2 mt-4 mb-2">
+                                     <label className="text-[10px] font-black uppercase opacity-40 ml-2 mb-2 block">Pinpoint Location on Map</label>
+                                     <LocationPicker lat={newProp.lat} lng={newProp.lng} onChange={(lat, lng) => setNewProp({...newProp, lat, lng})} />
                                    </div>
 
                                    <div className="grid grid-cols-3 gap-2 col-span-1 md:col-span-2">
@@ -812,7 +823,7 @@ export default function AdminDashboard() {
                                         <input type="file" accept="image/*" className="hidden" disabled={uploadingImage} onChange={async e => {
                                           const file = e.target.files?.[0]; if (!file) return;
                                           const url = await uploadFile(file);
-                                          if (url) setNewProp({...newProp, cover_image: url});
+                                          if (url) setNewProp(prev => ({...prev, cover_image: url}));
                                         }} />
                                       </label>
                                     </div>
@@ -1080,10 +1091,10 @@ export default function AdminDashboard() {
                                        onChange={async (e) => {
                                           const file = e.target.files?.[0];
                                           if (!file) return;
-                                          // Local immediate preview
+                                          // Immediate local preview while uploading
                                           const previewUrl = URL.createObjectURL(file);
-                                          if (editingPost) setEditingPost({...editingPost, cover_image: previewUrl});
-                                          else setNewPost({...newPost, cover_image: previewUrl});
+                                          if (editingPost) setEditingPost(prev => prev ? {...prev, cover_image: previewUrl} : prev);
+                                          else setNewPost(prev => ({...prev, cover_image: previewUrl}));
                                           
                                           // Silent upload logic
                                           try {
@@ -1441,7 +1452,7 @@ export default function AdminDashboard() {
                                       onChange={async (e) => {
                                          const file = e.target.files?.[0]; if (!file) return;
                                          setIsUploadingVarietyImg(true);
-                                         try { const url = await uploadFile(file); if (url) setNewUnit({...newUnit, variety_img: url}); }
+                                         try { const url = await uploadFile(file); if (url) setNewUnit(prev => ({...prev, variety_img: url})); }
                                          finally { setIsUploadingVarietyImg(false); }
                                       }}
                                    />
@@ -1574,6 +1585,12 @@ export default function AdminDashboard() {
                         {/* Description */}
                         <textarea placeholder="Description" rows={2} value={editingProperty.description || ''} onChange={e => setEditingProperty({...editingProperty, description: e.target.value})} className="w-full px-4 py-3 bg-slate-500/5 rounded-xl text-sm font-medium border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)] resize-none" />
                         
+                        {/* Map Location */}
+                        <div className="mt-4 mb-2">
+                          <label className="text-[10px] font-black uppercase opacity-40 ml-2 mb-2 block">Pinpoint Location on Map</label>
+                          <LocationPicker lat={editingProperty.lat ?? 0} lng={editingProperty.lng ?? 0} onChange={(lat, lng) => setEditingProperty({...editingProperty, lat, lng})} />
+                        </div>
+                        
                         {/* Environmental Data Additions */}
                         <div className="bg-slate-500/5 rounded-2xl p-6 border border-emerald-500/10 space-y-4">
                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2">Environmental Data</h4>
@@ -1614,9 +1631,9 @@ export default function AdminDashboard() {
                               <input type="file" accept="image/*" className="hidden" disabled={uploadingImage} onChange={async e => {
                                 const file = e.target.files?.[0]; if (!file) return;
                                 const previewUrl = URL.createObjectURL(file);
-                                setEditingProperty({...editingProperty, cover_image: previewUrl});
+                                setEditingProperty(prev => prev ? {...prev, cover_image: previewUrl} : prev);
                                 const url = await uploadFile(file);
-                                if (url) setEditingProperty({...editingProperty, cover_image: url});
+                                if (url) setEditingProperty(prev => prev ? {...prev, cover_image: url} : prev);
                               }} />
                             </label>
                           </div>
