@@ -141,9 +141,9 @@ export function MarketingTab({ onNotify }: { onNotify: any }) {
           Campaign Editor
         </h2>
         <div className="space-y-6">
-           <input placeholder="Subject Line" value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 text-sm font-bold outline-none border border-transparent focus:border-brand-blue text-[var(--foreground)]" />
-           <textarea rows={10} placeholder="Personalize with {{name}}..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 text-sm font-medium outline-none border border-transparent focus:border-brand-blue resize-none text-[var(--foreground)]" />
-           <button onClick={handleLaunch} disabled={sending} className="btn-premium-primary w-full py-5 flex items-center justify-center gap-3 text-xs tracking-widest font-heading">
+           <input title="Campaign Subject" placeholder="Subject Line" value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 text-sm font-bold outline-none border border-transparent focus:border-brand-blue text-[var(--foreground)]" />
+           <textarea title="Campaign Message Body" rows={10} placeholder="Personalize with {{name}}..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 text-sm font-medium outline-none border border-transparent focus:border-brand-blue resize-none text-[var(--foreground)]" />
+           <button title="Launch Campaign Sequence" onClick={handleLaunch} disabled={sending} className="btn-premium-primary w-full py-5 flex items-center justify-center gap-3 text-xs tracking-widest font-heading">
              {sending ? <Activity className="animate-spin" /> : <>Launch Sequence <Send size={18} /></>}
            </button>
         </div>

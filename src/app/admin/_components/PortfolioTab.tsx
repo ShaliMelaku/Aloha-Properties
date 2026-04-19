@@ -91,11 +91,11 @@ export function PortfolioTab({ properties, loading, onRefresh, onNotify, onEdit,
                    <div className="grid grid-cols-3 gap-6">
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase opacity-40 ml-2">Air Quality</label>
-                        <input type="number" value={newProp.air_quality_index} onChange={e => setNewProp({...newProp, air_quality_index: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]" />
+                        <input type="number" title="Air Quality Index" placeholder="AQI" value={newProp.air_quality_index} onChange={e => setNewProp({...newProp, air_quality_index: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase opacity-40 ml-2">Risk Level</label>
-                        <select value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]">
+                        <select title="Select Environment Risk Level" value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]">
                           <option value="Low">Low</option>
                           <option value="Moderate">Moderate</option>
                           <option value="High">High</option>
@@ -103,7 +103,7 @@ export function PortfolioTab({ properties, loading, onRefresh, onNotify, onEdit,
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase opacity-40 ml-2">Discount %</label>
-                        <input type="number" value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]" />
+                        <input type="number" title="Discount Percentage" placeholder="0" value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]" />
                       </div>
                    </div>
 
@@ -143,8 +143,8 @@ export function PortfolioTab({ properties, loading, onRefresh, onNotify, onEdit,
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => onManageUnits(prop.id)} className="bg-brand-blue/10 text-brand-blue px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue/20">Manage Units</button>
-                        <button onClick={() => onEdit(prop)} className="bg-slate-500/10 text-[var(--foreground)] p-2 rounded-lg hover:bg-slate-500/20"><Edit3 size={16}/></button>
-                        <button onClick={() => onDelete(prop)} className="bg-red-500/10 text-red-500 p-2 rounded-lg hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
+                        <button onClick={() => onEdit(prop)} className="bg-slate-500/10 text-[var(--foreground)] p-2 rounded-lg hover:bg-slate-500/20" title="Edit Property"><Edit3 size={16}/></button>
+                        <button onClick={() => onDelete(prop)} className="bg-red-500/10 text-red-500 p-2 rounded-lg hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity" title="Delete Property"><Trash2 size={16}/></button>
                       </div>
                    </div>
                    <div className="grid grid-cols-3 gap-4 pt-2">
@@ -162,7 +162,7 @@ export function PortfolioTab({ properties, loading, onRefresh, onNotify, onEdit,
                         <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Progress</p>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500" style={{ width: `${prop.progress?.[0]?.percent || 0}%` }} />
+                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${prop.progress?.[0]?.percent || 0}%` }} />
                           </div>
                           <span className="text-[9px] font-black text-emerald-500">{prop.progress?.[0]?.percent || 0}%</span>
                         </div>

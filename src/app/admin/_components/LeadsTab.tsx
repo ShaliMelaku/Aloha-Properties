@@ -158,7 +158,7 @@ export function LeadsTab({ leads, loading, onRefresh, onNotify, onIndividualOutr
                     <h3 className="text-2xl font-heading font-black tracking-tight uppercase text-[var(--foreground)]">{viewingLead.name}</h3>
                     <p className="text-xs font-bold opacity-40 uppercase tracking-widest text-[var(--foreground)]">{viewingLead.email} {viewingLead.phone ? `\u2022 ${viewingLead.phone}` : ''}</p>
                  </div>
-                 <button onClick={() => setViewingLead(null)} className="text-[var(--foreground)]/40 hover:text-red-400"><X size={20}/></button>
+                  <button onClick={() => setViewingLead(null)} className="text-[var(--foreground)]/40 hover:text-red-400" title="Close Lead Details"><X size={20}/></button>
               </div>
               
               <div className="space-y-6">
@@ -176,6 +176,7 @@ export function LeadsTab({ leads, loading, onRefresh, onNotify, onIndividualOutr
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Lead Status</label>
                     <select 
+                      title="Select Lead Status"
                       value={viewingLead.status || 'new'} 
                       onChange={e => setViewingLead({...viewingLead, status: e.target.value as any})}
                       className="w-full bg-slate-500/5 px-4 py-3 rounded-xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]"
@@ -192,6 +193,8 @@ export function LeadsTab({ leads, loading, onRefresh, onNotify, onIndividualOutr
                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Internal Notes</label>
                     <textarea 
                        rows={4} 
+                       title="Internal Notes"
+                       placeholder="Add internal notes about this prospect..."
                        value={viewingLead.notes || ''} 
                        onChange={e => setViewingLead({...viewingLead, notes: e.target.value})}
                        className="w-full bg-slate-500/5 px-4 py-3 rounded-xl border border-transparent focus:border-brand-blue outline-none text-sm font-medium resize-none text-[var(--foreground)]"
