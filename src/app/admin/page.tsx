@@ -195,7 +195,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/news');
       const data = await res.json();
       if (data.success) {
-        notify('success', `News Desk Synchronized: ${data.posted} new articles integrated.`);
+        if (data.posted > 0) notify('success', `News Desk Synchronized: ${data.posted} new articles integrated.`);
         fetchPosts();
       } else {
         notify('error', 'Sync failed: ' + (data.error || 'Unknown error'));
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
   };
 
   const fetchPosts = async () => {
-    const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
+    const { data } = await supabaseClient.from('posts').select('*').eq('is_deleted', false).order('created_at', { ascending: false });
     setPosts(data || []);
   };
 

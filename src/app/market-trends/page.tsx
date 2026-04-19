@@ -13,6 +13,7 @@ import {
   X, 
   Download,
   Share2,
+  ExternalLink,
   User
 } from "lucide-react";
 import Image from "next/image";
@@ -180,6 +181,7 @@ export default function MarketTrendsHub() {
                                fill
                                className="object-cover group-hover:scale-105 transition-transform duration-700"
                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
+                               unoptimized={true}
                              />
                              <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
@@ -328,12 +330,25 @@ export default function MarketTrendsHub() {
                                  fill
                                  className="object-cover" 
                                  sizes="(max-width: 1200px) 100vw, 1200px"
+                                 unoptimized={true}
                                />
                            </div>
                         )}
                         <div className="prose prose-luxury lg:prose-xl text-[var(--foreground)]">
                            <p className="text-xl font-bold italic opacity-60 leading-relaxed mb-8 border-l-4 border-brand-blue pl-6">{selectedPost.excerpt}</p>
                            <div className="whitespace-pre-wrap leading-loose font-medium opacity-80" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+                           {selectedPost.source_url && (
+                             <div className="mt-12 pt-8 border-t border-[var(--border)] text-center">
+                               <a 
+                                 href={selectedPost.source_url} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer" 
+                                 className="btn-premium-primary px-8 py-4 text-xs font-black uppercase inline-flex items-center tracking-widest gap-3 hover:scale-105 transition-all shadow-xl shadow-brand-blue/20"
+                               >
+                                 Read Full Original Article <ExternalLink size={16} />
+                               </a>
+                             </div>
+                           )}
                         </div>
                      </div>
                   </div>

@@ -222,7 +222,7 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
               <div className="text-white font-black uppercase text-xs tracking-widest flex items-center gap-2 drop-shadow-md">
                 <MapPin size={14} className="text-brand-blue" /> Location
               </div>
-              <button onClick={() => setMapOpen(false)} className="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors drop-shadow-md">
+              <button title="Close Map Modal" onClick={() => setMapOpen(false)} className="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors drop-shadow-md">
                 <X size={14} />
               </button>
             </div>

@@ -56,7 +56,7 @@ export function VisionTeaser() {
           initial={{ opacity: 0, x: -50 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          className="flex-1 space-y-6 md:space-y-8 text-center md:text-left"
+          className="flex-1 space-y-6 md:space-y-8 text-center md:text-left relative z-20"
         >
           <div className="flex items-center gap-3 justify-center md:justify-start">
             <div className="w-12 h-px bg-brand-blue" />
@@ -80,7 +80,7 @@ export function VisionTeaser() {
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center"
-          style={{ perspective: '1200px', cursor: 'crosshair' }}
+          style={{ perspective: '1200px' }}
         >
           {/* Card 1 — Back Left */}
           <motion.div
@@ -560,6 +560,7 @@ export function TrendsTeaser() {
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500" 
                           sizes="80px"
+                          unoptimized={true}
                         />
                       </div>
                     )}
