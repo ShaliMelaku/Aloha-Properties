@@ -55,16 +55,18 @@ export async function GET(request: Request) {
       // Create a slug from title
       const slug = art.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 60);
       
-      // DE-DUPLICATION: Check if this article was ever soft-deleted
+      // DE-DUPLICATION: Check if this article was already fetched
       const { data: existing } = await supabase
         .from('posts')
-        .select('is_deleted')
+        .select('id')
         .eq('slug', slug)
         .maybeSingle();
 
-      if (existing?.is_deleted) {
-        continue; // Skip re-inserting deleted posts
+      if (existing) {
+        continue; // Skip re-inserting and padding the post count for already synced news.
       }
+
+
 
       await supabase.from('posts').upsert({
         title: art.title,

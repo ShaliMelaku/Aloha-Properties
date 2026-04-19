@@ -282,7 +282,7 @@ export default function MarketTrendsHub() {
                   <div className="flex-1 bg-slate-800 relative">
                      {viewingPDF.file_url ? (
                         <iframe 
-                          src={`${viewingPDF.file_url}#toolbar=0&view=FitH`} 
+                          src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewingPDF.file_url)}&embedded=true`} 
                           className="absolute inset-0 w-full h-full border-0"
                           title={`PDF Viewer: ${viewingPDF.title}`}
                         />
