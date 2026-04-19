@@ -169,7 +169,7 @@ export function PortfolioGallery() {
 
         {/* Results Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="wait">
             {loading ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="col-span-full py-32 text-center text-[var(--foreground)]/40 font-bold tracking-widest uppercase text-sm">
                  Decrypting Registry...

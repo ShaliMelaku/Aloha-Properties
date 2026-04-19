@@ -87,7 +87,7 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
       onMouseEnter={() => setActivePulse(property)}
       onMouseLeave={() => setActivePulse(null)}
       viewport={{ once: true }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
+      transition={{ duration: 0.5 }}
       className="group relative bg-[var(--card)] rounded-luxury overflow-hidden border border-[var(--border)] transition-all duration-500 hover:shadow-2xl hover:shadow-brand-blue/5 hover:-translate-y-1"
     >
       {/* Comparison Toggle */}
