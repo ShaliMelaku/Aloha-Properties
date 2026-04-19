@@ -350,8 +350,11 @@ export default function AdminDashboard() {
     try {
       const { error } = await supabaseClient.from('leads').insert({ name: newLead.name, email: newLead.email, phone: newLead.phone, interest: newLead.interest, status: newLead.status || 'new' });
       if (!error) { notify('success', 'Lead added.'); setIsAddingLead(false); setNewLead({ name: '', email: '', phone: '', interest: '', status: 'new' }); fetchLeads(); }
-      else throw error;
-    } catch { notify('error', 'Failed to add lead.'); }
+      else {
+        console.error('Lead insert error:', JSON.stringify(error));
+        notify('error', `RLS/DB Error: ${error.message || error.code}. Run the master_rls_unlock.sql in Supabase.`);
+      }
+    } catch (e: unknown) { notify('error', `Failed to add lead: ${e instanceof Error ? e.message : 'unknown'}`); }
     setAddingLead(false);
   };
 
@@ -1096,17 +1099,19 @@ export default function AdminDashboard() {
                                           if (editingPost) setEditingPost(prev => prev ? {...prev, cover_image: previewUrl} : prev);
                                           else setNewPost(prev => ({...prev, cover_image: previewUrl}));
                                           
-                                          // Silent upload logic
+                                          // Fixed: use functional setState and getPublicUrl
                                           try {
                                              const fileExt = file.name.split('.').pop();
-                                             const fileName = `${Math.random()}.${fileExt}`;
-                                             const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file);
+                                             const fileName = 'covers/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + fileExt;
+                                             const { data, error } = await supabaseClient.storage.from('blog-media').upload(fileName, file, { upsert: true });
                                              if (error) throw error;
-                                             const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/blog-media/${data.path}`;
-                                             if (editingPost) setEditingPost({...editingPost, cover_image: url});
-                                             else setNewPost({...newPost, cover_image: url});
-                                          } catch { 
-                                             notify('error', 'Upload failed'); 
+                                             const { data: urlData } = supabaseClient.storage.from('blog-media').getPublicUrl(data.path);
+                                             const url = urlData.publicUrl + '?v=' + Date.now();
+                                             if (editingPost) setEditingPost(prev => prev ? {...prev, cover_image: url} : prev);
+                                             else setNewPost(prev => ({...prev, cover_image: url}));
+                                             notify('success', 'Cover image uploaded.');
+                                          } catch (err) {
+                                             notify('error', 'Upload failed: ' + (err instanceof Error ? err.message : 'Check storage RLS'));
                                           }
                                        }}
                                     />
@@ -1171,28 +1176,50 @@ export default function AdminDashboard() {
                                         accept=".pdf"
                                         title="Upload PDF Asset"
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        onChange={async (e) => {
-                                           const file = e.target.files?.[0];
-                                           if (!file) return;
-                                           setIsUploadingPDF(true);
-                                           try {
-                                              const pdfForm = new FormData();
-                                              pdfForm.append("file", file);
-                                              pdfForm.append("path", "reports");
-                                              pdfForm.append("bucket", "blog-media");
-                                              const res = await fetch("/api/admin/upload", { method: "POST", body: pdfForm });
-                                              const result = await res.json();
-                                              if (!result.success) throw new Error(result.error || "Upload failed");
-                                              if (editingPost) setEditingPost({...editingPost, file_url: result.url});
-                                              else setNewPost({...newPost, file_url: result.url});
-                                              notify("success", "PDF uploaded successfully.");
-                                           } catch (err) {
-                                              const message = err instanceof Error ? err.message : "Check storage permissions";
-                                              notify("error", "Upload error: " + message);
-                                           } finally {
-                                              setIsUploadingPDF(false);
-                                           }
-                                        }}
+                                        onChange={async (e) => {
+
+                                           const file = e.target.files?.[0];
+
+                                           if (!file) return;
+
+                                           setIsUploadingPDF(true);
+
+                                           try {
+
+                                              const pdfForm = new FormData();
+
+                                              pdfForm.append("file", file);
+
+                                              pdfForm.append("path", "reports");
+
+                                              pdfForm.append("bucket", "blog-media");
+
+                                              const res = await fetch("/api/admin/upload", { method: "POST", body: pdfForm });
+
+                                              const result = await res.json();
+
+                                              if (!result.success) throw new Error(result.error || "Upload failed");
+
+                                              if (editingPost) setEditingPost({...editingPost, file_url: result.url});
+
+                                              else setNewPost({...newPost, file_url: result.url});
+
+                                              notify("success", "PDF uploaded successfully.");
+
+                                           } catch (err) {
+
+                                              const message = err instanceof Error ? err.message : "Check storage permissions";
+
+                                              notify("error", "Upload error: " + message);
+
+                                           } finally {
+
+                                              setIsUploadingPDF(false);
+
+                                           }
+
+                                        }}
+
                                      />
                                      <button type="button" disabled={isUploadingPDF} className={`w-full h-[44px] rounded-xl flex items-center gap-2 justify-center font-black text-xs uppercase tracking-widest transition-all ${isUploadingPDF ? 'bg-brand-blue-deep text-white bg-progress-stripes shadow-inner cursor-wait' : 'bg-brand-blue text-white hover:opacity-90'}`}>
                                         {isUploadingPDF ? (

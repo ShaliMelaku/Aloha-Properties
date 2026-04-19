@@ -23,7 +23,7 @@ export async function fetchEthiopiaRealEstateNews(): Promise<NewsArticle[]> {
   const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(keywords)}&lang=en&max=5&apikey=${apiKey}`;
 
   const response = await fetch(url, { next: { revalidate: 3600 } });
-  
+
   if (!response.ok) {
     const errorData = await response.text();
     throw new Error(`News API Failed (${response.status}): ${errorData}`);
