@@ -29,7 +29,10 @@ export default function PropertyMap({
   location: string
 }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!mounted) return <div className="h-full w-full bg-slate-500/10 animate-pulse" />;
 

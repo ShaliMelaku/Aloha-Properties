@@ -1,18 +1,46 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export interface SupabaseUnit {
+// ── Unit Type (e.g. "2BR Deluxe", "Studio") ──────────────────
+export interface SupabaseUnitType {
   id: string;
   property_id: string;
-  type: string;
+  name: string;
   beds: number;
   baths: number;
   sqm: number;
-  price: number;
-  variety_img: string; // Floorplan image
-  is_sold: boolean;
+  price_from: number;
+  type_image: string;
+  total_units: number;
+  discount_percentage?: number;
+  downpayment_percentage?: number;
+  description?: string;
+  // Derived: count of units by status for this type
+  available_count?: number;
+  reserved_count?: number;
+  sold_count?: number;
 }
 
+// ── Individual Unit (e.g. "Unit A-101, Floor 4") ──────────────
+export interface SupabaseUnit {
+  id: string;
+  property_id: string;
+  unit_type_id?: string;
+  unit_number?: string;
+  floor_number?: number;
+  status: 'available' | 'reserved' | 'sold';
+  price?: number;
+  notes?: string;
+  // Legacy fields (kept for back-compat)
+  type?: string;
+  beds?: number;
+  baths?: number;
+  sqm?: number;
+  is_sold?: boolean;
+  variety_img?: string;
+}
+
+// ── Progress ──────────────────────────────────────────────────
 export interface SupabaseProgress {
   id: string;
   property_id: string;
@@ -22,24 +50,28 @@ export interface SupabaseProgress {
   estimated_completion: string;
 }
 
+// ── Property ──────────────────────────────────────────────────
 export interface SupabaseProperty {
   id: string;
   name: string;
-  developer: string; // Added
+  developer: string;
   location: string;
-  cover_image: string; // Standardized
-  lat: number; // Added
-  lng: number; // Added
+  cover_image: string;
+  lat: number;
+  lng: number;
   price_start?: number;
   pay_schedule?: string;
+  payment_schedule?: string;
   amenities: string[];
-  discount_percentage?: number; 
-  downpayment_percentage?: number; 
+  discount_percentage?: number;
+  downpayment_percentage?: number;
   description?: string;
-  air_quality_index?: number; // Added
-  urban_heat_index?: number;  // Added
-  env_risk_level?: string;    // Added
-  units: SupabaseUnit[];
+  video_url?: string;
+  air_quality_index?: number;
+  urban_heat_index?: number;
+  env_risk_level?: string;
+  unit_types: SupabaseUnitType[];   // NEW — apartment configurations
+  units: SupabaseUnit[];             // individual unit tracker
   progress: SupabaseProgress[];
 }
 
@@ -55,13 +87,31 @@ export function useProperties() {
           .from('properties')
           .select(`
             *,
+            unit_types:property_unit_types(*),
             units:property_units(*),
             progress:property_progress(*)
           `)
           .order('created_at', { ascending: false });
 
         if (sbError) throw sbError;
-        setProperties(data as SupabaseProperty[]);
+
+        // Enrich each unit type with live availability counts
+        const enriched = (data || []).map((prop) => {
+          const enrichedTypes = (prop.unit_types || []).map((ut: SupabaseUnitType) => {
+            const typeUnits = (prop.units || []).filter(
+              (u: SupabaseUnit) => u.unit_type_id === ut.id
+            );
+            return {
+              ...ut,
+              available_count: typeUnits.filter((u: SupabaseUnit) => u.status === 'available').length,
+              reserved_count:  typeUnits.filter((u: SupabaseUnit) => u.status === 'reserved').length,
+              sold_count:      typeUnits.filter((u: SupabaseUnit) => u.status === 'sold').length,
+            };
+          });
+          return { ...prop, unit_types: enrichedTypes };
+        });
+
+        setProperties(enriched as SupabaseProperty[]);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown database failure'));
       } finally {

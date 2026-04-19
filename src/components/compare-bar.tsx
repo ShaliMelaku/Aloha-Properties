@@ -13,10 +13,32 @@ export function CompareBar() {
   const [showModal, setShowModal] = useState(false);
   const { formatPrice } = useCurrency();
 
+  const getAvgSqmPrice = (prop: SupabaseProperty) => {
+    if (prop.unit_types && prop.unit_types.length > 0) {
+      const validTypes = prop.unit_types.filter(ut => (ut.price_from || 0) > 0 && (ut.sqm || 0) > 0);
+      if (validTypes.length === 0) return 0;
+      return validTypes.reduce((acc, ut) => acc + ((ut.price_from || 0) / (ut.sqm || 1)), 0) / validTypes.length;
+    }
+    const units = prop.units || [];
+    const validUnits = units.filter(u => u.price && u.sqm && u.price > 0 && u.sqm > 0);
+    if (validUnits.length === 0) return 0;
+    return validUnits.reduce((acc, u) => acc + ((u.price || 0) / (u.sqm || 1)), 0) / validUnits.length;
+  };
+
+  const getMinPrice = (prop: SupabaseProperty) => {
+    if (prop.unit_types && prop.unit_types.length > 0) {
+      return Math.min(...prop.unit_types.map(ut => ut.price_from || 0));
+    }
+    const prices = prop.units?.map(u => u.price || 0).filter(p => p > 0) || [];
+    return prices.length > 0 ? Math.min(...prices) : 0;
+  };
+
+  const getImage = (prop: SupabaseProperty) => {
+    return prop.unit_types?.[0]?.type_image || prop.units?.[0]?.variety_img || prop.cover_image || "/images/cover.jpg";
+  };
+
   const topValueProperty = compared.length >= 2 ? compared.reduce((prev: SupabaseProperty, curr: SupabaseProperty) => {
-    const prevAvg = (prev.units?.reduce((acc: number, u: { price: number; sqm: number }) => acc + (u.price / u.sqm), 0) || 0) / (prev.units?.length || 1);
-    const currAvg = (curr.units?.reduce((acc: number, u: { price: number; sqm: number }) => acc + (u.price / u.sqm), 0) || 0) / (curr.units?.length || 1);
-    return prevAvg < currAvg ? prev : curr;
+    return getAvgSqmPrice(prev) < getAvgSqmPrice(curr) ? prev : curr;
   }) : null;
 
   if (compared.length === 0) return null;
@@ -49,7 +71,7 @@ export function CompareBar() {
               <motion.div key={prop.id} layoutId={`compare-${prop.id}`} className="relative group flex-shrink-0">
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden border-2 border-brand-blue shadow-lg relative">
                   <Image
-                    src={prop.units?.[0]?.variety_img || "/images/cover.jpg"}
+                    src={getImage(prop)}
                     alt={prop.name}
                     fill
                     className="object-cover"
@@ -128,9 +150,8 @@ export function CompareBar() {
                 <div className="block md:hidden space-y-6">
                   {compared.map((prop: SupabaseProperty) => {
                     const isTop = topValueProperty?.id === prop.id;
-                    const minPrice = Math.min(...(prop.units?.map((u: { price: number }) => u.price) || [0]));
-                    const units = prop.units || [];
-                    const avgSqm = units.length > 0 ? units.reduce((acc: number, u: { price: number; sqm: number }) => acc + (u.price / u.sqm), 0) / units.length : 0;
+                    const minPrice = getMinPrice(prop);
+                    const avgSqm = getAvgSqmPrice(prop);
                     return (
                       <div key={prop.id} className={`rounded-3xl border overflow-hidden ${isTop ? 'border-brand-blue/40 shadow-xl shadow-brand-blue/10' : 'border-[var(--border)]'}`}>
                         {isTop && (
@@ -140,7 +161,7 @@ export function CompareBar() {
                         )}
                         <div className="relative h-48">
                           <Image 
-                            src={prop.units?.[0]?.variety_img || "/images/cover.jpg"} 
+                            src={getImage(prop)} 
                             alt={prop.name} 
                             fill
                             className="object-cover"
@@ -214,7 +235,7 @@ export function CompareBar() {
                             )}
                             <div className="relative h-44 w-full rounded-2xl overflow-hidden mb-6 border border-[var(--border)]">
                               <Image 
-                                src={prop.units?.[0]?.variety_img || "/images/cover.jpg"} 
+                                src={getImage(prop)} 
                                 alt={prop.name} 
                                 fill
                                 className="object-cover"
@@ -230,8 +251,8 @@ export function CompareBar() {
                     <tbody className="text-center font-bold">
                       {[
                         { icon: MapPin, label: 'Neighborhood', getValue: (p: SupabaseProperty) => p.location },
-                        { icon: Building2, label: 'Start Price', getValue: (p: SupabaseProperty) => formatPrice(Math.min(...(p.units?.map((u: { price: number }) => u.price) || [0]))), highlight: true },
-                        { icon: LandPlot, label: 'Avg SQM Price', getValue: (p: SupabaseProperty) => { const u = p.units||[]; const avg = u.length>0?u.reduce((a:number,v:{price:number;sqm:number})=>a+(v.price/v.sqm),0)/u.length:0; return `${formatPrice(avg)} / m²`; } },
+                        { icon: Building2, label: 'Start Price', getValue: (p: SupabaseProperty) => formatPrice(getMinPrice(p)), highlight: true },
+                        { icon: LandPlot, label: 'Avg SQM Price', getValue: (p: SupabaseProperty) => `${formatPrice(getAvgSqmPrice(p))} / m²` },
                         { icon: HardHat, label: 'Phase', getValue: (p: SupabaseProperty) => p.progress?.[0]?.status_text || 'In Progress' },
                       ].map(({ icon: Icon, label, getValue, highlight }, ri) => (
                         <tr key={label} className={ri % 2 === 1 ? 'bg-slate-500/5' : ''}>
