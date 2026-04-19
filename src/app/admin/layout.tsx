@@ -3,13 +3,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: Integrate Supabase Server-Side Auth here.
-  // When deploying, you would uncomment the following:
-  // const supabase = createServerComponentClient({ cookies })
-  // const { data: { session } } = await supabase.auth.getSession()
-  // if (!session) {
-  //   redirect('/login');
-  // }
-
-  return <>{children}</>;
+  return (
+    <div className="dark min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-brand-blue/30 selection:text-white">
+      {children}
+    </div>
+  );
 }
