@@ -11,7 +11,7 @@ export function AboutSection() {
   const values = [
     { icon: Sparkles, title: "Excellence", desc: "Curating only the top 1% of Addis Ababa development projects." },
     { icon: Handshake, title: "Transparency", desc: "No hidden fees, full developer disclosure, and verified pricing." },
-    { icon: Lightbulb, title: "Innovation", desc: "Cinematic drone tours and AI-driven market intelligence." },
+    { icon: Lightbulb, title: "Innovation", desc: "Cinematic drone tours and AI-driven market insights." },
     { icon: Heart, title: "Hospitality", desc: "The 'Aloha Spirit' is at the core of our customized service." }
   ];
 
@@ -48,7 +48,7 @@ export function AboutSection() {
                transition={{ delay: 0.1 }}
                className="text-lg text-[var(--foreground)]/60 font-medium leading-relaxed max-w-lg mb-8"
             >
-              Aloha Properties is not just a listing aggregator. We are an exclusive marketing house designed to elevate exceptional properties through cinematic storytelling and strategic intelligence.
+              Aloha Properties is not just a listing aggregator. We are an exclusive marketing house designed to elevate exceptional properties through cinematic storytelling and strategic insights.
             </motion.p>
             <motion.button 
                initial={{ opacity: 0, y: 20 }}

@@ -57,7 +57,7 @@ export function NewsletterSection() {
                 className="flex items-center gap-2 mb-6"
               >
                 <div className="w-8 h-px bg-brand-blue" />
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Market Intelligence</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Market Insights</span>
               </motion.div>
               
               <h2 className="font-heading text-4xl md:text-5xl font-black tracking-tighter mb-6">
@@ -114,7 +114,7 @@ export function NewsletterSection() {
                       <CheckCircle2 size={32} />
                     </div>
                     <h4 className="text-xl font-heading font-black tracking-tight mb-2">Access Granted</h4>
-                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Welcome to the inner circle of Aloha Intelligence.</p>
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Welcome to the inner circle of Aloha Insights.</p>
                   </motion.div>
                 )}
               </AnimatePresence>

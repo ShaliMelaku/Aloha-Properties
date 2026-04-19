@@ -54,13 +54,13 @@ export function VisionTeaser() {
 
         {/* Poker Card Stack */}
         <div className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center overflow-hidden rounded-[2rem]">
-          {/* Card 1 (Back Left) — hidden on mobile to avoid text overlap */}
+          {/* Card 1 (Back Left) */}
           <motion.div
             initial={{ opacity: 0, x: 50, rotate: 0 }}
             whileInView={{ opacity: 1, x: -55, rotate: -10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute hidden sm:block aspect-[4/5] w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
+            className="absolute aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
             <img
               src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
@@ -68,13 +68,13 @@ export function VisionTeaser() {
               className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
           </motion.div>
-          {/* Card 2 (Back Right) — hidden on mobile */}
+          {/* Card 2 (Back Right) */}
           <motion.div
             initial={{ opacity: 0, x: -50, rotate: 0 }}
             whileInView={{ opacity: 1, x: 55, rotate: 10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-            className="absolute hidden sm:block aspect-[4/5] w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
+            className="absolute aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 z-10"
           >
             <img
               src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80"
@@ -370,7 +370,7 @@ export function TrendsTeaser() {
                 <div className="w-10 h-10 rounded-xl bg-brand-blue/10 flex items-center justify-center text-brand-blue">
                   <BookOpen size={20} />
                 </div>
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-40">Intelligence Highlights</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-40">Insights Highlights</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-6xl font-heading font-black tracking-tighter text-[var(--foreground)]">
                 MARKET PERFORMANCE <br />
@@ -378,7 +378,7 @@ export function TrendsTeaser() {
               </h2>
             </div>
             <Link href="/market-trends" className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-brand-blue shrink-0 group">
-              Full Intelligence Hub
+              Full News Desk
               <div className="w-10 h-10 rounded-full border border-brand-blue/30 flex items-center justify-center group-hover:bg-brand-blue group-hover:text-white transition-all">
                 <ArrowRight size={16} />
               </div>
@@ -474,7 +474,7 @@ export function TrendsTeaser() {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-[9px] font-black uppercase tracking-widest text-brand-blue mb-1 opacity-80">
-                        {art.source?.name || 'Aloha Intelligence'}
+                        {art.source?.name || 'Aloha News'}
                       </p>
                       <h4 className="text-sm font-bold text-[var(--foreground)] line-clamp-2 leading-snug group-hover:text-brand-blue transition-colors">
                         {art.title}
@@ -494,7 +494,7 @@ export function TrendsTeaser() {
                   href="/market-trends"
                   className="flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-brand-blue/20 text-[10px] font-black uppercase tracking-widest text-brand-blue hover:bg-brand-blue/5 hover:border-brand-blue/40 transition-all"
                 >
-                  View All Intelligence <ArrowRight size={12} />
+                  View All News <ArrowRight size={12} />
                 </Link>
               </div>
             </div>

@@ -47,6 +47,7 @@ export default function MarketTrendsHub() {
       const { data } = await supabaseClient
         .from('posts')
         .select('*')
+        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
       
       if (data) {
@@ -99,7 +100,7 @@ export default function MarketTrendsHub() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
                <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-px bg-brand-blue" />
-                  <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-blue">Aloha Market Trends</span>
+                  <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-blue">Aloha News Desk</span>
                </div>
                <h1 className="text-5xl md:text-8xl font-heading font-black tracking-tighter leading-[0.85] mb-8 text-[var(--foreground)]">
                   RESEARCH <span className="opacity-30 italic">DESK.</span>
@@ -147,7 +148,7 @@ export default function MarketTrendsHub() {
       <section className="py-20 px-6 pb-40">
          <div className="max-w-6xl mx-auto">
             {filtered.length === 0 ? (
-               <div className="py-40 text-center opacity-20 italic">No publications found matching your criteria.</div>
+               <div className="py-40 text-center opacity-20 italic">No news found matching your criteria.</div>
             ) : (
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filtered.map((pub, idx) => (
@@ -159,11 +160,30 @@ export default function MarketTrendsHub() {
                         transition={{ delay: idx * 0.05 }}
                         className="group relative flex flex-col bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden hover:border-brand-blue/40 transition-all hover:shadow-2xl h-full"
                      >
-                        <div className="p-6 pb-2 border-b border-[var(--border)] bg-slate-500/5">
+                        <div className="p-6 pb-2 border-b border-[var(--border)] bg-slate-500/5 flex justify-between items-center">
                             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-black/40 text-white backdrop-blur-md border border-white/20 flex items-center w-fit gap-2`}>
                                 {pub.type === 'report' ? <FileText size={10} /> : <BookOpen size={10} />} {pub.type}
                             </span>
+                            {pub.file_url && (
+                              <div className="flex items-center gap-1.5 text-emerald-400">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-[8px] font-black uppercase tracking-tighter">Asset Ready</span>
+                              </div>
+                            )}
                         </div>
+
+                        {pub.cover_image && (
+                          <div className="relative h-64 w-full overflow-hidden border-b border-[var(--border)] bg-slate-500/5">
+                             <Image 
+                               src={pub.cover_image} 
+                               alt={pub.title} 
+                               fill
+                               className="object-cover group-hover:scale-105 transition-transform duration-700"
+                               unoptimized
+                             />
+                             <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        )}
 
                         <div className="p-8 flex-1 flex flex-col">
                            <div className="flex justify-between items-center mb-4 text-[10px] font-bold opacity-40 uppercase tracking-widest">
@@ -178,11 +198,14 @@ export default function MarketTrendsHub() {
                            </p>
                            
                            <div className="flex gap-3">
-                              <button 
-                                onClick={() => pub.type === 'report' ? setViewingPDF(pub) : setSelectedPost(pub)}
+                               <button 
+                                onClick={() => (pub.file_url && pub.file_url.toLowerCase().endsWith('.pdf')) ? setViewingPDF(pub) : setSelectedPost(pub)}
                                 className="flex-1 py-3 bg-brand-blue/5 border border-brand-blue/10 text-brand-blue rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"
                               >
-                                {pub.type === 'report' ? 'View PDF' : 'Read Article'} <ArrowRight size={14} />
+                                {pub.file_url?.toLowerCase().endsWith('.pdf') 
+                                  ? 'View PDF' 
+                                  : `View ${pub.type.charAt(0).toUpperCase() + pub.type.slice(1)}`} 
+                                <ArrowRight size={14} />
                               </button>
                                <button 
                                  onClick={() => handleShare(pub)}
@@ -274,7 +297,7 @@ export default function MarketTrendsHub() {
                <motion.div initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 40 }} className="relative w-full max-w-5xl max-h-[90vh] bg-[var(--background)] rounded-[3rem] border border-[var(--border)] overflow-hidden shadow-2xl flex flex-col">
                   <div className="flex justify-between items-center p-6 border-b border-[var(--border)] bg-[var(--background)] sticky top-0 z-10">
                      <div className="flex items-center gap-4">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">{selectedPost.type === 'report' ? 'Verified Report' : 'Market Analysis'}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">{selectedPost.type === 'report' ? 'Verified Publication' : 'Latest News'}</span>
                         <div className="w-1 h-1 rounded-full bg-slate-500/20" />
                         <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(selectedPost.created_at).toLocaleDateString()}</span>
                      </div>

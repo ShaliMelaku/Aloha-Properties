@@ -168,7 +168,7 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [newPost, setNewPost] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' });
+  const [newPost, setNewPost] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false });
 
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead', id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -185,13 +185,13 @@ export default function AdminDashboard() {
     setSelectedLeadsIndices(newSet);
   };
 
-  const syncIntelligence = async () => {
+  const syncNews = async () => {
     setSyncing(true);
     try {
       const res = await fetch('/api/news');
       const data = await res.json();
       if (data.success) {
-        notify('success', `Intelligence Synchronized: ${data.posted} new articles integrated.`);
+        notify('success', `News Desk Synchronized: ${data.posted} new articles integrated.`);
         fetchPosts();
       } else {
         notify('error', 'Sync failed: ' + (data.error || 'Unknown error'));
@@ -244,13 +244,6 @@ export default function AdminDashboard() {
     setPosts(data || []);
   };
 
-  const syncNews = useCallback(async () => {
-    try {
-      await fetch('/api/news', { method: 'GET' });
-      fetchPosts();
-    } catch {}
-  }, []);
-
   useEffect(() => {
     setMounted(true);
     const checkSession = async () => {
@@ -274,7 +267,7 @@ export default function AdminDashboard() {
       authListener.subscription.unsubscribe();
       clearInterval(newsInterval);
     };
-  }, [syncNews]);
+  }, []);
 
   const handleLogin = async () => {
     setIsVerifying(true);
@@ -791,7 +784,7 @@ export default function AdminDashboard() {
                                      </div>
                                      <div className="space-y-1">
                                        <label className="text-[9px] font-black uppercase opacity-40 ml-1">Risk Level</label>
-                                       <select value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]">
+                                       <select title="Select Risk Level" value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]">
                                          <option value="Low">Low</option>
                                          <option value="Moderate">Moderate</option>
                                          <option value="High">High</option>
@@ -892,7 +885,8 @@ export default function AdminDashboard() {
                                         <span>{progress.percent}%</span>
                                       </div>
                                       <div className="h-1.5 bg-slate-500/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-brand-blue rounded-full transition-all w-[var(--width)]" style={{ "--width": `${progress.percent}%` } as React.CSSProperties} />
+                                        {/* eslint-disable-next-line react/forbid-dom-props */}
+                                        <div className="h-full bg-brand-blue rounded-full transition-all" style={{ width: `${progress.percent}%` }} />
                                       </div>
                                     </div>
                                   )}
@@ -963,7 +957,7 @@ export default function AdminDashboard() {
                        <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3"><Edit3 size={20} className="text-brand-blue" />Market Trends (Blog)</h2>
                          <div className="flex gap-2">
                            <button 
-                             onClick={syncIntelligence}
+                             onClick={syncNews}
                              disabled={syncing}
                              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all border border-[var(--border)] text-[var(--foreground)] ${syncing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-500/5'}`}
                            >
@@ -1006,7 +1000,7 @@ export default function AdminDashboard() {
                                       onClick={() => { setEditingPost(post); setIsAddingPost(true); }}
                                       className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/30 hover:text-brand-blue flex items-center gap-1.5 group/add"
                                     >
-                                       <Plus size={10} className="group-hover/add:rotate-90 transition-transform" /> Add Report
+                                       <Plus size={10} className="group-hover/add:rotate-90 transition-transform" /> Add Asset
                                     </button>
                                  )}
                                  <div className="w-px h-4 bg-[var(--border)] mx-1" />
@@ -1056,7 +1050,7 @@ export default function AdminDashboard() {
             {isAddingPost && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAddingPost(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                 <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                 <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 pb-12 shadow-2xl max-h-[92vh] overflow-y-auto">
                     <h3 className="text-2xl font-heading font-black tracking-tight mb-6 uppercase text-[var(--foreground)]">{editingPost ? 'Edit Article' : 'Compose Article'}</h3>
                     <div className="space-y-4">
                        <input type="text" placeholder="Article Title" value={editingPost ? editingPost.title : newPost.title} onChange={e => editingPost ? setEditingPost({...editingPost, title: e.target.value}) : setNewPost({...newPost, title: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
@@ -1227,6 +1221,7 @@ export default function AdminDashboard() {
                                  if (!error) {
                                     notify('success', 'Article saved.');
                                     setIsAddingPost(false);
+                                    setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '' });
                                     fetchPosts();
                                  } else throw error;
                               } catch { notify('error', 'Failed to save.'); }
@@ -1345,7 +1340,7 @@ export default function AdminDashboard() {
             {selectedPropertyId && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedPropertyId(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                 <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                 <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 pb-12 shadow-2xl max-h-[85vh] overflow-y-auto">
                     <div className="flex items-center justify-between mb-6">
                        <h3 className="text-2xl font-heading font-black tracking-tight uppercase text-[var(--foreground)]">Unit Manager</h3>
                        <button onClick={() => setSelectedPropertyId(null)} className="text-[var(--foreground)]/40 hover:text-red-400 font-bold text-sm tracking-widest uppercase">Close</button>
@@ -1529,7 +1524,7 @@ export default function AdminDashboard() {
              {editingProperty && (
                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingProperty(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                  <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                  <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 pb-12 shadow-2xl max-h-[92vh] overflow-y-auto">
                      <h3 className="text-2xl font-heading font-black tracking-tight mb-6 uppercase text-[var(--foreground)]">Edit Property</h3>
                      <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1576,7 +1571,7 @@ export default function AdminDashboard() {
                              </div>
                              <div className="space-y-1">
                                <label className="text-[9px] font-black uppercase opacity-40 ml-1">Risk Level</label>
-                               <select value={editingProperty.env_risk_level ?? 'Low'} onChange={e => setEditingProperty({...editingProperty, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]">
+                               <select title="Select Risk Level" value={editingProperty.env_risk_level ?? 'Low'} onChange={e => setEditingProperty({...editingProperty, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold text-[var(--foreground)]">
                                  <option value="Low">Low</option>
                                  <option value="Moderate">Moderate</option>
                                  <option value="High">High</option>
@@ -1724,7 +1719,18 @@ export default function AdminDashboard() {
                              setIsDeleting(true);
                              try {
                                 const table = confirmDelete.type === 'property' ? 'properties' : confirmDelete.type === 'lead' ? 'leads' : 'posts';
-                                const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
+                                
+                                let error;
+                                if (confirmDelete.type === 'post') {
+                                   // Soft delete for posts
+                                   const { error: err } = await supabaseClient.from('posts').update({ is_deleted: true }).eq('id', confirmDelete.id);
+                                   error = err;
+                                } else {
+                                   // Hard delete for properties and leads
+                                   const { error: err } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
+                                   error = err;
+                                }
+
                                 if (!error) {
                                    notify('success', 'Record purged.');
                                    if (confirmDelete.type === 'property') fetchProperties();

@@ -32,7 +32,7 @@ export function Footer() {
               <ul className="space-y-4 text-sm font-bold">
                 <li><Link href="/" className="hover:text-brand-blue transition-colors">Home</Link></li>
                 <li><Link href="/portfolio" className="hover:text-brand-blue transition-colors">Portfolio</Link></li>
-                <li><Link href="/market-trends" className="hover:text-brand-blue transition-colors">Intelligence</Link></li>
+                <li><Link href="/market-trends" className="hover:text-brand-blue transition-colors">News Desk</Link></li>
               </ul>
             </div>
             <div className="space-y-6">
@@ -63,10 +63,10 @@ export function Footer() {
 
         <div className="pt-8 border-t border-slate-500/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-[10px] font-black uppercase tracking-widest opacity-30 text-center md:text-left">
-            © {new Date().getFullYear()} Aloha Real Estate Marketing And Event Communications PLC
+            © {new Date().getFullYear()} Aloha Marketing And Event Communications PLC
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-50 text-center">
-            Developed by <span className="text-brand-blue">Shalom Melaku</span> | shalieth101@gmail.com | +251934132115
+            Developed by <span className="text-brand-blue">Royal Labs</span> | Shalom Melaku | shalieth101@gmail.com | +251934132115
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-80">
             Addis Ababa, Ethiopia
