@@ -120,6 +120,8 @@ export interface Post {
   source_url: string;
   type: 'article' | 'report' | 'guide';
   file_url: string;
+  is_deleted: boolean;
+  is_featured?: boolean;
 }
 
 export default function AdminDashboard() {
@@ -205,7 +207,7 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [newPost, setNewPost] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false });
+  const [newPost, setNewPost] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false, is_featured: false });
 
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead', id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -277,7 +279,7 @@ export default function AdminDashboard() {
   };
 
   const fetchPosts = async () => {
-    const { data } = await supabaseClient.from('posts').select('*').eq('is_deleted', false).order('created_at', { ascending: false });
+    const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
     setPosts(data || []);
   };
 
@@ -1033,7 +1035,7 @@ export default function AdminDashboard() {
                               <Activity size={16} className={syncing ? 'animate-spin' : ''} /> 
                               {syncing ? 'Syncing...' : 'Sync Live Pulse'}
                            </button>
-                           <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
+                           <button onClick={() => { setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false, is_featured: false }); setEditingPost(null); setIsAddingPost(true); }} className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand-blue/20">
                               <Plus size={16} /> New Article
                            </button>
                     </div>
@@ -1301,20 +1303,21 @@ export default function AdminDashboard() {
                            <button onClick={() => setIsAddingPost(false)} className="flex-1 py-4 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]">Cancel</button>
                            <button onClick={async () => {
                               try {
-                                 const payload = editingPost 
-                                     ? { ...editingPost } 
-                                     : { ...newPost };
+                                 const rawPayload = editingPost ? { ...editingPost } : { ...newPost };
+                                  // Clean payload for DB to avoid primary key or internal field conflicts
+                                  const { id: postId, created_at, ...payload } = rawPayload as any;
+                                  if (payload.is_deleted === undefined) payload.is_deleted = false;
                                  
                                  if (!payload.title || !payload.slug) return notify('error', 'Title and slug required.');
                                  
                                  const { error } = editingPost 
-                                   ? await supabaseClient.from('posts').update(payload).eq('id', editingPost.id)
+                                   ? await supabaseClient.from('posts').update(payload).eq('id', postId)
                                    : await supabaseClient.from('posts').insert(payload);
                                  
                                  if (!error) {
                                     notify('success', 'Article saved.');
                                     setIsAddingPost(false);
-                                    setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false });
+                                    setNewPost({ title: '', slug: '', excerpt: '', content: '', cover_image: '', video_url: '', source_label: '', source_url: '', type: 'article', file_url: '', is_deleted: false, is_featured: false });
                                     fetchPosts();
                                  } else {
                                     console.error("Save error:", error);

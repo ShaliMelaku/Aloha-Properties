@@ -14,7 +14,10 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
     <NextThemesProvider 
       {...props} 
-      forcedTheme={isServerAdmin ? "dark" : undefined}
+      // Use different storage keys to prevent theme bleeding between portals
+      storageKey={isServerAdmin ? "aloha-admin-theme" : "aloha-visitor-theme"}
+      // Remove forcedTheme to allow independent toggling if desired
+      forcedTheme={undefined}
     >
       {children}
     </NextThemesProvider>

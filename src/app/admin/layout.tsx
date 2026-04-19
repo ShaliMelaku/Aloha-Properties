@@ -4,7 +4,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="dark min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-brand-blue/30 selection:text-white">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-brand-blue/30 selection:text-white">
       {children}
     </div>
   );

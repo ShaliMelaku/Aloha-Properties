@@ -200,22 +200,12 @@ export default function MarketTrendsHub() {
                            </p>
                            
                            <div className="flex gap-3">
-                               <button 
-                                onClick={() => {
-                                  const isPDF = pub.file_url?.toLowerCase().endsWith('.pdf');
-                                  if (isPDF) {
-                                    setViewingPDF(pub);
-                                  } else {
-                                    setSelectedPost(pub);
-                                  }
-                                }}
-                                className="flex-1 py-3 bg-brand-blue/5 border border-brand-blue/10 text-brand-blue rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"
-                              >
-                                {pub.file_url?.toLowerCase().endsWith('.pdf') 
-                                  ? 'View PDF' 
-                                  : `View ${pub.type.charAt(0).toUpperCase() + pub.type.slice(1)}`} 
-                                <ArrowRight size={14} />
-                              </button>
+                                                               <button 
+                                 onClick={() => setSelectedPost(pub)}
+                                 className="flex-1 py-3 bg-brand-blue/5 border border-brand-blue/10 text-brand-blue rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"
+                               >
+                                 View Details <ArrowRight size={14} />
+                               </button>
                                <button 
                                  onClick={() => handleShare(pub)}
                                  className="w-12 h-12 border border-[var(--border)] rounded-xl flex items-center justify-center opacity-40 hover:opacity-100 transition-all"

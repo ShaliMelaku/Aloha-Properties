@@ -420,13 +420,36 @@ export function TrendsTeaser() {
 
   const fetchNews = useCallback(async () => {
     try {
+      // 1. Fetch Manual Posts from Supabase
+      const { data: manualPosts } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const manualArticles = (manualPosts || []).map(post => ({
+        title: post.title,
+        description: post.excerpt,
+        content: post.content,
+        url: `/blog/${post.slug}`,
+        image: post.cover_image,
+        publishedAt: post.created_at,
+        source: { name: post.author_name || 'Aloha Research' },
+        type: post.type
+      }));
+
+      // 2. Fetch External News as fallback/filler
       const res = await fetch('/api/news');
       const data = await res.json();
-      if (data.articles && data.articles.length > 0) {
-        setArticles(data.articles.slice(0, 5));
-      }
-    } catch {
-      // silent fallback
+      const externalArticles = data.articles || [];
+
+      // 3. Merge: Prioritize manual posts
+      const merged = [...manualArticles, ...externalArticles];
+      setArticles(merged.slice(0, 5));
+      
+    } catch (err) {
+      console.error('News fetch error:', err);
     } finally {
       setLoading(false);
     }
