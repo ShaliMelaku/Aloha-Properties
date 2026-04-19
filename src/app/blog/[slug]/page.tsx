@@ -105,7 +105,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                   {post.source_url && (
                      <div className="p-8 bg-brand-blue text-white rounded-[2rem] shadow-xl shadow-brand-blue/20">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-4">Verification</p>
-                        <h4 className="text-xl font-heading font-black mb-6 leading-tight">Authentic Market Intelligence</h4>
+                        <h4 className="text-xl font-heading font-black mb-6 leading-tight">Authentic Market Insights</h4>
                         <a 
                           href={post.source_url} 
                           target="_blank" 

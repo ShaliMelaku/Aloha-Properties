@@ -229,7 +229,7 @@ export function AnalyticsDashboard() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em]">Live Intelligence</span>
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em]">Live Insights</span>
                 </div>
                 <h2 className="text-3xl font-heading font-black tracking-tighter text-white uppercase">
                   Market <span className="text-cyan-400 italic">Command</span>
@@ -321,7 +321,7 @@ export function AnalyticsDashboard() {
                 <span className="absolute inset-0 rounded-full border-2 border-cyan-500/30 animate-ping" />
                 <Activity size={24} className="absolute inset-0 m-auto text-cyan-400 animate-spin" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Loading intelligence feed…</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Loading data feed…</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">

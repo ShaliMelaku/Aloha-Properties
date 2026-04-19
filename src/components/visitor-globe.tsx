@@ -242,7 +242,7 @@ export function VisitorGlobe() {
           <div>
              <div className="flex items-center gap-3 mb-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10B981]" />
-              <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Live Intelligence Feed</span>
+              <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Live Insights Feed</span>
             </div>
             <h3 className="text-3xl font-black uppercase tracking-tighter text-[var(--foreground)] leading-none">Global Network <span className="text-brand-blue">Pulse.</span></h3>
           </div>

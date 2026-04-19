@@ -199,7 +199,14 @@ export default function MarketTrendsHub() {
                            
                            <div className="flex gap-3">
                                <button 
-                                onClick={() => (pub.file_url && pub.file_url.toLowerCase().endsWith('.pdf')) ? setViewingPDF(pub) : setSelectedPost(pub)}
+                                onClick={() => {
+                                  const isPDF = pub.file_url?.toLowerCase().endsWith('.pdf');
+                                  if (isPDF) {
+                                    setViewingPDF(pub);
+                                  } else {
+                                    setSelectedPost(pub);
+                                  }
+                                }}
                                 className="flex-1 py-3 bg-brand-blue/5 border border-brand-blue/10 text-brand-blue rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"
                               >
                                 {pub.file_url?.toLowerCase().endsWith('.pdf') 
@@ -297,7 +304,7 @@ export default function MarketTrendsHub() {
                <motion.div initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 40 }} className="relative w-full max-w-5xl max-h-[90vh] bg-[var(--background)] rounded-[3rem] border border-[var(--border)] overflow-hidden shadow-2xl flex flex-col">
                   <div className="flex justify-between items-center p-6 border-b border-[var(--border)] bg-[var(--background)] sticky top-0 z-10">
                      <div className="flex items-center gap-4">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">{selectedPost.type === 'report' ? 'Verified Publication' : 'Latest News'}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">{selectedPost.type === 'report' ? 'Verified Insight' : 'Latest News'}</span>
                         <div className="w-1 h-1 rounded-full bg-slate-500/20" />
                         <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(selectedPost.created_at).toLocaleDateString()}</span>
                      </div>

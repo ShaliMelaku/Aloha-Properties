@@ -319,7 +319,7 @@ function NewsStoryModal({ article, onClose }: { article: NewsArticle; onClose: (
                 onClick={onClose}
                 className="flex items-center justify-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-500/10 transition-all"
               >
-                More Intelligence <ArrowRight size={14} />
+                More Insights <ArrowRight size={14} />
               </Link>
             </div>
           </div>
@@ -395,7 +395,7 @@ export function TrendsTeaser() {
             </div>
           ) : articles.length === 0 ? (
             <div className="bg-slate-500/5 rounded-[2.5rem] p-10 md:p-20 border border-[var(--border)] text-center">
-              <p className="text-lg opacity-50 font-medium">Live market intelligence arriving shortly.</p>
+              <p className="text-lg opacity-50 font-medium">Live market insights arriving shortly.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

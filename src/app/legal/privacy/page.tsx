@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
           <p>At Aloha Properties, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy outlines how we collect, use, and safeguard the data you provide to us when using our platform.</p>
 
           <h2 className="text-xl font-black text-brand-blue mt-8 mb-4">1. Information We Collect</h2>
-          <p>We may collect personal information such as your name, email address, phone number, and investment interests when you register, inquire about a property, or subscribe to our market intelligence updates.</p>
+          <p>We may collect personal information such as your name, email address, phone number, and investment interests when you register, inquire about a property, or subscribe to our market insights updates.</p>
 
           <h2 className="text-xl font-black text-brand-blue mt-8 mb-4">2. How We Use Your Data</h2>
           <p>Your data is used exclusively to provide personalized real estate curation, send relevant market updates, and improve your experience on our platform. We do not sell your personal information to third parties.</p>

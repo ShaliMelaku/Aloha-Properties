@@ -55,7 +55,7 @@ export function StoryModal({ isOpen, onClose }: StoryModalProps) {
                 <div className="space-y-4">
                   {[
                     { icon: Sparkles, text: "Curated Excellence" },
-                    { icon: Target, text: "Strategic Intelligence" },
+                    { icon: Target, text: "Strategic Insights" },
                     { icon: Heart, text: "Hospitality First" }
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 text-white/60">

@@ -28,7 +28,7 @@ export default function TermsOfService() {
           <p>All content on this platform, including but not limited to branding, images, analytics, and software logic, is the exclusive property of Aloha Properties and protected by intellectual property laws.</p>
 
           <h2 className="text-xl font-black text-brand-blue mt-8 mb-4">4. Limitation of Liability</h2>
-          <p>Market intelligence and analytics provided on this platform are for informational purposes only. Aloha Properties shall not be held liable for any investment decisions made based on the data presented herein.</p>
+          <p>Market insights and analytics provided on this platform are for informational purposes only. Aloha Properties shall not be held liable for any investment decisions made based on the data presented herein.</p>
         </div>
       </motion.div>
     </main>

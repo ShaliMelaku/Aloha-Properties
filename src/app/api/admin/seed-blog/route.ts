@@ -8,7 +8,7 @@ const BLOG_POSTS = [
     excerpt: "Exploring the shift from traditional sprawl to high-density premium developments in the heart of Ethiopia's capital.",
     content: "Addis Ababa is undergoing a dramatic transformation. As land scarcity in prime districts like Bole and Kazanchis increases, developers are looking skyward. This vertical evolution isn't just about height—it's about a new standard of living. Integrated amenities like sky-pools, private gyms, and concierge services are becoming the baseline for the city's new elite.\n\nInvestment yields in these vertical communities are currently trending 15% higher than traditional standalone villas, driven by a growing class of professional expatriates and the diaspora who prioritize security and a 'lock-and-leave' lifestyle.",
     cover_image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000",
-    author_name: "Aloha Intelligence"
+    author_name: "Aloha News Desk"
   },
   {
     title: "The Diaspora Playbook: Hedging with Premium Real Estate",
