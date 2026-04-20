@@ -6,11 +6,12 @@ import {
   Trash2, TrendingUp, Shield, Wind, Sun, Info,
   DollarSign, Calendar, ChevronRight, Activity, Camera, Download,
   Home, Map as MapIcon, X, PlusCircle, ArrowRight, Settings2,
-  Box, Tag, LayoutPanelLeft, Listbox
+  Box
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Property, Unit, UnitType } from "@/types/admin";
-import { MapPicker } from "./MapPicker";
+import dynamic from "next/dynamic";
+const MapPicker = dynamic(() => import("./MapPicker").then(mod => mod.MapPicker), { ssr: false });
 import { MediaUpload } from "./MediaUpload";
 import { saveUnitType, deleteUnitType, saveUnit, deleteUnit } from "@/lib/admin-actions";
 

@@ -7,13 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { MapPin, Search, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Fix Leaflet marker icon issue
-const DefaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+
 
 interface MapPickerProps {
   lat: number;
@@ -27,6 +21,13 @@ function LocationMarker({ lat, lng, onChange }: MapPickerProps) {
       onChange(e.latlng.lat, e.latlng.lng);
       map.flyTo(e.latlng, map.getZoom());
     },
+  });
+
+  const DefaultIcon = L.icon({
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
   });
 
   return <Marker position={[lat, lng]} icon={DefaultIcon} />;

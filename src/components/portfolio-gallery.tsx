@@ -175,8 +175,8 @@ export function PortfolioGallery() {
                  Decrypting Registry...
               </motion.div>
             ) : filteredProperties.length > 0 ? (
-              filteredProperties.map((prop, idx) => (
-                <PropertyCard key={prop.id} property={prop} index={idx} />
+              filteredProperties.map((prop) => (
+                <PropertyCard key={prop.id} property={prop} />
               ))
             ) : (
               <motion.div 
