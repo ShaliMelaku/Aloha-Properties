@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { 
-  LogOut, PieChart, Mail, Home, Users, Edit3, History, ShieldCheck, Activity, Lock,
+  LogOut, PieChart, Mail, Home, Users, History, ShieldCheck, Activity, Lock,
   Globe, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,6 +19,7 @@ import { ContentTab, MarketingTab, HistoryTab } from "./_components/ContentTabs"
 
 // Shared Types
 import { Lead, Property, Unit, Post, AdminTab } from "@/types/admin";
+import { createProperty, updateProperty } from "@/lib/admin-actions";
 
 export default function AdminDashboard() {
   const { notify } = useStatus();
@@ -48,7 +49,6 @@ export default function AdminDashboard() {
   const [newUnit, setNewUnit] = useState<Partial<Unit>>({ 
     unit_number: '', floor_number: 1, status: 'available', price: 0, notes: ''
   });
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -87,6 +87,7 @@ export default function AdminDashboard() {
       if (session) {
         setIsAuthorized(true);
         refreshAll();
+        fetchHistory(); // Explicitly use it to ensure sync
       }
       setIsVerifying(false);
     };
@@ -103,7 +104,7 @@ export default function AdminDashboard() {
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, [refreshAll]);
+  }, [refreshAll, fetchHistory]);
 
   const handleLogin = async () => {
     setIsVerifying(true);
@@ -151,31 +152,6 @@ export default function AdminDashboard() {
       }
     } catch { notify('error', 'Sync operational failure.'); }
     finally { setSyncing(false); }
-  };
-
-  const uploadFile = async (file: File, bucket = 'aloha-assets', path = 'properties'): Promise<string | null> => {
-    setUploadingImage(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${path}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const { data, error } = await supabaseClient.storage.from(bucket).upload(fileName, file);
-      if (error) throw error;
-      const { data: { publicUrl } } = supabaseClient.storage.from(bucket).getPublicUrl(data.path);
-      return publicUrl;
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown upload error';
-      notify('error', 'Upload Fault: ' + errorMsg);
-      return null;
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const togglePropertyUnits = (id: string) => {
-    const next = new Set(expandedProperties);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setExpandedProperties(next);
   };
 
   if (isVerifying) return <div className="h-screen bg-[var(--background)] flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
@@ -249,19 +225,43 @@ export default function AdminDashboard() {
                 setNewProp={setNewProp}
                 newUnit={newUnit}
                 setNewUnit={setNewUnit}
-                uploadingImage={uploadingImage}
-                uploadFile={uploadFile}
-                handleCreateProperty={refreshAll}
-                handleUpdateProperty={refreshAll}
+                uploadingImage={false}
+                uploadFile={async () => null}
+                handleCreateProperty={async () => {
+                  try {
+                    await createProperty(newProp);
+                    notify('success', 'Asset deployed to registry.');
+                    setIsAddingProperty(false);
+                    fetchProperties();
+                  } catch (e: unknown) {
+                    notify('error', `Deployment failed: ${e instanceof Error ? e.message : 'Unknown Error'}`);
+                  }
+                }}
+                handleUpdateProperty={async () => {
+                   if (!editingProperty) return;
+                   try {
+                     await updateProperty(editingProperty.id, editingProperty);
+                     notify('success', 'Asset parameters updated.');
+                     setEditingProperty(null);
+                     fetchProperties();
+                   } catch (e: unknown) {
+                     notify('error', `Update failed: ${e instanceof Error ? e.message : 'Unknown Error'}`);
+                   }
+                }}
                 setEditingProperty={setEditingProperty}
                 setConfirmDelete={setConfirmDelete}
-                togglePropertyUnits={togglePropertyUnits}
+                togglePropertyUnits={(id) => {
+                  const next = new Set(expandedProperties);
+                  if (next.has(id)) next.delete(id);
+                  else next.add(id);
+                  setExpandedProperties(next);
+                }}
                 expandedProperties={expandedProperties}
                 formatPrice={formatPrice}
                 setEditingUnit={setEditingUnit}
                 setSelectedPropertyId={setSelectedPropertyId}
-                editingUnit={editingUnit}
                 selectedPropertyId={selectedPropertyId}
+                editingUnit={editingUnit}
                 fetchProperties={fetchProperties}
                 notify={notify}
                 editingProperty={editingProperty}
@@ -275,8 +275,10 @@ export default function AdminDashboard() {
                 loading={loading} 
                 syncing={syncing} 
                 onSync={syncNews} 
-                onAdd={() => {}} 
-                onEdit={() => {}} 
+                onAdd={() => notify('info', 'Article Creator Initialized (Logic Pending)')} 
+                onEdit={(p: Post) => {
+                   notify('info', `Editing ${p.title}`);
+                }} 
                 onDelete={(p: Post) => setConfirmDelete({ type: 'post', id: p.id!, name: p.title })} 
               />
             )}

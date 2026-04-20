@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit3, Mail, Trash2, X, Search, Filter, Activity } from "lucide-react";
+import { Plus, Edit3, Mail, Trash2, X, Search, Filter, Activity, Download } from "lucide-react";
 import { Lead } from "@/types/admin";
 import { saveLead } from "@/lib/admin-actions";
 
@@ -64,6 +64,24 @@ export function LeadsTab({
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Name", "Email", "Phone", "Interest", "Status", "Created At"];
+    const rows = filteredLeads.map(l => [
+      l.name, l.email, l.phone || "", l.interest || "", l.status || "new", l.created_at || ""
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `aloha_leads_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    onNotify('success', 'Lead registry exported to CSV.');
+  };
+
   const filteredLeads = leads.filter(l => 
     l.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     l.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,6 +108,13 @@ export function LeadsTab({
             />
          </div>
          <div className="flex gap-4">
+            <button 
+                onClick={handleExportCSV}
+                title="Export Lead Registry to CSV" 
+                className="px-6 py-4 bg-[var(--card)] rounded-xl border border-[var(--border)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 hover:text-brand-blue hover:border-brand-blue/30 transition-all flex items-center gap-2"
+            >
+               <Download size={16} /> Export CSV
+            </button>
             <button title="Filter Records" className="px-6 py-4 bg-[var(--card)] rounded-xl border border-[var(--border)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 hover:text-[var(--foreground)] hover:border-brand-blue/30 transition-all flex items-center gap-2">
                <Filter size={16} /> Advanced Filters
             </button>

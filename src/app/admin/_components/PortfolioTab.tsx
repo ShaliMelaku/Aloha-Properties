@@ -36,6 +36,8 @@ interface PortfolioTabProps {
   fetchProperties: () => void;
   notify: (type: 'success' | 'error' | 'info', msg: string) => void;
   editingProperty: Property | null;
+  editingUnit: Unit | null;
+  selectedPropertyId: string | null;
 }
 
 export function PortfolioTab({
@@ -59,6 +61,8 @@ export function PortfolioTab({
   setEditingUnit,
   setSelectedPropertyId,
   notify,
+  editingUnit,
+  selectedPropertyId,
 }: PortfolioTabProps) {
   
   const handlePropertySubmit = () => {
@@ -131,6 +135,10 @@ export function PortfolioTab({
                      <div className="space-y-2">
                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Amenities Portfolio</label>
                        <input title="Amenities" type="text" placeholder="Gym, Pool, Security... (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Visual Gallery (Paths/URLs)</label>
+                       <textarea title="Gallery Images" placeholder="Enter image URLs (comma separated)..." onChange={e => setNewProp({...newProp, gallery_images: e.target.value.split(',').map(s => s.trim())})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none text-[var(--foreground)] resize-none" />
                      </div>
                    </div>
 

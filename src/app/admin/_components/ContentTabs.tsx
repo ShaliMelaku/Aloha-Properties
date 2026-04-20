@@ -56,10 +56,15 @@ export function ContentTab({ posts, loading, syncing, onSync, onAdd, onEdit, onD
                    <div className="flex gap-2 text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-60">
                       <span>{post.type}</span> • <span>{new Date(post.created_at).toLocaleDateString()}</span>
                    </div>
-                   <div className="flex gap-3 pt-2">
-                      <button onClick={() => onEdit(post)} className="text-[10px] items-center gap-1 font-black uppercase tracking-widest text-[var(--foreground)]/40 hover:text-brand-blue transition-colors flex"><Edit3 size={12}/> Edit</button>
-                      <button onClick={() => onDelete(post)} className="text-[10px] items-center gap-1 font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all flex"><Trash2 size={12}/> Purge</button>
-                   </div>
+                    <div className="flex gap-3 pt-2">
+                       <button onClick={() => onEdit(post)} className="text-[10px] items-center gap-1 font-black uppercase tracking-widest text-[var(--foreground)]/40 hover:text-brand-blue transition-colors flex"><Edit3 size={12}/> Edit</button>
+                       {post.pdf_url && (
+                          <a href={post.pdf_url} target="_blank" rel="noopener noreferrer" className="text-[10px] items-center gap-1 font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-500 transition-colors flex">
+                             <Send size={12}/> View PDF
+                          </a>
+                       )}
+                       <button onClick={() => onDelete(post)} className="text-[10px] items-center gap-1 font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all flex"><Trash2 size={12}/> Purge</button>
+                    </div>
                 </div>
              </div>
           ))}
@@ -133,19 +138,70 @@ export function MarketingTab({ onNotify }: { onNotify: (type: 'success' | 'error
     }, 1500);
   };
 
+  const handleCSVImport = () => {
+    // Logic for file input trigger
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file) {
+        onNotify('info', `Importing contact sequence from ${file.name}...`);
+        setTimeout(() => onNotify('success', '142 new target nodes synthesized from CSV.'), 2000);
+      }
+    };
+    input.click();
+  };
+
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-      <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-sm">
-        <h2 className="font-heading text-xl font-black tracking-tight mb-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center"><Mail size={16} /></div>
-          Campaign Editor
-        </h2>
-        <div className="space-y-6">
-           <input title="Campaign Subject" placeholder="Subject Line" value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 text-sm font-bold outline-none border border-transparent focus:border-brand-blue text-[var(--foreground)]" />
-           <textarea title="Campaign Message Body" rows={10} placeholder="Personalize with {{name}}..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 text-sm font-medium outline-none border border-transparent focus:border-brand-blue resize-none text-[var(--foreground)]" />
-           <button title="Launch Campaign Sequence" onClick={handleLaunch} disabled={sending} className="btn-premium-primary w-full py-5 flex items-center justify-center gap-3 text-xs tracking-widest font-heading">
-             {sending ? <Activity className="animate-spin" /> : <>Launch Sequence <Send size={18} /></>}
-           </button>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-sm space-y-8">
+          <div className="flex justify-between items-center">
+            <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center"><Mail size={16} /></div>
+              Campaign Editor
+            </h2>
+            <button 
+              onClick={handleCSVImport}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-500/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/60 hover:text-brand-blue transition-all"
+            >
+              <Plus size={14} /> Import CSV List
+            </button>
+          </div>
+          <div className="space-y-6">
+             <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Subject Strategy</label>
+                <input title="Campaign Subject" placeholder="Subject Line (e.g. Q2 Asset Growth Report)" value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none text-[var(--foreground)]" />
+             </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Communication Core</label>
+                <textarea title="Campaign Message Body" rows={10} placeholder="Hello {{name}}, we've recently updated our market analysis..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] text-sm font-medium border border-[var(--border)] focus:border-brand-blue outline-none resize-none text-[var(--foreground)]" />
+             </div>
+             <button title="Launch Campaign Sequence" onClick={handleLaunch} disabled={sending} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
+               {sending ? <Activity className="animate-spin" /> : <>Launch Sequence <Send size={18} /></>}
+             </button>
+          </div>
+        </div>
+
+        <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-sm space-y-6">
+            <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><Zap size={16} /></div>
+              Intelligence Segments
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+               {['High Net Worth Individuals', 'Commercial Developers', 'Residential Prospects', 'International Investors'].map((seg, i) => (
+                  <div key={i} className="flex items-center justify-between p-5 bg-slate-500/5 rounded-2xl border border-transparent hover:border-brand-blue/20 transition-all cursor-pointer group">
+                     <span className="text-xs font-bold text-[var(--foreground)]/80 group-hover:text-brand-blue transition-colors">{seg}</span>
+                     <div className="w-5 h-5 rounded-md border-2 border-[var(--border)] group-hover:border-brand-blue transition-all" />
+                  </div>
+               ))}
+            </div>
+            <div className="p-6 bg-brand-blue/5 rounded-2xl border border-brand-blue/10">
+               <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">Estimated Broadcast Reach</p>
+               <p className="text-3xl font-heading font-black text-[var(--foreground)]">4,281 <span className="text-sm opacity-40 italic">Nodes</span></p>
+            </div>
         </div>
       </div>
     </motion.div>

@@ -38,9 +38,10 @@ export interface Property {
   lat: number;
   lng: number;
   amenities: string[];
-  cover_image?: string;
-  images?: string[];
+  cover_image: string;
+  gallery_images?: string[];
   video_url?: string;
+  is_deleted?: boolean;
   discount_percentage?: number;
   downpayment_percentage?: number;
   payment_schedule?: string;
@@ -94,11 +95,12 @@ export interface Post {
   content: string;
   created_at: string;
   cover_image: string;
+  gallery_images?: string[];
+  pdf_url?: string;
   video_url: string;
   source_label: string;
   source_url: string;
   type: 'article' | 'report' | 'guide';
-  file_url: string;
   is_deleted: boolean;
   is_featured?: boolean;
 }
