@@ -2,6 +2,19 @@ import { supabaseClient } from "./supabase";
 import { Lead, Property, Post, Unit, UnitType } from "@/types/admin";
 
 /**
+ * HELPER: Generate slug from text
+ */
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')     // Replace spaces with -
+    .replace(/[^\w-]+/g, '')  // Remove all non-word chars
+    .replace(/--+/g, '-');    // Replace multiple - with single -
+}
+
+/**
  * PORTFOLIO ACTIONS
  */
 
@@ -32,22 +45,25 @@ export async function deleteProperty(id: string) {
 }
 
 export async function saveUnitType(type: Partial<UnitType>) {
-  if (type.id) {
+  const { id, ...payload } = type;
+  
+  if (id) {
     const { error } = await supabaseClient
       .from('property_unit_types')
-      .update(type)
-      .eq('id', type.id);
+      .update(payload)
+      .eq('id', id);
     if (error) throw error;
   } else {
     const { error } = await supabaseClient
       .from('property_unit_types')
-      .insert(type);
+      .insert(payload);
     if (error) throw error;
   }
 }
 
 export async function saveUnit(unit: Partial<Unit>) {
   const { id, ...payload } = unit;
+  
   if (id) {
     const { error } = await supabaseClient
       .from('property_units')
@@ -83,16 +99,18 @@ export async function deleteUnitType(id: string) {
  */
 
 export async function saveLead(lead: Partial<Lead>) {
-  if (lead.id) {
+  const { id, created_at, ...payload } = lead;
+  
+  if (id) {
     const { error } = await supabaseClient
       .from('leads')
-      .update(lead)
-      .eq('id', lead.id);
+      .update(payload)
+      .eq('id', id);
     if (error) throw error;
   } else {
     const { error } = await supabaseClient
       .from('leads')
-      .insert(lead);
+      .insert(payload);
     if (error) throw error;
   }
 }
@@ -110,10 +128,15 @@ export async function deleteLead(id: string) {
  */
 
 export async function savePost(post: Partial<Post>) {
-  // Remove internal fields that might conflict with DB schema upon insert/update
-  const { id, ...payload } = post;
-  delete payload.created_at;
+  const { id, created_at, ...payload } = post;
   
+  // Ensure slug exists
+  if (!payload.slug && payload.title) {
+    payload.slug = slugify(payload.title);
+  } else if (!payload.slug) {
+    payload.slug = `post-${Date.now()}`;
+  }
+
   if (id) {
     const { error } = await supabaseClient
       .from('posts')

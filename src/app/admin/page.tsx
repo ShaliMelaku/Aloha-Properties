@@ -132,10 +132,10 @@ export default function AdminDashboard() {
       const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
       if (error) throw error;
       
-      notify('success', `Resource Purged from Neural Core: ${confirmDelete.name}`);
+      notify('success', `Resource deleted: ${confirmDelete.name}`);
       refreshAll();
     } catch (err: unknown) {
-      notify('error', `Purge Fault: ${err instanceof Error ? err.message : 'Unknown'}`);
+      notify('error', `Deletion error: ${err instanceof Error ? err.message : 'Unknown'}`);
     } finally {
       setConfirmDelete(null);
     }
@@ -160,15 +160,15 @@ export default function AdminDashboard() {
     return (
       <div className="h-screen bg-[var(--background)] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--brand-blue-alpha)_0%,_transparent_70%)]">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl space-y-8 relative overflow-hidden group">
-           <div className="text-center space-y-2 relative z-10">
+          <div className="text-center space-y-2 relative z-10">
               <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-brand-blue shadow-xl shadow-brand-blue/10"><Lock size={40} /></div>
-              <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">Admin <span className="opacity-30 italic">Gate.</span></h1>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Biometric Verification Pending...</p>
+              <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">Admin <span className="opacity-30 italic">Login.</span></h1>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Identity Authentication Pending...</p>
            </div>
            <div className="space-y-4 relative z-10">
               <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
               <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
-              <button onClick={handleLogin} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Establish Connection</button>
+              <button onClick={handleLogin} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Sign In</button>
            </div>
            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-brand-blue/5 rounded-full blur-3xl" />
         </motion.div>
@@ -218,7 +218,7 @@ export default function AdminDashboard() {
                {theme === 'dark' ? 'Day Mode' : 'Night Mode'}
             </button>
             <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-400 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/5 rounded-2xl transition-all">
-               <LogOut size={18} /> Terminate
+               <LogOut size={18} /> Sign Out
             </button>
          </div>
       </div>
@@ -318,12 +318,12 @@ export default function AdminDashboard() {
              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8 shadow-[0_0_100px_rgba(239,68,68,0.15)]">
                 <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-red-500/5"><Trash2 size={40} /></div>
                 <div className="space-y-3">
-                   <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">Confirm Erasure</h3>
-                   <p className="text-xs font-bold opacity-40 uppercase tracking-widest leading-relaxed">Are you certain you wish to purge <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the neural core?</p>
+                   <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">Confirm Deletion</h3>
+                   <p className="text-xs font-bold opacity-40 uppercase tracking-widest leading-relaxed">Are you certain you wish to delete <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the database?</p>
                 </div>
                 <div className="flex gap-4">
-                   <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/10 transition-all">Abort</button>
-                   <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.05] active:scale-95 transition-all">Confirm Purge</button>
+                   <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/10 transition-all">Cancel</button>
+                   <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.05] active:scale-95 transition-all">Delete Forever</button>
                 </div>
              </motion.div>
            </div>
