@@ -6,7 +6,7 @@ import {
   Trash2, TrendingUp, Shield, Wind, Sun, Info,
   DollarSign, Calendar, ChevronRight, Activity, Camera, Download,
   Home, Map as MapIcon, X, PlusCircle, ArrowRight, Settings2,
-  Box
+  Box, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Property, Unit, UnitType } from "@/types/admin";
@@ -131,7 +131,14 @@ export function PortfolioTab({
 
                    <div className="flex gap-3">
                       <button onClick={() => setEditingProperty(prop)} className="flex-1 py-4 bg-slate-500/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"><Settings2 size={14} /> Manage Property</button>
-                      <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
+                      <button 
+                          onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} 
+                          className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                          aria-label={`Purge ${prop.name}`}
+                          title="Purge Asset"
+                       >
+                          <Trash2 size={16} />
+                       </button>
                    </div>
                 </div>
 
@@ -150,7 +157,14 @@ export function PortfolioTab({
                             </div>
                             <div className="flex items-center gap-4">
                                <p className="text-xs font-black text-brand-blue">{formatPrice(ut.price_from)}</p>
-                               <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitType(ut); setShowUnitTypeModal(true); }} className="p-2 opacity-40 hover:opacity-100 transition-opacity"><Settings2 size={14}/></button>
+                               <button 
+                                  onClick={() => { setActivePropertyId(prop.id); setEditingUnitType(ut); setShowUnitTypeModal(true); }} 
+                                  className="p-2 opacity-40 hover:opacity-100 transition-opacity"
+                                  aria-label={`Edit ${ut.name} Configuration`}
+                                  title="Configure Model"
+                               >
+                                  <Settings2 size={14}/>
+                               </button>
                             </div>
                          </div>
                       ))}
@@ -173,7 +187,14 @@ export function PortfolioTab({
         {(isAddingProperty || editingProperty) && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-5xl p-12 overflow-y-auto max-h-[90vh] grid grid-cols-1 lg:grid-cols-12 gap-12 relative shadow-[0_0_100px_rgba(0,112,243,0.1)]">
-               <button onClick={() => { setIsAddingProperty(false); setEditingProperty(null); }} className="absolute top-8 right-8 w-12 h-12 bg-slate-500/10 rounded-2xl flex items-center justify-center opacity-40 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"><X size={20}/></button>
+               <button 
+                   onClick={() => { setIsAddingProperty(false); setEditingProperty(null); }} 
+                   className="absolute top-8 right-8 w-12 h-12 bg-slate-500/10 rounded-2xl flex items-center justify-center opacity-40 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
+                   aria-label="Close Asset Editor"
+                   title="Close"
+                >
+                   <X size={20}/>
+                </button>
                
                <div className="lg:col-span-12 space-y-2 mb-4">
                   <h3 className="text-4xl font-heading font-black tracking-tighter uppercase">{editingProperty ? 'Recalibrate' : 'Deploy'} <span className="opacity-30 italic">Asset Core.</span></h3>
@@ -183,33 +204,33 @@ export function PortfolioTab({
                <div className="lg:col-span-7 space-y-8">
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-4">
-                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Building2 size={12}/> Architecture Identity</label>
-                         <input type="text" placeholder="e.g. Skyline Residence" value={editingProperty?.name || newProp.name || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, name: e.target.value}) : setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                         <label htmlFor="prop-name" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Building2 size={12}/> Architecture Identity</label>
+                         <input id="prop-name" type="text" placeholder="e.g. Skyline Residence" value={editingProperty?.name || newProp.name || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, name: e.target.value}) : setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
                       </div>
                       <div className="space-y-4">
-                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><User size={12}/> Developer Node</label>
-                         <input type="text" placeholder="e.g. Aloha Global" value={editingProperty?.developer || newProp.developer || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, developer: e.target.value}) : setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                         <label htmlFor="prop-developer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Users size={12}/> Developer Node</label>
+                         <input id="prop-developer" type="text" placeholder="e.g. Aloha Global" value={editingProperty?.developer || newProp.developer || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, developer: e.target.value}) : setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
                       </div>
                       <div className="space-y-4">
-                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapPin size={12}/> Deployment Zone</label>
-                         <input type="text" placeholder="e.g. Bole, Addis" value={editingProperty?.location || newProp.location || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, location: e.target.value}) : setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                         <label htmlFor="prop-location" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapPin size={12}/> Deployment Zone</label>
+                         <input id="prop-location" type="text" placeholder="e.g. Bole, Addis" value={editingProperty?.location || newProp.location || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, location: e.target.value}) : setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
                       </div>
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
-                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><DollarSign size={12}/> Budget Baseline</label>
-                         <input type="number" placeholder="Starting Price" value={editingProperty?.price_start || newProp.price_start || 0} onChange={e => editingProperty ? setEditingProperty({...editingProperty, price_start: parseInt(e.target.value)}) : setNewProp({...newProp, price_start: parseInt(e.target.value)})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                         <label htmlFor="prop-price" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><DollarSign size={12}/> Budget Baseline</label>
+                         <input id="prop-price" type="number" placeholder="Starting Price" value={editingProperty?.price_start || newProp.price_start || 0} onChange={e => editingProperty ? setEditingProperty({...editingProperty, price_start: parseInt(e.target.value)}) : setNewProp({...newProp, price_start: parseInt(e.target.value)})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
                       </div>
                       <div className="space-y-4">
-                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Calendar size={12}/> Projected Completion</label>
-                         <input type="text" placeholder="e.g. Q4 2026" value={editingProperty?.completion_date || newProp.completion_date || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, completion_date: e.target.value}) : setNewProp({...newProp, completion_date: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                         <label htmlFor="prop-completion" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Calendar size={12}/> Projected Completion</label>
+                         <input id="prop-completion" type="text" placeholder="e.g. Q4 2026" value={editingProperty?.completion_date || newProp.completion_date || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, completion_date: e.target.value}) : setNewProp({...newProp, completion_date: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
                       </div>
                    </div>
 
                    <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Info size={12}/> Neural Description</label>
-                      <textarea placeholder="Describe the asset's unique value proposition..." value={editingProperty?.description || newProp.description || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, description: e.target.value}) : setNewProp({...newProp, description: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner h-32" />
+                      <label htmlFor="prop-description" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Info size={12}/> Neural Description</label>
+                      <textarea id="prop-description" placeholder="Describe the asset's unique value proposition..." value={editingProperty?.description || newProp.description || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, description: e.target.value}) : setNewProp({...newProp, description: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner h-32" />
                    </div>
 
                   <div className="space-y-6">
@@ -233,7 +254,11 @@ export function PortfolioTab({
                      />
                      {(editingProperty?.cover_image || newProp.cover_image) && (
                         <div className="h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
-                           <img src={editingProperty?.cover_image || newProp.cover_image} className="w-full h-full object-cover" />
+                           <img 
+                               src={editingProperty?.cover_image || newProp.cover_image} 
+                               alt={`${editingProperty?.name || "New Asset"} Cover Visual`}
+                               className="w-full h-full object-cover" 
+                            />
                         </div>
                      )}
                   </div>
@@ -242,12 +267,12 @@ export function PortfolioTab({
                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-4">ESG Intelligence</p>
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase tracking-widest opacity-40 ml-2">Air Quality</label>
-                           <input type="number" value={editingProperty?.air_quality_index || newProp.air_quality_index} onChange={e => editingProperty ? setEditingProperty({...editingProperty, air_quality_index: parseInt(e.target.value)}) : setNewProp({...newProp, air_quality_index: parseInt(e.target.value)})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border border-[var(--border)] focus:border-brand-blue outline-none" />
+                           <label htmlFor="air-quality" className="text-[9px] font-black uppercase tracking-widest opacity-40 ml-2">Air Quality</label>
+                           <input id="air-quality" type="number" value={editingProperty?.air_quality_index || newProp.air_quality_index} onChange={e => editingProperty ? setEditingProperty({...editingProperty, air_quality_index: parseInt(e.target.value)}) : setNewProp({...newProp, air_quality_index: parseInt(e.target.value)})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border border-[var(--border)] focus:border-brand-blue outline-none" />
                         </div>
                         <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase tracking-widest opacity-40 ml-2">Heat Delta</label>
-                           <input type="number" value={editingProperty?.urban_heat_index || newProp.urban_heat_index} onChange={e => editingProperty ? setEditingProperty({...editingProperty, urban_heat_index: parseInt(e.target.value)}) : setNewProp({...newProp, urban_heat_index: parseInt(e.target.value)})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border border-[var(--border)] focus:border-brand-blue outline-none" />
+                           <label htmlFor="heat-delta" className="text-[9px] font-black uppercase tracking-widest opacity-40 ml-2">Heat Delta</label>
+                           <input id="heat-delta" type="number" value={editingProperty?.urban_heat_index || newProp.urban_heat_index} onChange={e => editingProperty ? setEditingProperty({...editingProperty, urban_heat_index: parseInt(e.target.value)}) : setNewProp({...newProp, urban_heat_index: parseInt(e.target.value)})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border border-[var(--border)] focus:border-brand-blue outline-none" />
                         </div>
                      </div>
                   </div>
@@ -266,7 +291,14 @@ export function PortfolioTab({
          {showUnitTypeModal && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-xl p-10 space-y-8 relative">
-                  <button onClick={() => setShowUnitTypeModal(false)} className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                  <button 
+                      onClick={() => setShowUnitTypeModal(false)} 
+                      className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"
+                      aria-label="Close Model Editor"
+                      title="Close"
+                   >
+                      <X/>
+                   </button>
                   <div className="space-y-1">
                      <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">Define <span className="opacity-30 italic">Model.</span></h4>
                      <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Categorization and specs for the property line.</p>
@@ -283,22 +315,22 @@ export function PortfolioTab({
                      </div>
                      
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Model Name</label>
-                        <input type="text" value={editingUnitType?.name || ''} onChange={e => setEditingUnitType({...editingUnitType, name: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                        <label htmlFor="unit-model-name" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Model Name</label>
+                        <input id="unit-model-name" type="text" value={editingUnitType?.name || ''} onChange={e => setEditingUnitType({...editingUnitType, name: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
                      </div>
 
                      <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-1">
-                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Beds</label>
-                           <input type="number" value={editingUnitType?.beds || 0} onChange={e => setEditingUnitType({...editingUnitType, beds: parseInt(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                           <label htmlFor="unit-beds" className="text-[9px] font-black uppercase opacity-40 ml-2">Beds</label>
+                           <input id="unit-beds" type="number" value={editingUnitType?.beds || 0} onChange={e => setEditingUnitType({...editingUnitType, beds: parseInt(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                         </div>
                         <div className="space-y-1">
-                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Baths</label>
-                           <input type="number" value={editingUnitType?.baths || 0} onChange={e => setEditingUnitType({...editingUnitType, baths: parseFloat(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                           <label htmlFor="unit-baths" className="text-[9px] font-black uppercase opacity-40 ml-2">Baths</label>
+                           <input id="unit-baths" type="number" value={editingUnitType?.baths || 0} onChange={e => setEditingUnitType({...editingUnitType, baths: parseFloat(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                         </div>
                         <div className="space-y-1">
-                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">SQM</label>
-                           <input type="number" value={editingUnitType?.sqm || 0} onChange={e => setEditingUnitType({...editingUnitType, sqm: parseInt(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                           <label htmlFor="unit-sqm" className="text-[9px] font-black uppercase opacity-40 ml-2">SQM</label>
+                           <input id="unit-sqm" type="number" value={editingUnitType?.sqm || 0} onChange={e => setEditingUnitType({...editingUnitType, sqm: parseInt(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                         </div>
                      </div>
                   </div>
@@ -313,7 +345,14 @@ export function PortfolioTab({
          {showUnitModal && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-xl p-10 space-y-8 relative overflow-y-auto max-h-[90vh]">
-                  <button onClick={() => setShowUnitModal(false)} className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                  <button 
+                      onClick={() => setShowUnitModal(false)} 
+                      className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"
+                      aria-label="Close Node Deployment"
+                      title="Close"
+                   >
+                      <X/>
+                   </button>
                   <div className="space-y-1">
                      <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">Deploy <span className="opacity-30 italic">Node Instance.</span></h4>
                      <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Tactical parameters for the specific asset node.</p>
@@ -321,8 +360,8 @@ export function PortfolioTab({
 
                   <div className="space-y-6">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Identity (e.g. Villa 104)</label>
-                        <input type="text" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                        <label htmlFor="unit-identity" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Identity (e.g. Villa 104)</label>
+                        <input id="unit-identity" type="text" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
                      </div>
 
                      <div className="space-y-2">
@@ -334,24 +373,28 @@ export function PortfolioTab({
                          />
                          {editingUnitInstance?.image_url && (
                             <div className="h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
-                               <img src={editingUnitInstance?.image_url} className="w-full h-full object-cover" />
+                               <img 
+                                   src={editingUnitInstance?.image_url} 
+                                   alt="Unit Instance Selective Visual"
+                                   className="w-full h-full object-cover" 
+                                />
                             </div>
                          )}
                       </div>
 
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Status Node</label>
-                           <select value={editingUnitInstance?.status || 'available'} onChange={e => setEditingUnitInstance({...editingUnitInstance, status: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
+                           <label htmlFor="unit-status" className="text-[9px] font-black uppercase opacity-40 ml-2">Status Node</label>
+                           <select id="unit-status" value={editingUnitInstance?.status || 'available'} onChange={e => setEditingUnitInstance({...editingUnitInstance, status: e.target.value as any})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
                               <option value="available">Available</option>
                               <option value="reserved">Reserved</option>
                               <option value="sold">Sold</option>
                            </select>
                         </div>
-                        <div className="space-y-1">
-                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Floor/Level</label>
-                           <input type="text" value={editingUnitInstance?.floor || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, floor: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
-                        </div>
+                         <div className="space-y-1">
+                            <label htmlFor="unit-floor" className="text-[9px] font-black uppercase opacity-40 ml-2">Floor/Level</label>
+                            <input id="unit-floor" type="number" value={editingUnitInstance?.floor_number || 0} onChange={e => setEditingUnitInstance({...editingUnitInstance, floor_number: parseInt(e.target.value)})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                         </div>
                      </div>
                   </div>
 

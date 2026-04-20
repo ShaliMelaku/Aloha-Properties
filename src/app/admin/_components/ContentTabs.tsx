@@ -78,7 +78,14 @@ export function ContentTab({
                           <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1"><Eye size={12}/> View Details</button>
                        )}
                     </div>
-                    <button onClick={() => setConfirmDelete({ type: 'post', id: post.id!, name: post.title })} className="text-[10px] font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                    <button 
+                       onClick={() => setConfirmDelete({ type: 'post', id: post.id!, name: post.title })} 
+                       className="text-[10px] font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                       aria-label={`Delete ${post.title}`}
+                       title="Delete Intelligent Node"
+                    >
+                       <Trash2 size={14}/>
+                    </button>
                  </div>
              </div>
           </div>
@@ -95,14 +102,21 @@ export function ContentTab({
                      <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Intelligence <span className="opacity-30 italic">Editor.</span></h2>
                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Publish articles, market reports, or guides.</p>
                   </div>
-                  <button onClick={() => setIsAddingPost(false)} className="p-2 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                   <button 
+                      onClick={() => setIsAddingPost(false)} 
+                      className="p-2 opacity-40 hover:opacity-100 transition-opacity"
+                      aria-label="Close Editor"
+                      title="Close"
+                   >
+                      <X/>
+                   </button>
                </div>
 
                <div className="space-y-6">
                   <div className="space-y-2">
                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Content Category</label>
                      <div className="grid grid-cols-3 gap-2">
-                        {['article', 'report', 'guide'].map(t => (
+                        {(['article', 'report', 'guide'] as const).map(t => (
                            <button key={t} onClick={() => setEditingPost({...editingPost, type: t})} className={`py-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${editingPost?.type === t ? 'border-brand-blue bg-brand-blue/5 text-brand-blue' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>{t}</button>
                         ))}
                      </div>
@@ -180,8 +194,8 @@ export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
         
         <div className="space-y-6 relative z-10">
            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Target Recipient (Leave empty for broadcast)</label>
-              <input placeholder="Email or Group Node..." className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+              <label htmlFor="target-recipient" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Target Recipient (Leave empty for broadcast)</label>
+              <input id="target-recipient" placeholder="Email or Group Node..." className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
            </div>
            <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Neural Subject</label>

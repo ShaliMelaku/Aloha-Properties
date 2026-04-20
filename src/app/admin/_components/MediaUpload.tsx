@@ -88,6 +88,8 @@ export function MediaUpload({
           ref={fileInputRef} 
           className="hidden" 
           accept={accept}
+          id={`media-upload-${bucket}`}
+          aria-label={label}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) handleUpload(file);

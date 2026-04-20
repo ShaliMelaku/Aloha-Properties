@@ -51,6 +51,17 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='images') THEN
         ALTER TABLE public.properties ADD COLUMN images TEXT[] DEFAULT '{}';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='price_start') THEN
+        ALTER TABLE public.properties ADD COLUMN price_start NUMERIC DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='completion_date') THEN
+        ALTER TABLE public.properties ADD COLUMN completion_date TEXT;
+    END IF;
+    
+    -- Units Hardening
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='units' AND column_name='image_url') THEN
+        ALTER TABLE public.units ADD COLUMN image_url TEXT;
+    END IF;
 END $$;
 
 -- 4. Enable RLS and Policies (Hardened)

@@ -48,6 +48,8 @@ export interface Property {
   air_quality_index: number;
   urban_heat_index: number;
   env_risk_level: string;
+  price_start: number;
+  completion_date?: string;
   units?: Unit[];
   unit_types?: UnitType[];
   progress?: PropertyProgress[];
@@ -75,6 +77,7 @@ export interface Unit {
   floor_number: number;
   status: 'available' | 'reserved' | 'sold';
   price: number;
+  image_url?: string;
   notes?: string;
 }
 
