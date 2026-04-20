@@ -40,7 +40,7 @@ export default function AdminDashboard() {
   const [isAddingProperty, setIsAddingProperty] = useState(false);
   const [newProp, setNewProp] = useState<Partial<Property>>({ 
     name: '', location: '', developer: 'Getas Real Estate', description: '', 
-    lat: 9.0, lng: 38.7, amenities: [], 
+    lat: 9.0192, lng: 38.7525, amenities: [], 
     cover_image: '', video_url: '', 
     discount_percentage: 0, downpayment_percentage: 0, 
     payment_schedule: 'Flexible Terms', air_quality_index: 50,
@@ -130,7 +130,7 @@ export default function AdminDashboard() {
       const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
       if (error) throw error;
       
-      notify('success', `Resource purged: ${confirmDelete.name}`);
+      notify('success', `Resource Purged from Neural Core: ${confirmDelete.name}`);
       refreshAll();
     } catch (err: unknown) {
       notify('error', `Purge Fault: ${err instanceof Error ? err.message : 'Unknown'}`);
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/news');
       const data = await res.json();
       if (data.success) {
-        notify('success', `News Desk Synchronized: ${data.posted} new articles.`);
+        notify('success', `Intelligence Desk Synchronized: ${data.posted} new articles.`);
         fetchPosts();
       }
     } catch { notify('error', 'Sync operational failure.'); }
@@ -156,18 +156,19 @@ export default function AdminDashboard() {
 
   if (!isAuthorized) {
     return (
-      <div className="h-screen bg-[var(--background)] flex items-center justify-center p-6">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl space-y-8">
-           <div className="text-center space-y-2">
-              <div className="w-16 h-16 bg-brand-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand-blue"><Lock size={32} /></div>
+      <div className="h-screen bg-[var(--background)] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--brand-blue-alpha)_0%,_transparent_70%)]">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl space-y-8 relative overflow-hidden group">
+           <div className="text-center space-y-2 relative z-10">
+              <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-brand-blue shadow-xl shadow-brand-blue/10"><Lock size={40} /></div>
               <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">Admin <span className="opacity-30 italic">Gate.</span></h1>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Unauthorized access is monitored.</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Biometric Verification Pending...</p>
            </div>
-           <div className="space-y-4">
-              <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue" />
-              <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue" />
-              <button onClick={handleLogin} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Establish Connection</button>
+           <div className="space-y-4 relative z-10">
+              <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+              <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+              <button onClick={handleLogin} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Establish Connection</button>
            </div>
+           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-brand-blue/5 rounded-full blur-3xl" />
         </motion.div>
       </div>
     );
@@ -187,8 +188,11 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <div className="w-80 h-screen sticky top-0 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-8 space-y-12 shadow-2xl z-50">
          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-lg"><ShieldCheck size={24} /></div>
-            <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
+            <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-xl shadow-brand-blue/20"><ShieldCheck size={28} /></div>
+            <div>
+               <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">Command Center v6</span>
+            </div>
          </div>
 
          <nav className="flex-1 space-y-2">
@@ -265,7 +269,7 @@ export default function AdminDashboard() {
                 editingProperty={editingProperty}
               />
             )}
-            {activeTab === 'marketing' && <MarketingTab key="marketing" onNotify={notify} />}
+            {activeTab === 'marketing' && <MarketingTab key="marketing" onNotify={notify} onRefreshLeads={fetchLeads} />}
             {activeTab === 'content' && (
               <ContentTab 
                 key="content"
@@ -273,9 +277,9 @@ export default function AdminDashboard() {
                 loading={loading} 
                 syncing={syncing} 
                 onSync={syncNews} 
-                onAdd={() => notify('info', 'Article Creator Initialized.')} 
-                onEdit={(p: Post) => notify('info', `Intelligence Layer: ${p.title}`)} 
-                onDelete={(p: Post) => setConfirmDelete({ type: 'post', id: p.id, name: p.title })} 
+                onRefresh={fetchPosts}
+                onNotify={notify} 
+                setConfirmDelete={setConfirmDelete} 
               />
             )}
             {activeTab === 'leads' && (
@@ -300,15 +304,15 @@ export default function AdminDashboard() {
       <AnimatePresence>
         {confirmDelete && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8 shadow-2xl">
-                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto"><Trash2 size={40} /></div>
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8 shadow-[0_0_100px_rgba(239,68,68,0.15)]">
+                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-red-500/5"><Trash2 size={40} /></div>
                 <div className="space-y-3">
                    <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">Confirm Erasure</h3>
                    <p className="text-xs font-bold opacity-40 uppercase tracking-widest leading-relaxed">Are you certain you wish to purge <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the neural core?</p>
                 </div>
                 <div className="flex gap-4">
                    <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/10 transition-all">Abort</button>
-                   <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all">Confirm Purge</button>
+                   <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.05] active:scale-95 transition-all">Confirm Purge</button>
                 </div>
              </motion.div>
            </div>

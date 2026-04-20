@@ -4,7 +4,7 @@ import { useState } from "react";
 import { 
   Users, Mail, Phone, Calendar, Search, 
   Download, Filter, Trash2, Eye, Activity,
-  Database, UserCheck, ShieldAlert
+  Database, UserCheck, ShieldAlert, FileUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lead } from "@/types/admin";
@@ -49,6 +49,10 @@ export function LeadsTab({
     }, 1000);
   };
 
+  const handleImportTrigger = () => {
+     onNotify('info', 'Navigate to Marketing section to drop contact manifests.');
+  };
+
   if (loading) return <div className="h-64 flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
 
   return (
@@ -69,9 +73,14 @@ export function LeadsTab({
                 className="w-full pl-12 pr-6 py-4 bg-[var(--card)] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[var(--border)] focus:border-brand-blue outline-none transition-all" 
               />
            </div>
-           <button onClick={handleExportCSV} className="flex items-center gap-3 px-6 py-4 bg-emerald-500/10 text-emerald-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-xl shadow-emerald-500/10">
-             <Download size={16} /> Export CSV
-           </button>
+           <div className="flex gap-2">
+              <button onClick={handleImportTrigger} className="flex items-center gap-3 px-6 py-4 bg-brand-blue/10 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest border border-brand-blue/20 hover:bg-brand-blue hover:text-white transition-all shadow-xl shadow-brand-blue/10">
+                <FileUp size={16} /> Ingest
+              </button>
+              <button onClick={handleExportCSV} className="flex items-center gap-3 px-6 py-4 bg-emerald-500/10 text-emerald-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-xl shadow-emerald-500/10">
+                <Download size={16} /> Export
+              </button>
+           </div>
         </div>
       </div>
 
@@ -82,7 +91,7 @@ export function LeadsTab({
            { label: 'Urgent', value: leads.filter(l => l.status === 'new').length, icon: ShieldAlert, color: 'red-400' }
          ].map((stat, i) => (
            <div key={i} className="bg-[var(--card)] p-6 rounded-3xl border border-[var(--border)] flex items-center gap-6">
-              <div className={`w-14 h-14 rounded-2xl bg-${stat.color}/10 flex items-center justify-center text-${stat.color}`}><stat.icon size={28} /></div>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center`} style={{ backgroundColor: `${stat.color}15`, color: stat.color }}><stat.icon size={28} /></div>
               <div>
                  <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{stat.label}</p>
                  <p className="text-2xl font-heading font-black">{stat.value}</p>
@@ -127,8 +136,8 @@ export function LeadsTab({
                    </td>
                    <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2">
-                         <button onClick={() => setViewingLead(lead)} title="View Lead" aria-label="View Lead" className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:border-brand-blue hover:text-brand-blue transition-all"><Eye size={14} /></button>
-                         <button onClick={() => setConfirmDelete({ type: 'lead', id: lead.id!, name: lead.name })} title="Delete Lead" aria-label="Delete Lead" className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={14} /></button>
+                         <button onClick={() => setViewingLead(lead)} title="View Node" aria-label="View Node" className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:border-brand-blue hover:text-brand-blue transition-all"><Eye size={14} /></button>
+                         <button onClick={() => setConfirmDelete({ type: 'lead', id: lead.id!, name: lead.name })} title="Purge Node" aria-label="Purge Node" className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={14} /></button>
                       </div>
                    </td>
                 </tr>

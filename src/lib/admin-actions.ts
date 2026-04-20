@@ -47,18 +47,35 @@ export async function saveUnitType(type: Partial<UnitType>) {
 }
 
 export async function saveUnit(unit: Partial<Unit>) {
-  if (unit.id) {
+  const { id, ...payload } = unit;
+  if (id) {
     const { error } = await supabaseClient
       .from('property_units')
-      .update(unit)
-      .eq('id', unit.id);
+      .update(payload)
+      .eq('id', id);
     if (error) throw error;
   } else {
     const { error } = await supabaseClient
       .from('property_units')
-      .insert(unit);
+      .insert(payload);
     if (error) throw error;
   }
+}
+
+export async function deleteUnit(id: string) {
+  const { error } = await supabaseClient
+    .from('property_units')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteUnitType(id: string) {
+  const { error } = await supabaseClient
+    .from('property_unit_types')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
 }
 
 /**
