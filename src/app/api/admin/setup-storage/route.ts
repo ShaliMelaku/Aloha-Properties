@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET() {
   try {
-    const { data, error } = await supabase.storage.createBucket('aloha-assets', {
+    const { error } = await supabase.storage.createBucket('aloha-assets', {
       public: true,
       allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf', 'video/mp4'],
       fileSizeLimit: 52428800 // 50MB
@@ -19,7 +19,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, message: "Storage bucket 'aloha-assets' initialized." });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error during storage setup';
+    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
   }
 }

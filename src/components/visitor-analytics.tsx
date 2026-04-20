@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { supabaseClient } from "@/lib/supabase";
-import { Activity, Users, Globe2, Target } from "lucide-react";
+import { Activity, Globe2, Target } from "lucide-react";
 
 interface LeadRecord {
   id: string;

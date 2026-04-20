@@ -352,7 +352,7 @@ export function PropertyCard({ property, index }: { property: SupabaseProperty, 
               <PropertyMap lat={property.lat} lng={property.lng} name={property.name} location={property.location} />
             </div>
             <div className="mt-4 p-4 rounded-2xl bg-black/60 text-white/80 text-[10px] font-bold tracking-wider leading-relaxed border border-white/10 backdrop-blur-md drop-shadow-md">
-              Precise location for '{property.name}' at {property.location}.
+              Precise location for &apos;{property.name}&apos; at {property.location}.
             </div>
           </motion.div>
         )}

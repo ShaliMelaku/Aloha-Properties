@@ -228,8 +228,6 @@ export function AnalyticsDashboard() {
   const totalLeads   = leads.length;
   const totalTraffic = visitors.length;
   const convRate     = totalTraffic > 0 ? ((totalLeads / totalTraffic) * 100).toFixed(1) : "0.0";
-  const thisW        = trendData[trendData.length - 1]?.count ?? 0;
-  const lastW        = trendData[trendData.length - 2]?.count ?? 0;
 
   const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
     { id: "overview",   label: "Overview",      icon: BarChart3 },

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion } from "framer-motion";
-import { Users, Plus, Edit3, Mail, Trash2, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, Plus, Edit3, Mail, Trash2, X, Search, Filter, Activity } from "lucide-react";
 import { Lead } from "@/types/admin";
 import { saveLead } from "@/lib/admin-actions";
 
@@ -11,15 +11,26 @@ interface LeadsTabProps {
   loading: boolean;
   onRefresh: () => void;
   onNotify: (type: 'success' | 'error' | 'info', msg: string) => void;
-  onIndividualOutreach: (lead: Lead) => void;
-  onDelete: (lead: Lead) => void;
+  setViewingLead: (l: Lead | null) => void;
+  setSelectedLead: (l: Lead | null) => void;
+  setConfirmDelete: (v: { type: 'property' | 'post' | 'lead', id: string, name: string } | null) => void;
+  viewingLead: Lead | null;
 }
 
-export function LeadsTab({ leads, loading, onRefresh, onNotify, onIndividualOutreach, onDelete }: LeadsTabProps) {
+export function LeadsTab({ 
+  leads, 
+  loading, 
+  onRefresh, 
+  onNotify, 
+  setViewingLead, 
+  setSelectedLead, 
+  setConfirmDelete,
+  viewingLead
+}: LeadsTabProps) {
   const [isAddingLead, setIsAddingLead] = useState(false);
-  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [newLead, setNewLead] = useState<Partial<Lead>>({ name: '', email: '', phone: '', interest: '', status: 'new' });
   const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleAddLead = async () => {
     if (!newLead.name || !newLead.email) return onNotify('info', 'Name and email required.');
@@ -52,94 +63,96 @@ export function LeadsTab({ leads, loading, onRefresh, onNotify, onIndividualOutr
     }
   };
 
+  const filteredLeads = leads.filter(l => 
+    l.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    l.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.interest?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -20 }} 
-      className="space-y-6"
+      className="space-y-8"
     >
-      <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden shadow-sm">
-        <div className="p-8 border-b border-[var(--border)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[var(--foreground)]">
-          <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3">
-            <Users size={20} className="text-brand-blue" />
-            Captured Inquiries
-          </h2>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{leads.length} Records</span>
-            <button
-              onClick={() => setIsAddingLead(true)}
-              className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-brand-blue/20"
-            >
-              <Plus size={14} /> Add Lead
+      {/* Search & Intelligence Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+         <div className="relative w-full md:w-96 group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--foreground)] opacity-20 group-focus-within:text-brand-blue group-focus-within:opacity-100 transition-all" size={18} />
+            <input 
+              type="text" 
+              placeholder="SEARCH LEAD REGISTRY..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-14 pr-8 py-5 bg-[var(--card)] rounded-2xl border border-[var(--border)] focus:border-brand-blue/50 outline-none font-black text-[10px] uppercase tracking-widest text-[var(--foreground)] shadow-xl transition-all"
+            />
+         </div>
+         <div className="flex gap-4">
+            <button className="px-6 py-4 bg-[var(--card)] rounded-xl border border-[var(--border)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground)]/40 hover:text-[var(--foreground)] hover:border-brand-blue/30 transition-all flex items-center gap-2">
+               <Filter size={16} /> Advanced Filters
             </button>
-          </div>
-        </div>
+            <button
+               onClick={() => setIsAddingLead(true)}
+               className="bg-brand-blue text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-brand-blue/20 flex items-center gap-2"
+            >
+               <Plus size={16} /> Add New Prospect
+            </button>
+         </div>
+      </div>
 
+      <div className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-500/5 text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">
-                <th className="px-8 py-4">Status</th>
-                <th className="px-8 py-4">Prospect</th>
-                <th className="px-8 py-4">Interest</th>
-                <th className="px-8 py-4">Inquiry Date</th>
-                <th className="px-8 py-4 text-right">Action</th>
+              <tr className="bg-slate-500/5 text-[10px] font-black uppercase tracking-[0.4em] opacity-40 text-[var(--foreground)] border-b border-[var(--border)]">
+                <th className="px-10 py-8 italic">Origin/Node</th>
+                <th className="px-10 py-8 italic">Intent/Interest</th>
+                <th className="px-10 py-8 italic">Captured at</th>
+                <th className="px-10 py-8 italic text-right">Operational Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)]">
+            <tbody className="divide-y divide-[var(--border)]">
               {loading ? (
-                 <tr><td colSpan={5} className="px-8 py-12 text-center opacity-40 italic">Decrypting Database...</td></tr>
-              ) : leads.map((lead) => (
-                 <tr key={lead.id} className="hover:bg-brand-blue/5 transition-colors group">
-                  <td className="px-8 py-5">
-                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
-                       lead.status === 'qualified' ? 'bg-emerald-500/10 text-emerald-500' : 
-                       lead.status === 'contacted' ? 'bg-amber-500/10 text-amber-500' : 
-                       lead.status === 'closed' ? 'bg-brand-blue/10 text-brand-blue' : 
-                       lead.status === 'lost' ? 'bg-red-500/10 text-red-500' : 
-                       'bg-slate-500/10 text-[var(--foreground)]/60'
-                     }`}>
-                       {lead.status || 'new'}
-                     </span>
+                <tr><td colSpan={4} className="px-10 py-20 text-center text-xs font-bold opacity-30 italic uppercase tracking-widest">Decrypting Lead Manifest...</td></tr>
+              ) : filteredLeads.length === 0 ? (
+                <tr><td colSpan={4} className="px-10 py-20 text-center text-xs font-bold opacity-30 italic uppercase tracking-widest">Registry Empty — Awaiting Initial Traffic</td></tr>
+              ) : filteredLeads.map((lead) => (
+                <tr key={lead.id} className="group hover:bg-brand-blue/[0.02] transition-colors">
+                  <td className="px-10 py-8">
+                     <div className="flex items-center gap-6">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-blue/10 text-brand-blue flex items-center justify-center font-black italic shadow-inner group-hover:scale-110 transition-transform">
+                           {lead.name.charAt(0)}
+                        </div>
+                        <div>
+                           <p className="font-heading font-black text-lg text-[var(--foreground)] tracking-tight">{lead.name}</p>
+                           <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{lead.email}</p>
+                        </div>
+                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-sm tracking-tight">{lead.name}</span>
-                      <span className="text-xs opacity-40">{lead.email}</span>
-                    </div>
+                  <td className="px-10 py-8">
+                     <p className="font-bold text-xs text-[var(--foreground)]/80">{lead.interest || 'General Inquiry'}</p>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-brand-blue opacity-50 mt-1">Platform Direct</p>
                   </td>
-                  <td className="px-8 py-5">
-                    <span className="text-[10px] font-black uppercase tracking-widest bg-brand-blue/10 text-brand-blue px-2 py-1 rounded-md">
-                      {lead.interest || "General"}
-                    </span>
+                  <td className="px-10 py-8">
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">
+                        {lead.created_at ? new Date(lead.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '---'}
+                     </p>
                   </td>
-                  <td className="px-8 py-5 text-xs font-medium opacity-60">
-                    {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                     <div className="flex justify-end gap-2">
-                        <button 
-                         onClick={() => setViewingLead(lead)} 
-                         title="Edit CRM Details"
-                         className="text-[var(--foreground)] hover:scale-110 transition-transform bg-slate-500/10 p-2 rounded-lg"
-                        >
-                         <Edit3 size={16} />
-                        </button>
-                        <button 
-                         onClick={() => onIndividualOutreach(lead)} 
-                         title="Individual Outreach"
-                         className="text-brand-blue hover:scale-110 transition-transform bg-brand-blue/10 p-2 rounded-lg"
-                        >
-                         <Mail size={16} />
-                        </button>
-                        <button 
-                         onClick={() => onDelete(lead)}
-                         title="Delete Lead"
-                         className="text-red-400 hover:scale-110 transition-transform bg-red-400/10 p-2 rounded-lg opacity-0 group-hover:opacity-100"
-                        >
-                         <Trash2 size={16} />
-                        </button>
+                  <td className="px-10 py-8">
+                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+                        <button onClick={() => setViewingLead(lead)} className="px-4 py-2 bg-[var(--background)] border border-[var(--border)] hover:border-brand-blue text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] rounded-lg transition-all">CRM Records</button>
+                        <button title="Direct Outreach" onClick={() => setSelectedLead(lead)} className="p-2 bg-brand-blue/10 text-brand-blue rounded-lg hover:bg-brand-blue hover:text-white transition-all"><Mail size={16}/></button>
+                        <button title="Delete Lead" onClick={() => setConfirmDelete({ type: 'lead', id: lead.id!, name: lead.name })} className="p-2 bg-red-400/10 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16}/></button>
+                     </div>
+                     <div className="group-hover:hidden transition-all text-right">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${
+                          (lead.status || 'new') === 'new' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 
+                          (lead.status === 'closed') ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                          'bg-slate-500/5 text-[var(--foreground)]/40 border border-[var(--border)]'
+                        }`}>
+                           {lead.status || 'NEW ARRIVAL'}
+                        </span>
                      </div>
                   </td>
                 </tr>
@@ -149,90 +162,91 @@ export function LeadsTab({ leads, loading, onRefresh, onNotify, onIndividualOutr
         </div>
       </div>
 
-      {/* Edit Lead Modal */}
-      {viewingLead && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-lg bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl">
-              <div className="flex justify-between items-start mb-6">
-                 <div>
-                    <h3 className="text-2xl font-heading font-black tracking-tight uppercase text-[var(--foreground)]">{viewingLead.name}</h3>
-                    <p className="text-xs font-bold opacity-40 uppercase tracking-widest text-[var(--foreground)]">{viewingLead.email} {viewingLead.phone ? `\u2022 ${viewingLead.phone}` : ''}</p>
-                 </div>
-                  <button onClick={() => setViewingLead(null)} className="text-[var(--foreground)]/40 hover:text-red-400" title="Close Lead Details"><X size={20}/></button>
-              </div>
-              
-              <div className="space-y-6">
-                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Interest</label>
-                       <p className="font-bold text-sm text-[var(--foreground)]">{viewingLead.interest || "General Inquiry"}</p>
+      <AnimatePresence>
+        {viewingLead && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl">
+                <div className="flex justify-between items-start mb-8">
+                   <div>
+                      <h3 className="text-3xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)]">{viewingLead.name}</h3>
+                      <p className="text-xs font-bold opacity-40 uppercase tracking-widest text-brand-blue">{viewingLead.email} {viewingLead.phone ? `\u2022 ${viewingLead.phone}` : ''}</p>
+                   </div>
+                    <button onClick={() => setViewingLead(null)} className="p-2 rounded-xl bg-slate-500/10 text-[var(--foreground)]/40 hover:text-red-400 transition-colors"><X size={20}/></button>
+                </div>
+                
+                <div className="space-y-8">
+                   <div className="grid grid-cols-2 gap-8">
+                      <div className="bg-slate-500/5 p-4 rounded-2xl border border-[var(--border)]">
+                         <label className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">Intent/Interest</label>
+                         <p className="font-bold text-sm text-[var(--foreground)]">{viewingLead.interest || "General Inquiry"}</p>
+                      </div>
+                      <div className="bg-slate-500/5 p-4 rounded-2xl border border-[var(--border)]">
+                         <label className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">Captured date</label>
+                         <p className="font-bold text-sm text-[var(--foreground)]">{viewingLead.created_at ? new Date(viewingLead.created_at).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                   </div>
+                   
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Lead Lifecycle Status</label>
+                      <select 
+                        title="Lifecycle Status"
+                        value={viewingLead.status || 'new'} 
+                        onChange={e => setViewingLead({...viewingLead, status: e.target.value as any})}
+                        className="w-full bg-[var(--background)] px-6 py-4 rounded-2xl border border-[var(--border)] focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)] appearance-none cursor-pointer hover:bg-slate-500/5 transition-all"
+                      >
+                         <option value="new">New Inquiry</option>
+                         <option value="contacted">Phase: Contacted</option>
+                         <option value="qualified">Qualified Asset Lead</option>
+                         <option value="closed">Conversion: Closed/Won</option>
+                         <option value="lost">Lost/Terminated</option>
+                      </select>
+                   </div>
+
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Internal Intelligence (Notes)</label>
+                      <textarea 
+                        rows={5} 
+                        title="Intelligence Notes"
+                        placeholder="Add internal intelligence about this prospect..."
+                        value={viewingLead.notes || ''} 
+                        onChange={e => setViewingLead({...viewingLead, notes: e.target.value})}
+                        className="w-full bg-[var(--background)] px-8 py-6 rounded-[2rem] border border-[var(--border)] focus:border-brand-blue outline-none text-sm font-medium resize-none text-[var(--foreground)] leading-relaxed"
+                      />
+                   </div>
+
+                   <button 
+                      onClick={handleUpdateLead}
+                      disabled={isSaving}
+                      className="w-full bg-brand-blue text-white font-black text-xs uppercase tracking-[0.4em] py-6 rounded-[2rem] shadow-2xl shadow-brand-blue/20 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-3"
+                   >
+                      {isSaving ? <Activity className="animate-spin" /> : "Authorize Record Sync"}
+                   </button>
+                </div>
+             </motion.div>
+          </div>
+        )}
+
+        {isAddingLead && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl">
+                 <h3 className="text-3xl font-heading font-black tracking-tighter mb-8 uppercase text-[var(--foreground)]">Manual Prospect Injection</h3>
+                 <div className="space-y-5">
+                    <input type="text" placeholder="FULL NAME *" value={newLead.name} onChange={e => setNewLead({...newLead, name: e.target.value})} className="w-full px-8 py-5 bg-[var(--background)] rounded-2xl border border-[var(--border)] focus:border-brand-blue outline-none text-xs font-black uppercase tracking-widest text-[var(--foreground)]" />
+                    <input type="email" placeholder="EMAIL ADDRESS *" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className="w-full px-8 py-5 bg-[var(--background)] rounded-2xl border border-[var(--border)] focus:border-brand-blue outline-none text-xs font-black uppercase tracking-widest text-[var(--foreground)]" />
+                    <input type="tel" placeholder="PHONE (OPTIONAL)" value={newLead.phone||''} onChange={e => setNewLead({...newLead, phone: e.target.value})} className="w-full px-8 py-5 bg-[var(--background)] rounded-2xl border border-[var(--border)] focus:border-brand-blue outline-none text-xs font-black uppercase tracking-widest text-[var(--foreground)]" />
+                    <input type="text" placeholder="PRIMARY INTEREST" value={newLead.interest||''} onChange={e => setNewLead({...newLead, interest: e.target.value})} className="w-full px-8 py-5 bg-[var(--background)] rounded-2xl border border-[var(--border)] focus:border-brand-blue outline-none text-xs font-black uppercase tracking-widest text-[var(--foreground)]" />
+                    
+                    <div className="flex gap-4 pt-4">
+                      <button onClick={() => setIsAddingLead(false)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]/40 hover:text-[var(--foreground)] transition-all">Cancel</button>
+                      <button onClick={handleAddLead} disabled={isSaving} className="flex-1 py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">
+                        {isSaving ? <Activity className="animate-spin mx-auto" /> : 'Confirm Injection'}
+                      </button>
                     </div>
-                    <div>
-                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Date</label>
-                       <p className="font-bold text-sm text-[var(--foreground)]">{viewingLead.created_at ? new Date(viewingLead.created_at).toLocaleDateString() : 'N/A'}</p>
-                    </div>
                  </div>
-                 
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Lead Status</label>
-                    <select 
-                      title="Select Lead Status"
-                      value={viewingLead.status || 'new'} 
-                      onChange={e => setViewingLead({...viewingLead, status: e.target.value as any})}
-                      className="w-full bg-slate-500/5 px-4 py-3 rounded-xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]"
-                    >
-                       <option value="new">New</option>
-                       <option value="contacted">Contacted</option>
-                       <option value="qualified">Qualified</option>
-                       <option value="closed">Closed / Won</option>
-                       <option value="lost">Lost</option>
-                    </select>
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">Internal Notes</label>
-                    <textarea 
-                       rows={4} 
-                       title="Internal Notes"
-                       placeholder="Add internal notes about this prospect..."
-                       value={viewingLead.notes || ''} 
-                       onChange={e => setViewingLead({...viewingLead, notes: e.target.value})}
-                       className="w-full bg-slate-500/5 px-4 py-3 rounded-xl border border-transparent focus:border-brand-blue outline-none text-sm font-medium resize-none text-[var(--foreground)]"
-                    />
-                 </div>
-
-                 <button 
-                    onClick={handleUpdateLead}
-                    disabled={isSaving}
-                    className="w-full bg-brand-blue text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg border-2 border-transparent hover:border-white/20 transition-all font-heading"
-                 >
-                    {isSaving ? "Saving..." : "Save Record"}
-                 </button>
-              </div>
-           </motion.div>
-        </div>
-      )}
-
-      {/* Add Lead Modal */}
-      {isAddingLead && (
-         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-lg bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] p-8 shadow-2xl">
-               <h3 className="text-2xl font-heading font-black tracking-tight mb-6 uppercase text-[var(--foreground)]">Add New Lead</h3>
-               <div className="space-y-4">
-                  <input type="text" placeholder="Full Name *" value={newLead.name} onChange={e => setNewLead({...newLead, name: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
-                  <input type="email" placeholder="Email Address *" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
-                  <input type="tel" placeholder="Phone Number" value={newLead.phone||''} onChange={e => setNewLead({...newLead, phone: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
-                  <input type="text" placeholder="Interest / Property" value={newLead.interest||''} onChange={e => setNewLead({...newLead, interest: e.target.value})} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl border border-transparent focus:border-brand-blue outline-none text-sm font-bold text-[var(--foreground)]" />
-                  <div className="flex gap-4 pt-4">
-                    <button onClick={() => setIsAddingLead(false)} className="flex-1 py-4 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest text-[var(--foreground)]">Cancel</button>
-                    <button onClick={handleAddLead} disabled={isSaving} className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 font-heading">
-                      {isSaving ? 'Saving...' : 'Add Lead'}
-                    </button>
-                  </div>
-               </div>
-            </motion.div>
-         </div>
-      )}
+              </motion.div>
+           </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

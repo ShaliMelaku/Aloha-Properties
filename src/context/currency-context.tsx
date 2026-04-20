@@ -14,8 +14,6 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-// Default conversion rate: 1 USD = 157.00 ETB (Official Market April 2026)
-const USD_RATE = 157.00;
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -38,7 +36,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
           setUsdRate(data.rate);
           console.log(`[Currency] Live NBE Rate Sync: 1 USD = ${data.rate} ETB`);
         }
-      } catch (err) {
+      } catch {
         console.error("[Currency] NBE Sync Failed, using local fallback.");
       }
     }

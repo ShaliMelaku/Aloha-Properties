@@ -37,6 +37,7 @@ export default function LocationPicker({
   onChange: (lat: number, lng: number) => void 
 }) {
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return <div className="h-[300px] w-full bg-slate-500/10 rounded-2xl animate-pulse" />;

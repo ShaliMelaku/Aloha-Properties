@@ -40,7 +40,7 @@ export async function GET() {
     } else {
       throw new Error("Invalid Data");
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json({ 
       success: false, 
       rate: cachedRate || 157.00, // Updated Baseline April 2026 (~157 ETB)

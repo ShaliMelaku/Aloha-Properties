@@ -2,11 +2,14 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Plus, Edit3, Trash2, MapPin, Building, Info, Activity, Upload, X, ShieldCheck } from "lucide-react";
+import { 
+  Plus, Trash2, Edit3, Upload, 
+  MapPin, Building2, ShieldCheck, ChevronRight, Activity, 
+  Home as HomeIcon
+} from "lucide-react";
 import Image from "next/image";
 import { Property, Unit, UnitType, PropertyProgress } from "@/types/admin";
 import { useCurrency } from "@/context/currency-context";
-import { createProperty, updateProperty } from "@/lib/admin-actions";
 import dynamic from "next/dynamic";
 
 const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false });
@@ -14,165 +17,355 @@ const LocationPicker = dynamic(() => import("@/components/location-picker"), { s
 interface PortfolioTabProps {
   properties: Property[];
   loading: boolean;
-  onRefresh: () => void;
-  onNotify: (type: 'success' | 'error' | 'info', msg: string) => void;
-  onEdit: (prop: Property) => void;
-  onDelete: (prop: Property) => void;
-  onManageUnits: (propId: string) => void;
+  isAddingProperty: boolean;
+  setIsAddingProperty: (v: boolean) => void;
+  newProp: Partial<Property>;
+  setNewProp: React.Dispatch<React.SetStateAction<Partial<Property>>>;
+  newUnit: Partial<Unit>;
+  setNewUnit: React.Dispatch<React.SetStateAction<Partial<Unit>>>;
+  uploadingImage: boolean;
+  uploadFile: (file: File, bucket?: string, path?: string) => Promise<string | null>;
+  handleCreateProperty: () => void;
+  handleUpdateProperty: () => void;
+  setEditingProperty: (v: Property | null) => void;
+  setConfirmDelete: (v: { type: 'property' | 'post' | 'lead', id: string, name: string } | null) => void;
+  togglePropertyUnits: (id: string) => void;
+  expandedProperties: Set<string>;
+  formatPrice: (p: number) => string;
+  setEditingUnit: (u: Unit | null) => void;
+  setSelectedPropertyId: (id: string | null) => void;
+  fetchProperties: () => void;
+  notify: (type: 'success' | 'error' | 'info', msg: string) => void;
+  editingProperty: Property | null;
 }
 
-export function PortfolioTab({ properties, loading, onRefresh, onNotify, onEdit, onDelete, onManageUnits }: PortfolioTabProps) {
-  const { formatPrice } = useCurrency();
-  const [isAdding, setIsAdding] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [newProp, setNewProp] = useState<Partial<Property>>({
-    name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '',
-    discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms',
-    air_quality_index: 50, urban_heat_index: 0, env_risk_level: 'Low'
-  });
-
-  const handleCreate = async () => {
-    if (!newProp.name || !newProp.location) return onNotify('info', "Name and location required.");
-    setIsSaving(true);
-    try {
-      await createProperty(newProp);
-      onNotify('success', "Property registered.");
-      setIsAdding(false);
-      setNewProp({ name: '', location: '', developer: '', description: '', lat: 9.0, lng: 38.7, amenities: [], cover_image: '', video_url: '', discount_percentage: 0, downpayment_percentage: 0, payment_schedule: 'Flexible Terms', air_quality_index: 50, urban_heat_index: 0, env_risk_level: 'Low' });
-      onRefresh();
-    } catch (err: any) {
-      onNotify('error', `Registration fault: ${err.message}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+export function PortfolioTab({
+  properties,
+  loading,
+  isAddingProperty,
+  setIsAddingProperty,
+  newProp,
+  setNewProp,
+  newUnit,
+  setNewUnit,
+  uploadingImage,
+  uploadFile,
+  handleCreateProperty,
+  handleUpdateProperty,
+  setEditingProperty,
+  setConfirmDelete,
+  togglePropertyUnits,
+  expandedProperties,
+  formatPrice,
+  setEditingUnit,
+  setSelectedPropertyId,
+  notify,
+}: PortfolioTabProps) {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }} 
-      className="space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-12"
     >
-      <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden shadow-sm p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="font-heading text-xl font-black tracking-tight flex items-center gap-3">
-            <Home size={20} className="text-brand-blue" />
-            Property Management
+      {/* Header & Control Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div>
+          <h2 className="text-4xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)]">
+            Registry <span className="opacity-30 italic">Curator.</span>
           </h2>
-          <button onClick={() => setIsAdding(!isAdding)} className="bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-xl text-xs font-bold hover:bg-brand-blue/20 transition-all flex items-center gap-2">
-             <Plus size={16} /> {isAdding ? 'Cancel' : 'New Property'}
-          </button>
+          <p className="text-xs font-bold opacity-40 uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+            <Building2 size={14} className="text-brand-blue" /> {properties.length} Assets Globally Managed
+          </p>
         </div>
+        <button 
+          onClick={() => setIsAddingProperty(!isAddingProperty)} 
+          className="group relative px-8 py-4 bg-brand-blue text-white rounded-2xl shadow-xl shadow-brand-blue/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+          <Plus size={20} className="relative z-10" /> 
+          <span className="relative z-10 font-black text-xs uppercase tracking-widest">{isAddingProperty ? 'Cancel Intent' : 'New Listing Protocol'}</span>
+        </button>
+      </div>
 
-        {/* Add Property Form */}
-        <AnimatePresence>
-          {isAdding && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-12 overflow-hidden">
-               <div className="bg-slate-500/5 rounded-3xl p-8 border border-brand-blue/30 space-y-6">
-                   <h3 className="text-sm font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Register New Listing</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase opacity-40 ml-2">Property Name</label>
-                          <input type="text" placeholder="e.g. Aloha Sky Garden" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+      <AnimatePresence>
+        {isAddingProperty && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, height: 'auto', scale: 1 }} 
+            exit={{ opacity: 0, height: 0, scale: 0.95 }} 
+            className="overflow-hidden"
+          >
+             <div className="bg-[var(--card)] rounded-[3rem] p-12 border border-brand-blue/30 shadow-2xl space-y-10">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-blue/10 text-brand-blue flex items-center justify-center font-black italic">!</div>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-[var(--foreground)]">Register New Listing</h3>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                   <div className="space-y-6">
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Property Designation *</label>
+                       <input title="Property Name" type="text" placeholder="Building Name" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Geography / Area *</label>
+                       <input title="Location" type="text" placeholder="City / Neighborhood" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Authorized Entity (Developer)</label>
+                       <input type="text" placeholder="Entity Name" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Amenities Portfolio</label>
+                       <input type="text" placeholder="Gym, Pool, Security... (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                     </div>
+                   </div>
+
+                   <div className="space-y-6">
+                      <div className="space-y-2 h-[280px]">
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Satellite Pinpoint</label>
+                        <div className="h-full rounded-2xl overflow-hidden border border-[var(--border)] relative z-0">
+                           <LocationPicker lat={newProp.lat ?? 9.0} lng={newProp.lng ?? 38.7} onChange={(lat, lng) => setNewProp({...newProp, lat, lng})} />
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase opacity-40 ml-2">Developer</label>
-                          <input type="text" placeholder="e.g. Royal Labs Dev" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Incentive %</label>
+                           <input title="Discount Percentage" type="number" min={0} max={100} value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)||0})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black text-emerald-500 border border-[var(--border)]" />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Entry %</label>
+                           <input title="Downpayment Percentage" type="number" min={0} max={100} value={newProp.downpayment_percentage} onChange={e => setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value)||0})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black text-brand-blue border border-[var(--border)]" />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Mechanism</label>
+                           <select title="Payment Type" value={newProp.payment_schedule} onChange={e => setNewProp({...newProp, payment_schedule: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-[10px] font-black text-[var(--foreground)] border border-[var(--border)] outline-none appearance-none cursor-pointer">
+                             <option value="Flexible Terms">Flexible</option>
+                             <option value="Quarterly">Quarterly</option>
+                             <option value="Cash">Cash Only</option>
+                             <option value="Mortgage">Bank Finance</option>
+                           </select>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase opacity-40 ml-2">Location Strategy</label>
-                        <input type="text" placeholder="e.g. Bole, Addis Ababa" value={newProp.location} onChange={e => setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-brand-blue text-[var(--foreground)]" />
-                      </div>
                    </div>
-                   
-                   <div className="grid grid-cols-3 gap-6">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase opacity-40 ml-2">Air Quality</label>
-                        <input type="number" title="Air Quality Index" placeholder="AQI" value={newProp.air_quality_index} onChange={e => setNewProp({...newProp, air_quality_index: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase opacity-40 ml-2">Risk Level</label>
-                        <select title="Select Environment Risk Level" value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]">
-                          <option value="Low">Low</option>
-                          <option value="Moderate">Moderate</option>
-                          <option value="High">High</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase opacity-40 ml-2">Discount %</label>
-                        <input type="number" title="Discount Percentage" placeholder="0" value={newProp.discount_percentage} onChange={e => setNewProp({...newProp, discount_percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold text-[var(--foreground)]" />
-                      </div>
-                   </div>
+                 </div>
 
-                   <button 
-                    onClick={handleCreate} 
-                    disabled={isSaving}
-                    className="w-full bg-brand-blue text-white font-black text-xs uppercase tracking-widest py-5 rounded-2xl shadow-xl shadow-brand-blue/20 hover:scale-[1.01] transition-all"
-                   >
-                     {isSaving ? "Initializing Database Record..." : "Confirm & Register Property"}
-                   </button>
-               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Narrative Description</label>
+                    <textarea placeholder="Tell the property's story..." rows={4} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-8 py-6 bg-[var(--background)] rounded-[2rem] text-sm font-medium text-[var(--foreground)] border border-[var(--border)] outline-none resize-none leading-relaxed" />
+                 </div>
 
-        {/* Existing properties list */}
-        <div className="grid grid-cols-1 gap-4">
-          {loading ? (
-             <div className="text-center py-12 opacity-40">Decrypting Portfolio...</div>
-          ) : properties.map((prop) => (
-             <div key={prop.id} className="group bg-slate-500/5 rounded-3xl p-6 border border-transparent hover:border-brand-blue/20 transition-all flex flex-col md:flex-row gap-6">
-                <div className="relative w-full md:w-48 h-32 rounded-2xl overflow-hidden shadow-lg">
-                   {prop.cover_image ? (
-                     <Image src={prop.cover_image} alt={prop.name} fill className="object-cover" unoptimized />
-                   ) : (
-                     <div className="w-full h-full bg-slate-200 flex items-center justify-center"><Building size={32} className="opacity-20" /></div>
-                   )}
-                </div>
-                <div className="flex-1 space-y-2">
-                   <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-heading font-black text-xl text-[var(--foreground)]">{prop.name}</h3>
-                        <p className="flex items-center gap-1.5 text-xs font-bold opacity-40 text-[var(--foreground)]">
-                          <MapPin size={12} className="text-brand-blue" />
-                          {prop.location}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => onManageUnits(prop.id)} className="bg-brand-blue/10 text-brand-blue px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue/20">Manage Units</button>
-                        <button onClick={() => onEdit(prop)} className="bg-slate-500/10 text-[var(--foreground)] p-2 rounded-lg hover:bg-slate-500/20" title="Edit Property"><Edit3 size={16}/></button>
-                        <button onClick={() => onDelete(prop)} className="bg-red-500/10 text-red-500 p-2 rounded-lg hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity" title="Delete Property"><Trash2 size={16}/></button>
-                      </div>
-                   </div>
-                   <div className="grid grid-cols-3 gap-4 pt-2">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Units</p>
-                        <p className="text-xs font-bold text-[var(--foreground)]">{prop.units?.length || 0} Listed</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Pricing</p>
-                        <p className="text-xs font-bold text-brand-blue">
-                          {prop.unit_types?.[0]?.price_from ? `From ${formatPrice(prop.unit_types[0].price_from)}` : 'N/A'}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Progress</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${prop.progress?.[0]?.percent || 0}%` }} />
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="bg-slate-500/5 rounded-3xl p-8 border border-[var(--border)] space-y-6">
+                       <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-emerald-500">Environmental Signal</h4>
+                       <div className="grid grid-cols-3 gap-6">
+                         <div className="space-y-2">
+                           <label className="text-[9px] font-black uppercase opacity-40">Air Quality</label>
+                           <input title="Air Quality Index" type="number" value={newProp.air_quality_index} onChange={e => setNewProp({...newProp, air_quality_index: parseInt(e.target.value)||50})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-black text-[var(--foreground)] border border-[var(--border)]" />
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-[9px] font-black uppercase opacity-40">Heat Index</label>
+                           <input title="Urban Heat Index" type="number" value={newProp.urban_heat_index} onChange={e => setNewProp({...newProp, urban_heat_index: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-black text-[var(--foreground)] border border-[var(--border)]" />
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-[9px] font-black uppercase opacity-40">Risk Level</label>
+                           <select title="Risk Level" value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-[10px] font-black text-[var(--foreground)] border border-[var(--border)]">
+                             <option value="Low">Low</option>
+                             <option value="Moderate">Moderate</option>
+                             <option value="High">High</option>
+                           </select>
+                         </div>
+                       </div>
+                    </div>
+
+                    <div className="bg-slate-500/5 rounded-3xl p-8 border border-[var(--border)] space-y-6">
+                       <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-brand-blue">Visual Identity</h4>
+                       <div className="flex gap-4 items-center">
+                          <div className="flex-1 space-y-2">
+                            <label className="text-[9px] font-black uppercase opacity-40 ml-2">Cover Asset URL</label>
+                            <input title="Cover Image URL" type="text" placeholder="HTTPS://..." value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black text-[var(--foreground)] border border-[var(--border)] outline-none" />
                           </div>
-                          <span className="text-[9px] font-black text-emerald-500">{prop.progress?.[0]?.percent || 0}%</span>
-                        </div>
-                      </div>
-                   </div>
-                </div>
+                          <div className="pt-6">
+                            <label className={`w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer transition-all ${uploadingImage ? 'bg-brand-blue text-white animate-pulse' : 'bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20 border border-brand-blue/10'}`}>
+                               <Upload size={24} />
+                               <input title="Upload Image" type="file" accept="image/*" className="hidden" disabled={uploadingImage} onChange={async e => {
+                                 const file = e.target.files?.[0]; if (!file) return;
+                                 const url = await uploadFile(file);
+                                 if (url) setNewProp((prev: Partial<Property>) => ({...prev, cover_image: url}));
+                               }} />
+                            </label>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+
+                 <button 
+                  onClick={handleCreateProperty} 
+                  disabled={uploadingImage} 
+                  className="w-full py-8 bg-brand-blue hover:bg-brand-blue-deep text-white font-black text-xs uppercase tracking-[0.5em] rounded-[2rem] shadow-2xl shadow-brand-blue/30 transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-4"
+                 >
+                    {uploadingImage ? <Activity className="animate-spin" /> : <><ShieldCheck size={20} /> Authorize Listing Deployment</>}
+                 </button>
              </div>
-          ))}
-        </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Property Inventory Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {loading ? (
+             <div className="col-span-full py-32 text-center">
+                <Activity className="animate-spin text-brand-blue mx-auto mb-4" size={32} />
+                <p className="text-xs font-black uppercase tracking-widest opacity-40">Decrypting Portfolio...</p>
+             </div>
+        ) : properties.map((prop) => (
+          <PropertyAdminCard 
+            key={prop.id} 
+            prop={prop} 
+            onEdit={() => setEditingProperty(prop)}
+            onDelete={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })}
+            onToggleUnits={() => togglePropertyUnits(prop.id)}
+            isExpanded={expandedProperties.has(prop.id)}
+            formatPrice={formatPrice}
+            onAddUnits={() => setSelectedPropertyId(prop.id)}
+            onEditUnit={(unit: Unit) => {
+               setEditingUnit(unit); 
+               setNewUnit({ ...unit, is_sold: unit.status === 'sold' });
+               setSelectedPropertyId(prop.id);
+            }}
+          />
+        ))}
+        {!loading && properties.length === 0 && (
+          <div className="col-span-full py-32 text-center bg-slate-500/5 rounded-[4rem] border border-dashed border-[var(--border)]">
+             <div className="w-20 h-20 bg-[var(--card)] rounded-3xl mx-auto flex items-center justify-center text-[var(--foreground)] opacity-20 mb-6"><HomeIcon size={40} /></div>
+             <p className="text-sm font-black uppercase tracking-[0.4em] opacity-40">Registry Empty. Initialize Listing Deployment.</p>
+          </div>
+        )}
       </div>
     </motion.div>
+  );
+}
+
+interface PropertyAdminCardProps {
+  prop: Property;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleUnits: () => void;
+  isExpanded: boolean;
+  formatPrice: (p: number) => string;
+  onAddUnits: () => void;
+  onEditUnit: (u: Unit) => void;
+}
+
+function PropertyAdminCard({ prop, onEdit, onDelete, onToggleUnits, isExpanded, formatPrice, onAddUnits, onEditUnit }: PropertyAdminCardProps) {
+  const progress = prop.progress?.[0] as PropertyProgress;
+  
+  return (
+    <div className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] overflow-hidden hover:border-brand-blue/40 transition-all group flex flex-col shadow-2xl">
+       <div className="relative h-56 overflow-hidden">
+          <Image 
+            src={prop.cover_image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80'} 
+            alt={prop.name} 
+            fill 
+            className="object-cover transition-transform duration-1000 group-hover:scale-110"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] to-transparent" />
+          <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+             <button title="Edit Property" onClick={onEdit} className="w-10 h-10 bg-white/10 backdrop-blur-3xl text-white rounded-xl flex items-center justify-center border border-white/20 hover:bg-brand-blue transition-colors shadow-2xl"><Edit3 size={16}/></button>
+             <button title="Delete Property" onClick={onDelete} className="w-10 h-10 bg-white/10 backdrop-blur-3xl text-red-100 rounded-xl flex items-center justify-center border border-white/20 hover:bg-red-500 transition-colors shadow-2xl"><Trash2 size={16}/></button>
+          </div>
+          <div className="absolute bottom-6 left-6">
+             <span className="px-4 py-2 bg-brand-blue text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-xl shadow-brand-blue/20">Active Asset</span>
+          </div>
+       </div>
+
+       <div className="p-8 flex-1 flex flex-col justify-between space-y-6">
+          <div className="space-y-4">
+             <div>
+                <h3 className="text-2xl font-heading font-black tracking-tighter text-[var(--foreground)] mb-1">{prop.name}</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue/70 flex items-center gap-2">
+                   <MapPin size={12} /> {prop.location} — {prop.developer}
+                </p>
+             </div>
+
+             <div className="flex gap-2">
+                {prop.discount_percentage !== undefined && prop.discount_percentage > 0 && (
+                   <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-emerald-500/20">{prop.discount_percentage}% Alpha Incentive</span>
+                )}
+                {prop.payment_schedule && (
+                   <span className="px-3 py-1 bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-widest rounded-lg border border-brand-blue/20">{prop.payment_schedule}</span>
+                )}
+             </div>
+          </div>
+
+          {progress && (
+            <div className="bg-slate-500/5 p-5 rounded-2xl border border-[var(--border)]">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">{progress.status_text || 'Execution Progress'}</span>
+                <span className="text-xs font-black text-brand-blue">{progress.percent}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-brand-blue/10 rounded-full overflow-hidden">
+                <motion.div 
+                   initial={{ width: 0 }} 
+                   animate={{ width: `${progress.percent}%` }} 
+                   className="h-full bg-brand-blue rounded-full" 
+                />
+              </div>
+            </div>
+          )}
+
+          <button 
+            onClick={onToggleUnits} 
+            className="w-full py-5 rounded-2xl border border-[var(--border)] hover:border-brand-blue transition-all flex items-center justify-between px-6 group/inv"
+          >
+             <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full transition-all duration-500 ${isExpanded ? 'bg-brand-blue shadow-[0_0_8px_#0066FF]' : 'bg-[var(--foreground)] opacity-20'}`} />
+                <span className="text-[11px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-60">Inventory ({prop.units?.length || 0} Units)</span>
+             </div>
+             <ChevronRight size={18} className={`transition-transform duration-500 text-brand-blue ${isExpanded ? 'rotate-90' : ''}`} />
+          </button>
+       </div>
+
+       <AnimatePresence>
+          {isExpanded && (
+             <motion.div 
+                initial={{ height: 0, opacity: 0 }} 
+                animate={{ height: "auto", opacity: 1 }} 
+                exit={{ height: 0, opacity: 0 }} 
+                className="border-t border-[var(--border)] bg-slate-500/5 overflow-hidden"
+             >
+                <div className="p-8 space-y-4">
+                   {prop.units && prop.units.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-3">
+                         {prop.units.map((unit: Unit) => (
+                            <div key={unit.id} className="bg-[var(--card)] p-5 rounded-2xl border border-[var(--border)] flex justify-between items-center group/item hover:border-brand-blue/30 transition-all shadow-sm">
+                               <div>
+                                  <p className="text-sm font-black text-[var(--foreground)] tracking-tight">{unit.unit_number || unit.type}</p>
+                                  <p className="text-[9px] font-bold opacity-30 uppercase tracking-widest mt-1">{unit.beds} Bed • {unit.baths} Bath • {unit.sqm}m²</p>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                  <p className="font-black text-xs text-brand-blue">{formatPrice(unit.price || 0)}</p>
+                                  <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                     <button title="Edit Unit" onClick={() => onEditUnit(unit)} className="p-2 bg-brand-blue/10 text-brand-blue rounded-xl hover:bg-brand-blue hover:text-white transition-all"><Edit3 size={14}/></button>
+                                  </div>
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                   ) : (
+                      <p className="text-[10px] text-center font-bold opacity-30 uppercase py-8 italic tracking-widest">Inventory empty. Awaiting signals.</p>
+                   )}
+                   
+                   <button onClick={onAddUnits} className="w-full py-4 bg-brand-blue/5 border border-brand-blue/20 text-brand-blue text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2">
+                       <Plus size={16} /> Deploy Inventory Signals
+                   </button>
+                </div>
+             </motion.div>
+          )}
+       </AnimatePresence>
+    </div>
   );
 }

@@ -334,7 +334,6 @@ export function VisitorGlobe() {
               {realTraffic.slice(0, 3).map((src) => (
                 <div key={src.source} className="flex items-center justify-between bg-black/40 p-6 rounded-[2rem] border border-white/5 hover:border-brand-blue/40 transition-all group">
                   <div className="flex items-center gap-5">
-                    {/* eslint-disable-next-line */}
                     <div className="w-3 h-3 rounded-full shadow-lg" style={{ backgroundColor: src.color }} />
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80">{src.source}</span>
                   </div>

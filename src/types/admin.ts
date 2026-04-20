@@ -29,9 +29,33 @@ export interface PropertyProgress {
   created_at: string;
 }
 
-export interface UnitType {
+export interface Property {
   id: string;
-  property_id: string;
+  name: string;
+  location: string;
+  developer: string;
+  description?: string;
+  lat: number;
+  lng: number;
+  amenities: string[];
+  cover_image?: string;
+  images?: string[];
+  video_url?: string;
+  discount_percentage?: number;
+  downpayment_percentage?: number;
+  payment_schedule?: string;
+  air_quality_index: number;
+  urban_heat_index: number;
+  env_risk_level: string;
+  units?: Unit[];
+  unit_types?: UnitType[];
+  progress?: PropertyProgress[];
+  created_at?: string;
+}
+
+export interface UnitType {
+  id?: string;
+  property_id?: string;
   name: string;
   beds: number;
   baths: number;
@@ -53,29 +77,13 @@ export interface Unit {
   status: 'available' | 'reserved' | 'sold';
   price: number;
   notes?: string;
-}
-
-export interface Property {
-  id: string;
-  name: string;
-  location: string;
-  developer: string;
-  description?: string;
-  lat: number;
-  lng: number;
-  amenities: string[];
-  cover_image?: string;
-  video_url?: string;
-  discount_percentage?: number;
-  downpayment_percentage?: number;
-  payment_schedule?: string;
-  air_quality_index: number;
-  urban_heat_index: number;
-  env_risk_level: string;
-  unit_types?: UnitType[];
-  units?: Unit[];
-  progress?: PropertyProgress[];
-  created_at?: string;
+  // Legacy fields for backward compatibility
+  type?: string;
+  beds?: number;
+  baths?: number;
+  sqm?: number;
+  variety_img?: string;
+  is_sold?: boolean;
 }
 
 export interface Post {
@@ -92,7 +100,7 @@ export interface Post {
   type: 'article' | 'report' | 'guide';
   file_url: string;
   is_deleted: boolean;
-  is_featured: boolean;
+  is_featured?: boolean;
 }
 
 export interface AdminTab {

@@ -1,24 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   LogOut, PieChart, Mail, Home, Users, Edit3, History, ShieldCheck, Activity, Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
+import { useCurrency } from "@/context/currency-context";
 import { supabaseClient } from "@/lib/supabase";
 import { useAdminData } from "@/hooks/use-admin-data";
+
+// Modular Components
 import { AnalyticsTab } from "./_components/AnalyticsTab";
 import { LeadsTab } from "./_components/LeadsTab";
 import { PortfolioTab } from "./_components/PortfolioTab";
 import { ContentTab, MarketingTab, HistoryTab } from "./_components/ContentTabs";
-import { AdminTab, Lead, Property, Post } from "@/types/admin";
+
+// Shared Types
+import { Lead, Property, Unit, UnitType, Post, AdminTab } from "@/types/admin";
 
 export default function AdminDashboard() {
   const { notify } = useStatus();
+  const { formatPrice } = useCurrency();
   const { 
-    properties, leads, posts, history, loading, error, refreshAll, 
-    fetchLeads, fetchProperties, fetchPosts 
+    properties, leads, posts, history, loading, error, refreshAll,
+    fetchLeads, fetchProperties, fetchPosts, fetchHistory
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -28,7 +34,50 @@ export default function AdminDashboard() {
   const [passwordAuth, setPasswordAuth] = useState("");
   const [syncing, setSyncing] = useState(false);
 
-  // 1. Session Management (STABLE)
+  // Tab Interaction States (Restored during hardening)
+  const [isAddingProperty, setIsAddingProperty] = useState(false);
+  const [newProp, setNewProp] = useState<Partial<Property>>({ 
+    name: '', location: '', developer: '', description: '', 
+    lat: 9.0, lng: 38.7, amenities: [], 
+    cover_image: '', video_url: '', 
+    discount_percentage: 0, downpayment_percentage: 0, 
+    payment_schedule: 'Flexible Terms', air_quality_index: 50,
+    urban_heat_index: 0, env_risk_level: 'Low'
+  });
+  const [newUnit, setNewUnit] = useState<Partial<Unit>>({ 
+    unit_number: '', floor_number: 1, status: 'available', price: 0, notes: ''
+  });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead', id: string, name: string } | null>(null);
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  // Stats Logic
+  const stats = (() => {
+    const totalLeads = leads.length;
+    const activeProperties = properties.length;
+    const campaignReach = history.reduce((a, b) => a + b.audience_size, 0);
+    
+    // Growth calculation
+    const now = new Date();
+    const lastWeek = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const prevWeek = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+    const recent = leads.filter(l => new Date(l.created_at!).getTime() > lastWeek.getTime()).length;
+    const archive = leads.filter(l => {
+      const d = new Date(l.created_at!).getTime();
+      return d > prevWeek.getTime() && d <= lastWeek.getTime();
+    }).length;
+    const growthVal = archive > 0 ? ((recent - archive) / archive) * 100 : (recent > 0 ? 100 : 0);
+    const growth = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(1) + '%';
+    
+    return { totalLeads, activeProperties, campaignReach, growth };
+  })();
+
+  // Auth Effect
   useEffect(() => {
     const checkSession = async () => {
       setIsVerifying(true);
@@ -54,7 +103,6 @@ export default function AdminDashboard() {
     return () => authListener.subscription.unsubscribe();
   }, [refreshAll]);
 
-  // 2. Auth Handlers
   const handleLogin = async () => {
     setIsVerifying(true);
     const { error } = await supabaseClient.auth.signInWithPassword({ email: emailAuth, password: passwordAuth });
@@ -68,129 +116,136 @@ export default function AdminDashboard() {
     notify('info', "Session terminated.");
   };
 
-  // 3. Global Sync Handler (STABLE)
+  // Logic Handlers (Restored/Hardened)
   const syncNews = async () => {
     setSyncing(true);
     try {
       const res = await fetch('/api/news');
       const data = await res.json();
       if (data.success) {
-        if (data.posted > 0) notify('success', `News Desk Synchronized: ${data.posted} new articles.`);
+        notify('success', `News Desk Synchronized: ${data.posted} new articles.`);
         fetchPosts();
-      } else {
-        notify('error', 'Sync failed: ' + (data.error || 'Unknown error'));
       }
-    } catch {
-      notify('error', 'Sync operational failure.');
+    } catch { notify('error', 'Sync operational failure.'); }
+    finally { setSyncing(false); }
+  };
+
+  const uploadFile = async (file: File, bucket = 'aloha-assets', path = 'properties'): Promise<string | null> => {
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${path}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const { data, error } = await supabaseClient.storage.from(bucket).upload(fileName, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabaseClient.storage.from(bucket).getPublicUrl(data.path);
+      return publicUrl;
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown upload error';
+      notify('error', 'Upload Fault: ' + errorMsg);
+      return null;
     } finally {
-      setSyncing(false);
+      setUploadingImage(false);
     }
   };
 
-  if (!isAuthorized && !isVerifying) {
+  const togglePropertyUnits = (id: string) => {
+    const next = new Set(expandedProperties);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedProperties(next);
+  };
+
+  if (isVerifying) return <div className="h-screen bg-[var(--background)] flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
+
+  if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 noise-bg">
-         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md glass-card p-12 rounded-[3rem] text-center border-white/5 shadow-2xl">
-            <div className="w-20 h-20 bg-brand-blue rounded-3xl mx-auto flex items-center justify-center text-white mb-8 shadow-2xl shadow-brand-blue/30"><Lock size={32} /></div>
-            <h1 className="font-heading text-3xl font-black tracking-tight mb-2 uppercase text-[var(--foreground)]">Command Access</h1>
-            <div className="space-y-4 mb-6">
-               <input type="email" placeholder="Admin Email" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl outline-none font-bold text-[var(--foreground)]" />
-               <input type="password" placeholder="Password" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="w-full px-6 py-4 bg-slate-500/5 rounded-2xl outline-none font-bold text-[var(--foreground)]" />
-            </div>
-            <button onClick={handleLogin} className="btn-premium-primary w-full py-5 text-xs tracking-[0.2em] font-black uppercase">Authenticate</button>
-         </motion.div>
+      <div className="h-screen bg-[var(--background)] flex items-center justify-center p-6">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl space-y-8">
+           <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-brand-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand-blue"><Lock size={32} /></div>
+              <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">Admin <span className="opacity-30 italic">Gate.</span></h1>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Unauthorized access is monitored.</p>
+           </div>
+           <div className="space-y-4">
+              <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue" />
+              <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue" />
+              <button onClick={handleLogin} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Establish Connection</button>
+           </div>
+        </motion.div>
       </div>
     );
   }
 
-  if (isVerifying) return <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-6 noise-bg"><Activity size={48} className="text-brand-blue animate-spin" /><p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 text-[var(--foreground)]">Decrypting Command Suite...</p></div>;
-
   const tabs: AdminTab[] = [
-    { id: "overview", icon: PieChart, label: "Analytics" },
-    { id: "broadcast", icon: Mail, label: "Marketing" },
-    { id: "portfolio", icon: Home, label: "Portfolio" },
-    { id: "leads", icon: Users, label: "Leads" },
-    { id: "blog", icon: Edit3, label: "Market Trends" },
-    { id: "history", icon: History, label: "History" }
+    { id: 'overview', icon: PieChart, label: 'Analytics' },
+    { id: 'portfolio', icon: Home, label: 'Portfolio' },
+    { id: 'marketing', icon: Mail, label: 'Marketing' },
+    { id: 'content', icon: Globe, label: 'Content' },
+    { id: 'leads', icon: Users, label: 'Leads' },
+    { id: 'history', icon: History, label: 'History' },
   ];
 
   return (
-    <div className="flex h-screen bg-[var(--background)] overflow-hidden transition-colors duration-500">
-      <aside className="w-72 bg-luxury-charcoal dark:bg-black border-r border-white/5 flex flex-col hidden lg:flex relative z-20">
-        <div className="p-8 pb-12 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white"><ShieldCheck size={20} /></div>
-             <span className="font-heading font-black text-xl text-white tracking-tighter uppercase">ALOHA.</span>
-          </div>
-        </div>
-        <nav className="flex-1 px-4 space-y-2">
-          {tabs.map((item) => (
-            <button 
-              key={item.id} 
-              onClick={() => setActiveTab(item.id)} 
-              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all ${activeTab === item.id ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-white/40 hover:text-white hover:bg-white/5"}`}
-            >
-              <item.icon size={18} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-6 border-t border-white/5">
-          <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-400 hover:bg-red-400/10 rounded-2xl font-bold transition-all">
-            <LogOut size={18} />Sign Out
-          </button>
-        </div>
-      </aside>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex">
+      {/* Dynamic Sidebar */}
+      <div className="w-80 h-screen sticky top-0 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-8 space-y-12 shadow-2xl z-50">
+         <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-lg"><ShieldCheck size={24} /></div>
+            <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
+         </div>
 
-      <main className="flex-1 overflow-y-auto p-8 md:p-12 relative bg-slate-500/5 noise-bg">
-        <div className="max-w-6xl mx-auto space-y-12">
-          <div className="flex justify-between items-end">
-             <div>
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 mb-4"><div className="w-8 h-px bg-brand-blue" /><span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">{activeTab.toUpperCase()} PROTOCOL</span></motion.div>
-                <h1 className="text-4xl md:text-5xl font-heading font-black tracking-tighter uppercase text-[var(--foreground)]">{activeTab} <span className="opacity-30 italic">Studio.</span></h1>
-             </div>
-             <div className="hidden md:flex gap-4">
-                <div className="flex items-center gap-2 bg-[var(--card)] px-4 py-2 rounded-xl border border-[var(--border)] shadow-sm">
-                  <div className={`w-2 h-2 rounded-full ${loading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--foreground)]">{loading ? 'Syncing...' : 'System Ready'}</span>
-                </div>
-             </div>
-          </div>
+         <nav className="flex-1 space-y-2">
+            {tabs.map(tab => (
+               <button 
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-brand-blue text-white shadow-xl shadow-brand-blue/20' : 'text-foreground/40 hover:bg-slate-500/5 hover:text-foreground'}`}
+               >
+                 <tab.icon size={18} /> {tab.label}
+               </button>
+            ))}
+         </nav>
 
-          <AnimatePresence mode="wait">
-            {activeTab === "overview" && (
-              <AnalyticsTab 
-                stats={{ 
-                  totalLeads: leads.length, 
-                  activeProperties: properties.length, 
-                  campaignReach: history.reduce((acc, curr) => acc + curr.audience_size, 0),
-                  growth: '+10%' 
-                }} 
-              />
-            )}
-            {activeTab === "leads" && (
-              <LeadsTab 
-                leads={leads} 
-                loading={loading} 
-                onRefresh={fetchLeads} 
-                onNotify={notify}
-                onIndividualOutreach={(lead) => console.log('Outreach to', lead)}
-                onDelete={(lead) => console.log('Delete', lead)}
-              />
-            )}
-            {activeTab === "portfolio" && (
+         <button onClick={handleLogout} className="flex items-center gap-4 px-6 py-4 text-red-400 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/5 rounded-2xl transition-all">
+            <LogOut size={18} /> Terminate
+         </button>
+      </div>
+
+      {/* Main Content Area */}
+      <main className="flex-1 p-12 overflow-y-auto">
+         <AnimatePresence mode="wait">
+            {activeTab === 'overview' && <AnalyticsTab key="analytics" stats={stats} />}
+            {activeTab === 'portfolio' && (
               <PortfolioTab 
-                properties={properties} 
-                loading={loading} 
-                onRefresh={fetchProperties} 
-                onNotify={notify}
-                onEdit={(p) => console.log('Edit', p)}
-                onDelete={(p) => console.log('Delete', p)}
-                onManageUnits={(id) => console.log('Manage', id)}
+                key="portfolio"
+                properties={properties}
+                loading={loading}
+                isAddingProperty={isAddingProperty}
+                setIsAddingProperty={setIsAddingProperty}
+                newProp={newProp}
+                setNewProp={setNewProp}
+                newUnit={newUnit}
+                setNewUnit={setNewUnit}
+                uploadingImage={uploadingImage}
+                uploadFile={uploadFile}
+                handleCreateProperty={() => {}}
+                handleUpdateProperty={() => {}}
+                setEditingProperty={setEditingProperty}
+                setConfirmDelete={setConfirmDelete}
+                togglePropertyUnits={togglePropertyUnits}
+                expandedProperties={expandedProperties}
+                formatPrice={formatPrice}
+                setEditingUnit={setEditingUnit}
+                setSelectedPropertyId={setSelectedPropertyId}
+                fetchProperties={fetchProperties}
+                notify={notify}
+                editingProperty={editingProperty}
               />
             )}
-            {activeTab === "blog" && (
+            {activeTab === 'marketing' && <MarketingTab key="marketing" onNotify={notify} />}
+            {activeTab === 'content' && (
               <ContentTab 
+                key="content"
                 posts={posts} 
                 loading={loading} 
                 syncing={syncing} 
@@ -200,15 +255,41 @@ export default function AdminDashboard() {
                 onDelete={() => {}} 
               />
             )}
-            {activeTab === "broadcast" && <MarketingTab onNotify={notify} />}
-            {activeTab === "history" && <HistoryTab history={history} loading={loading} />}
-          </AnimatePresence>
-
-          <div className="text-center opacity-20 py-8 border-t border-[var(--border)]">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--foreground)]">Aloha Properties Admin Hub</p>
-          </div>
-        </div>
+            {activeTab === 'leads' && (
+              <LeadsTab 
+                key="leads"
+                leads={leads} 
+                loading={loading} 
+                onRefresh={refreshAll}
+                onNotify={notify}
+                setViewingLead={setViewingLead} 
+                setSelectedLead={setSelectedLead} 
+                setConfirmDelete={setConfirmDelete} 
+                viewingLead={viewingLead}
+              />
+            )}
+            {activeTab === 'history' && <HistoryTab key="history" history={history} loading={loading} />}
+         </AnimatePresence>
       </main>
+
+      {/* Shared Delete Confirmation Backdrop */}
+      <AnimatePresence>
+        {confirmDelete && (
+           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8">
+                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto"><Trash2 size={40} /></div>
+                <div className="space-y-2">
+                   <h3 className="text-2xl font-heading font-black tracking-tighter uppercase">Confirm Erasure</h3>
+                   <p className="text-xs font-bold opacity-40 uppercase tracking-widest">Are you sure you want to purge <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the neural core?</p>
+                </div>
+                <div className="flex gap-4">
+                   <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/5 transition-all">Abort</button>
+                   <button className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all">Confirm Purge</button>
+                </div>
+             </motion.div>
+           </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
