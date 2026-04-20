@@ -69,8 +69,8 @@ export function PortfolioTab({
                         <h3 className="text-2xl font-heading font-black text-white tracking-tighter uppercase">{prop.name}</h3>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setEditingProperty(prop)} className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-brand-blue transition-all"><Eye size={16} /></button>
-                        <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} className="w-10 h-10 rounded-xl bg-red-500/10 backdrop-blur-md flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
+                        <button onClick={() => setEditingProperty(prop)} title="Edit Property" aria-label="Edit Property" className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-brand-blue transition-all"><Eye size={16} /></button>
+                        <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} title="Delete Property" aria-label="Delete Property" className="w-10 h-10 rounded-xl bg-red-500/10 backdrop-blur-md flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
                       </div>
                    </div>
                 </div>

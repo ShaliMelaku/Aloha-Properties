@@ -56,7 +56,7 @@ export function ContentTab({
                          <a href={post.file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1"><FileText size={12}/> PDF</a>
                       )}
                    </div>
-                   <button onClick={() => onDelete(post)} className="text-[10px] font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                   <button onClick={() => onDelete(post)} title="Delete Post" aria-label="Delete Post" className="text-[10px] font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
                 </div>
              </div>
           </div>

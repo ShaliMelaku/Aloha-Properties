@@ -127,8 +127,8 @@ export function LeadsTab({
                    </td>
                    <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2">
-                         <button onClick={() => setViewingLead(lead)} className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:border-brand-blue hover:text-brand-blue transition-all"><Eye size={14} /></button>
-                         <button onClick={() => setConfirmDelete({ type: 'lead', id: lead.id!, name: lead.name })} className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={14} /></button>
+                         <button onClick={() => setViewingLead(lead)} title="View Lead" aria-label="View Lead" className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:border-brand-blue hover:text-brand-blue transition-all"><Eye size={14} /></button>
+                         <button onClick={() => setConfirmDelete({ type: 'lead', id: lead.id!, name: lead.name })} title="Delete Lead" aria-label="Delete Lead" className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={14} /></button>
                       </div>
                    </td>
                 </tr>
