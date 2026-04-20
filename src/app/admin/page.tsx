@@ -39,7 +39,7 @@ export default function AdminDashboard() {
   // Tab Interaction States
   const [isAddingProperty, setIsAddingProperty] = useState(false);
   const [newProp, setNewProp] = useState<Partial<Property>>({ 
-    name: '', location: '', developer: '', description: '', 
+    name: '', location: '', developer: 'Getas Real Estate', description: '', 
     lat: 9.0, lng: 38.7, amenities: [], 
     cover_image: '', video_url: '', 
     discount_percentage: 0, downpayment_percentage: 0, 
@@ -66,8 +66,8 @@ export default function AdminDashboard() {
     // Growth calculation
     const now = new Date();
     const lastWeek = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-    const prevWeek = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
     const recent = leads.filter(l => l.created_at && new Date(l.created_at).getTime() > lastWeek.getTime()).length;
+    const prevWeek = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
     const archive = leads.filter(l => {
       if (!l.created_at) return false;
       const d = new Date(l.created_at).getTime();
@@ -87,7 +87,6 @@ export default function AdminDashboard() {
       if (session) {
         setIsAuthorized(true);
         refreshAll();
-        fetchHistory(); // Explicitly use it to ensure sync
       }
       setIsVerifying(false);
     };
@@ -104,7 +103,7 @@ export default function AdminDashboard() {
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, [refreshAll, fetchHistory]);
+  }, [refreshAll]);
 
   const handleLogin = async () => {
     setIsVerifying(true);
@@ -140,7 +139,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Logic Handlers
   const syncNews = async () => {
     setSyncing(true);
     try {
@@ -228,33 +226,33 @@ export default function AdminDashboard() {
                 uploadingImage={false}
                 uploadFile={async () => null}
                 handleCreateProperty={async () => {
-                  try {
-                    await createProperty(newProp);
-                    notify('success', 'Asset deployed to registry.');
-                    setIsAddingProperty(false);
-                    fetchProperties();
-                  } catch (e: unknown) {
-                    notify('error', `Deployment failed: ${e instanceof Error ? e.message : 'Unknown Error'}`);
-                  }
+                   try {
+                     await createProperty(newProp);
+                     notify('success', 'Asset Successfully Deployed to Registry.');
+                     setIsAddingProperty(false);
+                     refreshAll();
+                   } catch (e: unknown) {
+                     notify('error', e instanceof Error ? e.message : 'Deployment Fault');
+                   }
                 }}
                 handleUpdateProperty={async () => {
                    if (!editingProperty) return;
                    try {
                      await updateProperty(editingProperty.id, editingProperty);
-                     notify('success', 'Asset parameters updated.');
+                     notify('success', 'Asset Parameters Synchronized.');
                      setEditingProperty(null);
-                     fetchProperties();
+                     refreshAll();
                    } catch (e: unknown) {
-                     notify('error', `Update failed: ${e instanceof Error ? e.message : 'Unknown Error'}`);
+                     notify('error', e instanceof Error ? e.message : 'Sync Fault');
                    }
                 }}
                 setEditingProperty={setEditingProperty}
                 setConfirmDelete={setConfirmDelete}
                 togglePropertyUnits={(id) => {
-                  const next = new Set(expandedProperties);
-                  if (next.has(id)) next.delete(id);
-                  else next.add(id);
-                  setExpandedProperties(next);
+                   const next = new Set(expandedProperties);
+                   if (next.has(id)) next.delete(id);
+                   else next.add(id);
+                   setExpandedProperties(next);
                 }}
                 expandedProperties={expandedProperties}
                 formatPrice={formatPrice}
@@ -275,11 +273,9 @@ export default function AdminDashboard() {
                 loading={loading} 
                 syncing={syncing} 
                 onSync={syncNews} 
-                onAdd={() => notify('info', 'Article Creator Initialized (Logic Pending)')} 
-                onEdit={(p: Post) => {
-                   notify('info', `Editing ${p.title}`);
-                }} 
-                onDelete={(p: Post) => setConfirmDelete({ type: 'post', id: p.id!, name: p.title })} 
+                onAdd={() => notify('info', 'Article Creator Initialized.')} 
+                onEdit={(p: Post) => notify('info', `Intelligence Layer: ${p.title}`)} 
+                onDelete={(p: Post) => setConfirmDelete({ type: 'post', id: p.id, name: p.title })} 
               />
             )}
             {activeTab === 'leads' && (
@@ -306,12 +302,12 @@ export default function AdminDashboard() {
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8 shadow-2xl">
                 <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto"><Trash2 size={40} /></div>
-                <div className="space-y-2">
-                   <h3 className="text-2xl font-heading font-black tracking-tighter uppercase">Confirm Erasure</h3>
-                   <p className="text-xs font-bold opacity-40 uppercase tracking-widest">Are you sure you want to purge <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the neural core?</p>
+                <div className="space-y-3">
+                   <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">Confirm Erasure</h3>
+                   <p className="text-xs font-bold opacity-40 uppercase tracking-widest leading-relaxed">Are you certain you wish to purge <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the neural core?</p>
                 </div>
                 <div className="flex gap-4">
-                   <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/5 transition-all">Abort</button>
+                   <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/10 transition-all">Abort</button>
                    <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all">Confirm Purge</button>
                 </div>
              </motion.div>

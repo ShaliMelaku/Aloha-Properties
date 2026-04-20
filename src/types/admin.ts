@@ -39,7 +39,7 @@ export interface Property {
   lng: number;
   amenities: string[];
   cover_image: string;
-  gallery_images?: string[];
+  images?: string[];
   video_url?: string;
   is_deleted?: boolean;
   discount_percentage?: number;
@@ -64,8 +64,6 @@ export interface UnitType {
   price_from: number;
   type_image?: string;
   total_units: number;
-  discount_percentage?: number;
-  downpayment_percentage?: number;
   description?: string;
 }
 
@@ -78,13 +76,6 @@ export interface Unit {
   status: 'available' | 'reserved' | 'sold';
   price: number;
   notes?: string;
-  // Legacy fields for backward compatibility
-  type?: string;
-  beds?: number;
-  baths?: number;
-  sqm?: number;
-  variety_img?: string;
-  is_sold?: boolean;
 }
 
 export interface Post {
@@ -95,14 +86,12 @@ export interface Post {
   content: string;
   created_at: string;
   cover_image: string;
-  gallery_images?: string[];
-  pdf_url?: string;
+  file_url?: string;
   video_url: string;
   source_label: string;
   source_url: string;
   type: 'article' | 'report' | 'guide';
   is_deleted: boolean;
-  is_featured?: boolean;
 }
 
 export interface AdminTab {

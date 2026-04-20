@@ -265,21 +265,14 @@ export function AnalyticsDashboard() {
               </h4>
               <span className="text-[9px] font-black uppercase tracking-widest opacity-40 text-[var(--foreground)]">{k.sup}</span>
             </div>
-            <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full blur-3xl opacity-30 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: k.color }} />
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+            <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: k.color }} />
           </motion.div>
         ))}
       </div>
 
-      <div className="bg-[var(--card)]/80 backdrop-blur-3xl rounded-[3rem] border border-[var(--border)] overflow-hidden shadow-2xl relative">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-           <motion.div animate={{ scale: [1, 1.2, 1], x: [0, 50, 0], y: [0, -30, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute -top-24 -left-24 w-96 h-96 bg-brand-blue/10 rounded-full blur-[120px]" />
-           <motion.div animate={{ scale: [1.2, 1, 1.2], x: [0, -40, 0], y: [0, 40, 0] }} transition={{ duration: 20, repeat: Infinity }} className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px]" />
-        </div>
-        
-        <div className="relative z-10">
-          {/* Navigation */}
-          <div className="flex overflow-x-auto hide-scrollbar border-b border-[var(--border)] bg-white/5">
+      <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] overflow-hidden">
+        {/* Navigation */}
+        <div className="flex overflow-x-auto hide-scrollbar border-b border-[var(--border)] bg-slate-500/5">
           {TABS.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-6 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-2 ${tab === t.id ? "border-brand-blue text-brand-blue bg-white/5" : "border-transparent text-[var(--foreground)]/40 hover:text-[var(--foreground)]"}`}>
               <t.icon size={14} />{t.label}
@@ -467,7 +460,6 @@ export function AnalyticsDashboard() {
             </motion.div>
           </AnimatePresence>
         </div>
-      </div>
       </div>
     </div>
   );
