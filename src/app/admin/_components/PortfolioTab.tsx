@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Edit3, Upload, 
@@ -8,8 +8,7 @@ import {
   Home as HomeIcon
 } from "lucide-react";
 import Image from "next/image";
-import { Property, Unit, UnitType, PropertyProgress } from "@/types/admin";
-import { useCurrency } from "@/context/currency-context";
+import { Property, Unit, PropertyProgress } from "@/types/admin";
 import dynamic from "next/dynamic";
 
 const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false });
@@ -28,7 +27,7 @@ interface PortfolioTabProps {
   handleCreateProperty: () => void;
   handleUpdateProperty: () => void;
   setEditingProperty: (v: Property | null) => void;
-  setConfirmDelete: (v: { type: 'property' | 'post' | 'lead', id: string, name: string } | null) => void;
+  setConfirmDelete: (v: { type: 'property' | 'post' | 'lead' | 'unit', id: string, name: string } | null) => void;
   togglePropertyUnits: (id: string) => void;
   expandedProperties: Set<string>;
   formatPrice: (p: number) => string;
@@ -61,6 +60,18 @@ export function PortfolioTab({
   setSelectedPropertyId,
   notify,
 }: PortfolioTabProps) {
+  
+  const handlePropertySubmit = () => {
+    if (!newProp.name || !newProp.location) return notify('error', 'Integrity Error: Name and Location required.');
+    handleCreateProperty();
+  };
+
+  const handleUnitEdit = (propertyId: string, unit: Unit) => {
+    setSelectedPropertyId(propertyId);
+    setEditingUnit(unit);
+    setNewUnit({ ...unit }); // Populate edit state
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -80,11 +91,12 @@ export function PortfolioTab({
         </div>
         <button 
           onClick={() => setIsAddingProperty(!isAddingProperty)} 
-          className="group relative px-8 py-4 bg-brand-blue text-white rounded-2xl shadow-xl shadow-brand-blue/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 overflow-hidden"
+          title={isAddingProperty ? 'Close Protocol' : 'Initialize New Listing'}
+          className="group relative px-8 py-4 bg-brand-blue text-white rounded-2xl shadow-xl shadow-brand-blue/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 overflow-hidden font-heading font-black uppercase text-[10px] tracking-widest"
         >
           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           <Plus size={20} className="relative z-10" /> 
-          <span className="relative z-10 font-black text-xs uppercase tracking-widest">{isAddingProperty ? 'Cancel Intent' : 'New Listing Protocol'}</span>
+          <span className="relative z-10">{isAddingProperty ? 'Cancel Intent' : 'New Listing Protocol'}</span>
         </button>
       </div>
 
@@ -114,11 +126,11 @@ export function PortfolioTab({
                      </div>
                      <div className="space-y-2">
                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Authorized Entity (Developer)</label>
-                       <input type="text" placeholder="Entity Name" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                       <input title="Developer Entity" type="text" placeholder="Entity Name" value={newProp.developer} onChange={e => setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
                      </div>
                      <div className="space-y-2">
                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Amenities Portfolio</label>
-                       <input type="text" placeholder="Gym, Pool, Security... (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
+                       <input title="Amenities" type="text" placeholder="Gym, Pool, Security... (comma separated)" onChange={e => setNewProp({...newProp, amenities: e.target.value.split(',').map(s => s.trim())})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all text-[var(--foreground)]" />
                      </div>
                    </div>
 
@@ -154,57 +166,14 @@ export function PortfolioTab({
 
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Narrative Description</label>
-                    <textarea placeholder="Tell the property's story..." rows={4} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-8 py-6 bg-[var(--background)] rounded-[2rem] text-sm font-medium text-[var(--foreground)] border border-[var(--border)] outline-none resize-none leading-relaxed" />
-                 </div>
-
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-slate-500/5 rounded-3xl p-8 border border-[var(--border)] space-y-6">
-                       <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-emerald-500">Environmental Signal</h4>
-                       <div className="grid grid-cols-3 gap-6">
-                         <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase opacity-40">Air Quality</label>
-                           <input title="Air Quality Index" type="number" value={newProp.air_quality_index} onChange={e => setNewProp({...newProp, air_quality_index: parseInt(e.target.value)||50})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-black text-[var(--foreground)] border border-[var(--border)]" />
-                         </div>
-                         <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase opacity-40">Heat Index</label>
-                           <input title="Urban Heat Index" type="number" value={newProp.urban_heat_index} onChange={e => setNewProp({...newProp, urban_heat_index: parseInt(e.target.value)||0})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-black text-[var(--foreground)] border border-[var(--border)]" />
-                         </div>
-                         <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase opacity-40">Risk Level</label>
-                           <select title="Risk Level" value={newProp.env_risk_level} onChange={e => setNewProp({...newProp, env_risk_level: e.target.value})} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-[10px] font-black text-[var(--foreground)] border border-[var(--border)]">
-                             <option value="Low">Low</option>
-                             <option value="Moderate">Moderate</option>
-                             <option value="High">High</option>
-                           </select>
-                         </div>
-                       </div>
-                    </div>
-
-                    <div className="bg-slate-500/5 rounded-3xl p-8 border border-[var(--border)] space-y-6">
-                       <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-brand-blue">Visual Identity</h4>
-                       <div className="flex gap-4 items-center">
-                          <div className="flex-1 space-y-2">
-                            <label className="text-[9px] font-black uppercase opacity-40 ml-2">Cover Asset URL</label>
-                            <input title="Cover Image URL" type="text" placeholder="HTTPS://..." value={newProp.cover_image} onChange={e => setNewProp({...newProp, cover_image: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-xs font-black text-[var(--foreground)] border border-[var(--border)] outline-none" />
-                          </div>
-                          <div className="pt-6">
-                            <label className={`w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer transition-all ${uploadingImage ? 'bg-brand-blue text-white animate-pulse' : 'bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20 border border-brand-blue/10'}`}>
-                               <Upload size={24} />
-                               <input title="Upload Image" type="file" accept="image/*" className="hidden" disabled={uploadingImage} onChange={async e => {
-                                 const file = e.target.files?.[0]; if (!file) return;
-                                 const url = await uploadFile(file);
-                                 if (url) setNewProp((prev: Partial<Property>) => ({...prev, cover_image: url}));
-                               }} />
-                            </label>
-                          </div>
-                       </div>
-                    </div>
+                    <textarea title="Narrative" placeholder="Tell the property's story..." rows={4} value={newProp.description} onChange={e => setNewProp({...newProp, description: e.target.value})} className="w-full px-8 py-6 bg-[var(--background)] rounded-[2rem] text-sm font-medium text-[var(--foreground)] border border-[var(--border)] outline-none resize-none leading-relaxed" />
                  </div>
 
                  <button 
-                  onClick={handleCreateProperty} 
+                  onClick={handlePropertySubmit} 
                   disabled={uploadingImage} 
-                  className="w-full py-8 bg-brand-blue hover:bg-brand-blue-deep text-white font-black text-xs uppercase tracking-[0.5em] rounded-[2rem] shadow-2xl shadow-brand-blue/30 transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-4"
+                  title="Finalize Deployment"
+                  className="w-full py-8 bg-brand-blue hover:bg-brand-blue-deep text-white font-black font-heading text-xs uppercase tracking-[0.5em] rounded-[2rem] shadow-2xl shadow-brand-blue/30 transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-4"
                  >
                     {uploadingImage ? <Activity className="animate-spin" /> : <><ShieldCheck size={20} /> Authorize Listing Deployment</>}
                  </button>
@@ -224,17 +193,13 @@ export function PortfolioTab({
           <PropertyAdminCard 
             key={prop.id} 
             prop={prop} 
-            onEdit={() => setEditingProperty(prop)}
+            onEdit={() => { setEditingProperty(prop); handleUpdateProperty(); }}
             onDelete={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })}
             onToggleUnits={() => togglePropertyUnits(prop.id)}
             isExpanded={expandedProperties.has(prop.id)}
             formatPrice={formatPrice}
             onAddUnits={() => setSelectedPropertyId(prop.id)}
-            onEditUnit={(unit: Unit) => {
-               setEditingUnit(unit); 
-               setNewUnit({ ...unit, is_sold: unit.status === 'sold' });
-               setSelectedPropertyId(prop.id);
-            }}
+            onEditUnit={(unit: Unit) => handleUnitEdit(prop.id, unit)}
           />
         ))}
         {!loading && properties.length === 0 && (
@@ -244,6 +209,29 @@ export function PortfolioTab({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedPropertyId && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+                 <div className="bg-[var(--card)] rounded-[3rem] p-12 border border-[var(--border)] shadow-2xl max-w-lg w-full space-y-8">
+                    <h3 className="text-2xl font-black uppercase tracking-tighter text-[var(--foreground)]">Unit Pulse Sync</h3>
+                    <div className="space-y-4">
+                        <input title="Unit Identifier" placeholder="Unit # (e.g. 102A)" value={newUnit.unit_number} onChange={e => setNewUnit({...newUnit, unit_number: e.target.value})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] text-[var(--foreground)]" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <input title="Price Signal" type="number" placeholder="Price" value={newUnit.price} onChange={e => setNewUnit({...newUnit, price: parseInt(e.target.value)||0})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] text-brand-blue" />
+                            <select title="Asset Status" value={newUnit.status} onChange={e => setNewUnit({...newUnit, status: e.target.value as Unit['status']})} className="w-full px-6 py-4 bg-[var(--background)] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[var(--border)] text-[var(--foreground)]">
+                                <option value="available">Available</option>
+                                <option value="reserved">Reserved</option>
+                                <option value="sold">Decommissioned (Sold)</option>
+                            </select>
+                        </div>
+                        <button onClick={() => setSelectedPropertyId(null)} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">Sync Unit Signal</button>
+                        <button onClick={() => setSelectedPropertyId(null)} className="w-full py-2 text-[10px] font-black uppercase tracking-widest opacity-20">Cancel Transmission</button>
+                    </div>
+                 </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -319,6 +307,7 @@ function PropertyAdminCard({ prop, onEdit, onDelete, onToggleUnits, isExpanded, 
 
           <button 
             onClick={onToggleUnits} 
+            title="Expand Inventory"
             className="w-full py-5 rounded-2xl border border-[var(--border)] hover:border-brand-blue transition-all flex items-center justify-between px-6 group/inv"
           >
              <div className="flex items-center gap-3">
@@ -359,7 +348,7 @@ function PropertyAdminCard({ prop, onEdit, onDelete, onToggleUnits, isExpanded, 
                       <p className="text-[10px] text-center font-bold opacity-30 uppercase py-8 italic tracking-widest">Inventory empty. Awaiting signals.</p>
                    )}
                    
-                   <button onClick={onAddUnits} className="w-full py-4 bg-brand-blue/5 border border-brand-blue/20 text-brand-blue text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2">
+                   <button onClick={onAddUnits} title="Add Units Protocol" className="w-full py-4 bg-brand-blue/5 border border-brand-blue/20 text-brand-blue text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2">
                        <Plus size={16} /> Deploy Inventory Signals
                    </button>
                 </div>

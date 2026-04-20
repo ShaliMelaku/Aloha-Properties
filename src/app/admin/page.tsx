@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { 
-  LogOut, PieChart, Mail, Home, Users, Edit3, History, ShieldCheck, Activity, Lock
+  LogOut, PieChart, Mail, Home, Users, Edit3, History, ShieldCheck, Activity, Lock,
+  Globe, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
@@ -17,13 +18,13 @@ import { PortfolioTab } from "./_components/PortfolioTab";
 import { ContentTab, MarketingTab, HistoryTab } from "./_components/ContentTabs";
 
 // Shared Types
-import { Lead, Property, Unit, UnitType, Post, AdminTab } from "@/types/admin";
+import { Lead, Property, Unit, Post, AdminTab } from "@/types/admin";
 
 export default function AdminDashboard() {
   const { notify } = useStatus();
   const { formatPrice } = useCurrency();
   const { 
-    properties, leads, posts, history, loading, error, refreshAll,
+    properties, leads, posts, history, loading, refreshAll,
     fetchLeads, fetchProperties, fetchPosts, fetchHistory
   } = useAdminData();
 
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
   const [passwordAuth, setPasswordAuth] = useState("");
   const [syncing, setSyncing] = useState(false);
 
-  // Tab Interaction States (Restored during hardening)
+  // Tab Interaction States
   const [isAddingProperty, setIsAddingProperty] = useState(false);
   const [newProp, setNewProp] = useState<Partial<Property>>({ 
     name: '', location: '', developer: '', description: '', 
@@ -52,7 +53,7 @@ export default function AdminDashboard() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead', id: string, name: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead' | 'unit', id: string, name: string } | null>(null);
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
@@ -66,9 +67,10 @@ export default function AdminDashboard() {
     const now = new Date();
     const lastWeek = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
     const prevWeek = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
-    const recent = leads.filter(l => new Date(l.created_at!).getTime() > lastWeek.getTime()).length;
+    const recent = leads.filter(l => l.created_at && new Date(l.created_at).getTime() > lastWeek.getTime()).length;
     const archive = leads.filter(l => {
-      const d = new Date(l.created_at!).getTime();
+      if (!l.created_at) return false;
+      const d = new Date(l.created_at).getTime();
       return d > prevWeek.getTime() && d <= lastWeek.getTime();
     }).length;
     const growthVal = archive > 0 ? ((recent - archive) / archive) * 100 : (recent > 0 ? 100 : 0);
@@ -116,7 +118,28 @@ export default function AdminDashboard() {
     notify('info', "Session terminated.");
   };
 
-  // Logic Handlers (Restored/Hardened)
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      let table = '';
+      if (confirmDelete.type === 'property') table = 'properties';
+      else if (confirmDelete.type === 'lead') table = 'leads';
+      else if (confirmDelete.type === 'post') table = 'posts';
+      else if (confirmDelete.type === 'unit') table = 'property_units';
+
+      const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
+      if (error) throw error;
+      
+      notify('success', `Resource purged: ${confirmDelete.name}`);
+      refreshAll();
+    } catch (err: unknown) {
+      notify('error', `Purge Fault: ${err instanceof Error ? err.message : 'Unknown'}`);
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
+  // Logic Handlers
   const syncNews = async () => {
     setSyncing(true);
     try {
@@ -187,7 +210,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex">
-      {/* Dynamic Sidebar */}
+      {/* Sidebar */}
       <div className="w-80 h-screen sticky top-0 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-8 space-y-12 shadow-2xl z-50">
          <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-lg"><ShieldCheck size={24} /></div>
@@ -228,8 +251,8 @@ export default function AdminDashboard() {
                 setNewUnit={setNewUnit}
                 uploadingImage={uploadingImage}
                 uploadFile={uploadFile}
-                handleCreateProperty={() => {}}
-                handleUpdateProperty={() => {}}
+                handleCreateProperty={refreshAll}
+                handleUpdateProperty={refreshAll}
                 setEditingProperty={setEditingProperty}
                 setConfirmDelete={setConfirmDelete}
                 togglePropertyUnits={togglePropertyUnits}
@@ -237,6 +260,8 @@ export default function AdminDashboard() {
                 formatPrice={formatPrice}
                 setEditingUnit={setEditingUnit}
                 setSelectedPropertyId={setSelectedPropertyId}
+                editingUnit={editingUnit}
+                selectedPropertyId={selectedPropertyId}
                 fetchProperties={fetchProperties}
                 notify={notify}
                 editingProperty={editingProperty}
@@ -252,7 +277,7 @@ export default function AdminDashboard() {
                 onSync={syncNews} 
                 onAdd={() => {}} 
                 onEdit={() => {}} 
-                onDelete={() => {}} 
+                onDelete={(p: Post) => setConfirmDelete({ type: 'post', id: p.id!, name: p.title })} 
               />
             )}
             {activeTab === 'leads' && (
@@ -260,23 +285,24 @@ export default function AdminDashboard() {
                 key="leads"
                 leads={leads} 
                 loading={loading} 
-                onRefresh={refreshAll}
+                onRefresh={fetchLeads}
                 onNotify={notify}
                 setViewingLead={setViewingLead} 
                 setSelectedLead={setSelectedLead} 
                 setConfirmDelete={setConfirmDelete} 
                 viewingLead={viewingLead}
+                selectedLead={selectedLead}
               />
             )}
             {activeTab === 'history' && <HistoryTab key="history" history={history} loading={loading} />}
          </AnimatePresence>
       </main>
 
-      {/* Shared Delete Confirmation Backdrop */}
+      {/* Shared Delete Confirmation */}
       <AnimatePresence>
         {confirmDelete && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8">
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8 shadow-2xl">
                 <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto"><Trash2 size={40} /></div>
                 <div className="space-y-2">
                    <h3 className="text-2xl font-heading font-black tracking-tighter uppercase">Confirm Erasure</h3>
@@ -284,7 +310,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex gap-4">
                    <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/5 transition-all">Abort</button>
-                   <button className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all">Confirm Purge</button>
+                   <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all">Confirm Purge</button>
                 </div>
              </motion.div>
            </div>

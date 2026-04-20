@@ -118,7 +118,7 @@ export function HistoryTab({ history, loading }: HistoryTabProps) {
 /**
  * MARKETING / BROADCAST TAB
  */
-export function MarketingTab({ onNotify }: { onNotify: any }) {
+export function MarketingTab({ onNotify }: { onNotify: (type: 'success' | 'error' | 'info', msg: string) => void }) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase';
 import { Lead, Property, Post, Campaign } from '@/types/admin';
 
@@ -63,8 +63,8 @@ export function useAdminData() {
         fetchPosts(),
         fetchHistory()
       ]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown hook error');
     } finally {
       setLoading(false);
     }

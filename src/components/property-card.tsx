@@ -43,7 +43,7 @@ function AvailabilityBadge({ type }: { type: SupabaseUnitType }) {
   );
 }
 
-export function PropertyCard({ property, index }: { property: SupabaseProperty, index: number }) {
+export function PropertyCard({ property }: { property: SupabaseProperty }) {
   const { formatPrice } = useCurrency();
   const { toggleCompare, compared, setActivePulse } = useComparison();
   const [typeIdx, setTypeIdx] = useState(0);

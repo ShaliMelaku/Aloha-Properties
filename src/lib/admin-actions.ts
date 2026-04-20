@@ -94,7 +94,8 @@ export async function deleteLead(id: string) {
 
 export async function savePost(post: Partial<Post>) {
   // Remove internal fields that might conflict with DB schema upon insert/update
-  const { id, created_at, ...payload } = post as any;
+  const { id, ...payload } = post;
+  delete payload.created_at;
   
   if (id) {
     const { error } = await supabaseClient
