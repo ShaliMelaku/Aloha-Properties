@@ -13,8 +13,8 @@ export function VisitorTracker() {
 
     const trackVisit = async () => {
       try {
-        // 1. Fetch Geolocation Data (Country Level)
-        const geoRes = await fetch("https://ip-api.com/json/?fields=status,country,countryCode");
+        // 1. Fetch Geolocation Data (High Fidelity)
+        const geoRes = await fetch("https://ip-api.com/json/?fields=status,country,countryCode,city,regionName,lat,lon");
         const geoData = await geoRes.json();
 
         if (geoData.status !== "success") return;
@@ -35,6 +35,10 @@ export function VisitorTracker() {
         const { error } = await supabaseClient.from("visitors").insert({
           country: geoData.country,
           country_code: geoData.countryCode,
+          city: geoData.city,
+          region: geoData.regionName,
+          lat: geoData.lat,
+          lng: geoData.lon,
           device_type: deviceType,
           browser: browser
         });

@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { 
   LogOut, PieChart, Mail, Home, Users, History, ShieldCheck, Activity, Lock,
-  Globe, Trash2
+  Globe, Trash2, Sun, Moon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
 import { useCurrency } from "@/context/currency-context";
 import { supabaseClient } from "@/lib/supabase";
 import { useAdminData } from "@/hooks/use-admin-data";
+import { useTheme } from "next-themes";
 
 // Modular Components
 import { AnalyticsTab } from "./_components/AnalyticsTab";
@@ -24,6 +25,7 @@ import { createProperty, updateProperty } from "@/lib/admin-actions";
 export default function AdminDashboard() {
   const { notify } = useStatus();
   const { formatPrice } = useCurrency();
+  const { theme, setTheme } = useTheme();
   const { 
     properties, leads, posts, history, loading, refreshAll,
     fetchLeads, fetchProperties, fetchPosts, fetchHistory
@@ -207,9 +209,18 @@ export default function AdminDashboard() {
             ))}
          </nav>
 
-         <button onClick={handleLogout} className="flex items-center gap-4 px-6 py-4 text-red-400 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/5 rounded-2xl transition-all">
-            <LogOut size={18} /> Terminate
-         </button>
+         <div className="pt-4 border-t border-[var(--border)] space-y-2">
+            <button 
+               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-foreground/40 hover:bg-slate-500/5 hover:text-foreground transition-all"
+            >
+               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+               {theme === 'dark' ? 'Day Mode' : 'Night Mode'}
+            </button>
+            <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-400 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/5 rounded-2xl transition-all">
+               <LogOut size={18} /> Terminate
+            </button>
+         </div>
       </div>
 
       {/* Main Content Area */}

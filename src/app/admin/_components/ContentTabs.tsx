@@ -69,15 +69,17 @@ export function ContentTab({
              </div>
              <div className="p-6 space-y-4">
                 <h3 className="font-heading font-black text-lg leading-tight uppercase tracking-tight line-clamp-2">{post.title}</h3>
-                <div className="flex justify-between items-center pt-2">
-                   <div className="flex gap-2">
-                      <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-brand-blue/60 hover:text-brand-blue transition-colors flex items-center gap-1"><Edit3 size={12}/> Edit</button>
-                      {post.file_url && (
-                         <a href={post.file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1"><FileText size={12}/> PDF</a>
-                      )}
-                   </div>
-                   <button onClick={() => setConfirmDelete({ type: 'post', id: post.id!, name: post.title })} className="text-[10px] font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
-                </div>
+                 <div className="flex justify-between items-center pt-2">
+                    <div className="flex gap-2">
+                       <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-brand-blue/60 hover:text-brand-blue transition-colors flex items-center gap-1"><Edit3 size={12}/> Edit</button>
+                       {post.file_url ? (
+                          <a href={post.file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1 transition-all hover:scale-105 active:scale-95"><FileText size={12}/> View PDF</a>
+                       ) : (
+                          <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1"><Eye size={12}/> View Details</button>
+                       )}
+                    </div>
+                    <button onClick={() => setConfirmDelete({ type: 'post', id: post.id!, name: post.title })} className="text-[10px] font-black uppercase tracking-widest text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                 </div>
              </div>
           </div>
         ))}
@@ -98,12 +100,24 @@ export function ContentTab({
 
                <div className="space-y-6">
                   <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Content Category</label>
+                     <div className="grid grid-cols-3 gap-2">
+                        {['article', 'report', 'guide'].map(t => (
+                           <button key={t} onClick={() => setEditingPost({...editingPost, type: t})} className={`py-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${editingPost?.type === t ? 'border-brand-blue bg-brand-blue/5 text-brand-blue' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>{t}</button>
+                        ))}
+                     </div>
+                  </div>
+                  <div className="space-y-2">
                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Headline Identity</label>
                      <input placeholder="e.g. Q4 Real Estate Forecast" value={editingPost?.title || ''} onChange={e => setEditingPost({...editingPost, title: e.target.value})} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] focus:border-brand-blue outline-none font-bold text-sm" />
                   </div>
                   <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Source Intelligence (Link)</label>
+                     <input placeholder="https://source-link.com" value={editingPost?.source_url || ''} onChange={e => setEditingPost({...editingPost, source_url: e.target.value})} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] focus:border-brand-blue outline-none text-xs" />
+                  </div>
+                  <div className="space-y-2">
                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Content Stratum</label>
-                     <textarea rows={8} placeholder="Enter article content or executive summary..." value={editingPost?.content || ''} onChange={e => setEditingPost({...editingPost, content: e.target.value})} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] focus:border-brand-blue outline-none text-sm resize-none" />
+                     <textarea rows={6} placeholder="Enter article content or executive summary..." value={editingPost?.content || ''} onChange={e => setEditingPost({...editingPost, content: e.target.value})} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] focus:border-brand-blue outline-none text-sm resize-none custom-scrollbar" />
                   </div>
                </div>
 
@@ -165,6 +179,10 @@ export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
         </div>
         
         <div className="space-y-6 relative z-10">
+           <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Target Recipient (Leave empty for broadcast)</label>
+              <input placeholder="Email or Group Node..." className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+           </div>
            <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Neural Subject</label>
               <input placeholder="Subject Line..." value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] font-bold text-sm border border-[var(--border)] focus:border-brand-blue outline-none" />

@@ -13,13 +13,30 @@ interface MapPickerProps {
   lat: number;
   lng: number;
   onChange: (lat: number, lng: number) => void;
+  onAddressChange?: (address: string) => void;
 }
 
-function LocationMarker({ lat, lng, onChange }: MapPickerProps) {
+const fetchAddress = async (lat: number, lng: number) => {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      headers: { 'User-Agent': 'AlohaHQ/1.0' }
+    });
+    const data = await res.json();
+    return data.display_name || "Unknown Intelligence Node";
+  } catch {
+    return "Synchronization Pending...";
+  }
+};
+
+function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const map = useMapEvents({
-    click(e) {
+    async click(e) {
       onChange(e.latlng.lat, e.latlng.lng);
       map.flyTo(e.latlng, map.getZoom());
+      if (onAddressChange) {
+         const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
+         onAddressChange(addr);
+      }
     },
   });
 
@@ -33,7 +50,7 @@ function LocationMarker({ lat, lng, onChange }: MapPickerProps) {
   return <Marker position={[lat, lng]} icon={DefaultIcon} />;
 }
 
-export function MapPicker({ lat, lng, onChange }: MapPickerProps) {
+export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -68,7 +85,7 @@ export function MapPicker({ lat, lng, onChange }: MapPickerProps) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <LocationMarker lat={lat} lng={lng} onChange={onChange} />
+          <LocationMarker lat={lat} lng={lng} onChange={onChange} onAddressChange={onAddressChange} />
         </MapContainer>
         
         {/* Overlay HUD */}

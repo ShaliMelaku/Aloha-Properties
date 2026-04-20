@@ -130,7 +130,7 @@ export function PortfolioTab({
                    </div>
 
                    <div className="flex gap-3">
-                      <button onClick={() => setEditingProperty(prop)} className="flex-1 py-4 bg-slate-500/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"><Eye size={14} /> View Data</button>
+                      <button onClick={() => setEditingProperty(prop)} className="flex-1 py-4 bg-slate-500/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"><Settings2 size={14} /> Manage Property</button>
                       <button onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
                    </div>
                 </div>
@@ -157,8 +157,8 @@ export function PortfolioTab({
                    </div>
 
                    <div className="flex gap-2 pt-2">
-                      <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitType({}); setShowUnitTypeModal(true); }} className="flex-1 py-4 border border-brand-blue/20 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all"><PlusCircle size={14}/> Define Model</button>
-                      <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance({}); setShowUnitModal(true); }} className="flex-1 py-4 bg-brand-blue/10 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all"><Box size={14}/> Node Instance</button>
+                      <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitType({ name: 'Luxury Villa' }); setShowUnitTypeModal(true); }} className="flex-1 py-4 border border-brand-blue/20 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all"><PlusCircle size={14}/> Define Model</button>
+                      <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance({}); setShowUnitModal(true); }} className="flex-1 py-4 bg-brand-blue/10 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all"><Box size={14}/> Deploy Unit Node</button>
                    </div>
                 </div>
              </div>
@@ -181,16 +181,36 @@ export function PortfolioTab({
                </div>
 
                <div className="lg:col-span-7 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-4">
-                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Building2 size={12}/> Architecture Identity</label>
-                        <input type="text" placeholder="e.g. Skyline Residence" value={editingProperty?.name || newProp.name} onChange={e => editingProperty ? setEditingProperty({...editingProperty, name: e.target.value}) : setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                     </div>
-                     <div className="space-y-4">
-                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapPin size={12}/> Deployment Zone</label>
-                        <input type="text" placeholder="e.g. Bole, Addis" value={editingProperty?.location || newProp.location} onChange={e => editingProperty ? setEditingProperty({...editingProperty, location: e.target.value}) : setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                     </div>
-                  </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-4">
+                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Building2 size={12}/> Architecture Identity</label>
+                         <input type="text" placeholder="e.g. Skyline Residence" value={editingProperty?.name || newProp.name || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, name: e.target.value}) : setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                      </div>
+                      <div className="space-y-4">
+                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><User size={12}/> Developer Node</label>
+                         <input type="text" placeholder="e.g. Aloha Global" value={editingProperty?.developer || newProp.developer || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, developer: e.target.value}) : setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                      </div>
+                      <div className="space-y-4">
+                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapPin size={12}/> Deployment Zone</label>
+                         <input type="text" placeholder="e.g. Bole, Addis" value={editingProperty?.location || newProp.location || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, location: e.target.value}) : setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><DollarSign size={12}/> Budget Baseline</label>
+                         <input type="number" placeholder="Starting Price" value={editingProperty?.price_start || newProp.price_start || 0} onChange={e => editingProperty ? setEditingProperty({...editingProperty, price_start: parseInt(e.target.value)}) : setNewProp({...newProp, price_start: parseInt(e.target.value)})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                      </div>
+                      <div className="space-y-4">
+                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Calendar size={12}/> Projected Completion</label>
+                         <input type="text" placeholder="e.g. Q4 2026" value={editingProperty?.completion_date || newProp.completion_date || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, completion_date: e.target.value}) : setNewProp({...newProp, completion_date: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                      </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Info size={12}/> Neural Description</label>
+                      <textarea placeholder="Describe the asset's unique value proposition..." value={editingProperty?.description || newProp.description || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, description: e.target.value}) : setNewProp({...newProp, description: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner h-32" />
+                   </div>
 
                   <div className="space-y-6">
                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapIcon size={12}/> Georeference Mapping</label>
@@ -198,6 +218,7 @@ export function PortfolioTab({
                         lat={editingProperty?.lat || newProp.lat || 9.0192} 
                         lng={editingProperty?.lng || newProp.lng || 38.7525} 
                         onChange={(lat, lng) => editingProperty ? setEditingProperty({...editingProperty, lat, lng}) : setNewProp({...newProp, lat, lng})} 
+                        onAddressChange={(location) => editingProperty ? setEditingProperty({...editingProperty, location}) : setNewProp({...newProp, location})}
                      />
                   </div>
                </div>
@@ -253,10 +274,10 @@ export function PortfolioTab({
 
                   <div className="space-y-4">
                      <div className="grid grid-cols-2 gap-4">
-                        <button onClick={() => setEditingUnitType({...editingUnitType, name: editingUnitType?.name || 'Luxury Villa'})} className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${editingUnitType?.name?.includes('Villa') ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>
+                        <button onClick={() => setEditingUnitType({...editingUnitType, name: 'Luxury Villa'})} className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${editingUnitType?.name?.toLowerCase().includes('villa') ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>
                            <Home size={24}/> <span className="text-[10px] font-black uppercase tracking-widest">Villa</span>
                         </button>
-                        <button onClick={() => setEditingUnitType({...editingUnitType, name: editingUnitType?.name || 'Studio Suite'})} className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${!editingUnitType?.name?.includes('Villa') ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>
+                        <button onClick={() => setEditingUnitType({...editingUnitType, name: 'Studio Suite'})} className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${!editingUnitType?.name?.toLowerCase().includes('villa') ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>
                            <Building2 size={24}/> <span className="text-[10px] font-black uppercase tracking-widest">Apartment</span>
                         </button>
                      </div>
@@ -283,6 +304,58 @@ export function PortfolioTab({
                   </div>
 
                   <button onClick={handleSaveUnitType} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Synchronize Model</button>
+               </motion.div>
+            </div>
+         )}
+      </AnimatePresence>
+      {/* Unit Instance Modal (Individual Unit Image Management) */}
+      <AnimatePresence>
+         {showUnitModal && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-xl p-10 space-y-8 relative overflow-y-auto max-h-[90vh]">
+                  <button onClick={() => setShowUnitModal(false)} className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                  <div className="space-y-1">
+                     <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">Deploy <span className="opacity-30 italic">Node Instance.</span></h4>
+                     <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Tactical parameters for the specific asset node.</p>
+                  </div>
+
+                  <div className="space-y-6">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Identity (e.g. Villa 104)</label>
+                        <input type="text" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                     </div>
+
+                     <div className="space-y-2">
+                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Camera size={12}/> Unit Selective Visual</label>
+                         <MediaUpload 
+                            bucket="property-assets" 
+                            onUploadComplete={(url) => setEditingUnitInstance({...editingUnitInstance, image_url: url})} 
+                            label="Set specific unit visual"
+                         />
+                         {editingUnitInstance?.image_url && (
+                            <div className="h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
+                               <img src={editingUnitInstance?.image_url} className="w-full h-full object-cover" />
+                            </div>
+                         )}
+                      </div>
+
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Status Node</label>
+                           <select value={editingUnitInstance?.status || 'available'} onChange={e => setEditingUnitInstance({...editingUnitInstance, status: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
+                              <option value="available">Available</option>
+                              <option value="reserved">Reserved</option>
+                              <option value="sold">Sold</option>
+                           </select>
+                        </div>
+                        <div className="space-y-1">
+                           <label className="text-[9px] font-black uppercase opacity-40 ml-2">Floor/Level</label>
+                           <input type="text" value={editingUnitInstance?.floor || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, floor: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                        </div>
+                     </div>
+                  </div>
+
+                  <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Synchronize Asset Node</button>
                </motion.div>
             </div>
          )}

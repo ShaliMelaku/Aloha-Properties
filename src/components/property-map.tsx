@@ -45,8 +45,10 @@ export default function PropertyMap({
       <MapContainer 
         center={[centerLat, centerLng]} 
         zoom={lat === 0 ? 12 : 15} 
-        scrollWheelZoom={false} 
+        scrollWheelZoom={true} 
+        zoomControl={true}
         style={{ height: "100%", width: "100%" }}
+        className="z-0"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

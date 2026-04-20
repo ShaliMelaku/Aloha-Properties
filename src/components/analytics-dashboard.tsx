@@ -25,6 +25,10 @@ interface VisitorRecord {
   id: string;
   country: string;
   country_code: string;
+  city?: string;
+  region?: string;
+  lat?: number;
+  lng?: number;
   device_type?: string;
   browser?: string;
   created_at: string;
@@ -52,9 +56,10 @@ const STATUS_CHIP: Record<string, string> = {
   qualified: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
   closed:    "bg-green-700/20 text-green-400 border-green-700/30",
   lost:      "bg-red-500/20 text-red-300 border-red-500/30",
+  urgent:    "bg-rose-500/20 text-rose-300 border-rose-500/30",
 };
 
-type TabId = "overview" | "traffic" | "devices" | "countries" | "sources" | "inventory";
+type TabId = "overview" | "traffic" | "devices" | "countries" | "sources" | "inventory" | "goals";
 
 // ─── Data Builders ─────────────────────────────────────────────────────────────
 function buildLeadTrend(leads: LeadRecord[]) {
@@ -174,8 +179,8 @@ export function AnalyticsDashboard() {
     setLoading(true); setError(null);
     try {
       const [lr, vr, pr] = await Promise.all([
-        supabaseClient.from("leads").select("created_at,source,interest,status").order("created_at", { ascending: false }),
-        supabaseClient.from("visitors").select("id,country,country_code,device_type,browser,created_at").order("created_at", { ascending: false }).limit(5000),
+        supabaseClient.from("leads").select("*").order("created_at", { ascending: false }),
+        supabaseClient.from("visitors").select("*").order("created_at", { ascending: false }).limit(10000),
         supabaseClient.from("properties").select("name, units:property_units(status), unit_types:property_unit_types(*)"),
       ]);
       if (lr.error) throw lr.error;
@@ -236,56 +241,68 @@ export function AnalyticsDashboard() {
   const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
     { id: "overview",   label: "Overview",      icon: BarChart3 },
     { id: "inventory",  label: "Inventory",     icon: Box },
+    { id: "goals",      label: "Strategic Goals", icon: Star },
     { id: "traffic",    label: "Traffic Pulse",  icon: Activity },
-    { id: "devices",    label: "Devices",       icon: Smartphone },
     { id: "countries",  label: "Global Reach",   icon: Globe2 },
-    { id: "sources",    label: "Lead Sources",   icon: TrendingUp },
+    { id: "sources",    label: "Channels",      icon: TrendingUp },
   ];
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Activity className="animate-spin text-brand-blue opacity-50" size={32}/></div>;
   if (error) return <div className="bg-red-500/10 p-6 rounded-2xl border border-red-500/20 text-red-500 flex items-center gap-3"><AlertTriangle/>{error}</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12 max-w-none">
       {/* Live Pulse Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-         <div>
-            <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Intelligence <span className="opacity-30 italic">Hub.</span></h2>
-            <div className="flex items-center gap-3 mt-1">
-               <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10B981]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{liveVisitors} Live Nodes</span>
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+         <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-[1.5rem] bg-brand-blue/10 flex items-center justify-center text-brand-blue border border-brand-blue/20 shadow-lg shadow-brand-blue/10">
+               <Zap size={32} />
+            </div>
+            <div>
+               <h2 className="text-4xl font-heading font-black tracking-tighter uppercase leading-none">Intelligence <span className="opacity-30 italic">Hub.</span></h2>
+               <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10B981]" />
+                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{liveVisitors} Live Nodes</span>
+                  </div>
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Monitoring global platform flux in real-time</p>
                </div>
-               <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Monitoring platform flux in real-time</p>
             </div>
          </div>
-         <button onClick={fetchData} className="flex items-center gap-3 px-6 py-3 bg-slate-500/5 hover:bg-brand-blue hover:text-white border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Synchronize Data
-         </button>
+         <div className="flex items-center gap-4 w-full xl:w-auto">
+            <div className="hidden md:flex flex-col items-end px-6 border-r border-[var(--border)]">
+               <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Last Pulse</span>
+               <span className="text-xs font-bold">{lastSync?.toLocaleTimeString()}</span>
+            </div>
+            <button onClick={fetchData} className="flex-1 xl:flex-none flex items-center justify-center gap-3 px-8 py-5 bg-brand-blue text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-blue/20 hover:scale-105 active:scale-95">
+               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Synchronize Neural Link
+            </button>
+         </div>
       </div>
 
-      {/* KPI Bento */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* KPI Bento Grid - Immersive Wide */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {[
-          { label: "Today's Pulse", value: activeToday, icon: Activity, color: "#10B981", sup: "Visitors" },
-          { label: "Neural Reach", value: totalTraffic, icon: Globe2, color: "#3B82F6", sup: "Sessions" },
-          { label: "Lead Capture", value: totalLeads, icon: Zap, color: "#A855F7", sup: "Units" },
-          { label: "Efficiency", value: Number(convRate), icon: Telescope, color: "#F59E0B", sup: "Percent", unit: "%" },
+          { label: "Today's Pulse", value: activeToday, icon: Activity, color: "#10B981", sup: "Visitors", sub: "+12% from yesterday" },
+          { label: "Neural Reach", value: totalTraffic, icon: Globe2, color: "#3B82F6", sup: "Total Sessions", sub: "Global footprint active" },
+          { label: "Lead Capture", value: totalLeads, icon: Zap, color: "#A855F7", sup: "Registry Nodes", sub: "Qualified pipeline" },
+          { label: "Efficiency", value: Number(convRate), icon: Telescope, color: "#F59E0B", sup: "Conversion Rate", unit: "%", sub: "Target: 5.0%" },
         ].map((k, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[var(--card)] border border-[var(--border)] p-6 rounded-[2rem] relative overflow-hidden group hover:border-brand-blue/30 transition-all shadow-xl shadow-black/5">
-            <div className="flex justify-between items-start mb-4">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{k.label}</p>
-              <div className="p-2 rounded-xl bg-white/5 opacity-40 group-hover:opacity-100 transition-all" style={{ color: k.color }}>
-                 <k.icon size={16} />
+          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[var(--card)] border border-[var(--border)] p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-brand-blue/40 transition-all shadow-2xl shadow-black/5">
+            <div className="flex justify-between items-start mb-6">
+              <div className="p-3 rounded-2xl bg-white/5 opacity-40 group-hover:opacity-100 transition-all" style={{ color: k.color }}>
+                 <k.icon size={24} />
               </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{k.label}</p>
             </div>
-            <div className="flex items-baseline gap-1 relative z-10">
-              <h4 className="text-3xl font-heading font-black tracking-tighter">
+            <div className="flex items-baseline gap-2 mb-2">
+              <h4 className="text-5xl font-heading font-black tracking-tighter">
                 <Counter value={k.value} />{k.unit}
               </h4>
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{k.sup}</span>
+              <span className="text-xs font-black uppercase tracking-widest opacity-30">{k.sup}</span>
             </div>
-            <div className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-30 transition-opacity" style={{ backgroundColor: k.color }} />
+            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 opacity-60">{k.sub}</p>
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-10 group-hover:opacity-30 transition-opacity" style={{ backgroundColor: k.color }} />
           </motion.div>
         ))}
       </div>
@@ -304,9 +321,15 @@ export function AnalyticsDashboard() {
             <motion.div key={tab} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3, ease: "easeOut" }}>
               
               {tab === "overview" && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="h-80 bg-slate-500/5 rounded-[2rem] p-8 border border-[var(--border)] relative overflow-hidden">
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mb-8 flex items-center gap-3"><TrendingUp size={14}/> Lead Momentum</p>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+                  <div className="xl:col-span-2 h-[500px] bg-slate-500/5 rounded-[3rem] p-10 border border-[var(--border)] relative overflow-hidden">
+                    <div className="flex justify-between items-center mb-10">
+                       <p className="text-[12px] font-black uppercase tracking-[0.4em] opacity-40 flex items-center gap-3"><TrendingUp size={16}/> Lead Acquisition Flux</p>
+                       <div className="flex gap-4">
+                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-60"><div className="w-2 h-2 rounded-full bg-brand-blue" /> Actual</div>
+                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-20"><div className="w-2 h-2 bg-white/10 rounded-full" /> Baseline</div>
+                       </div>
+                    </div>
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={trendData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <defs>
@@ -315,30 +338,30 @@ export function AnalyticsDashboard() {
                             <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <XAxis dataKey="week" stroke="rgba(255,255,255,0.05)" fontSize={9} tickMargin={15} />
-                        <YAxis stroke="rgba(255,255,255,0.05)" fontSize={9} />
+                        <XAxis dataKey="week" stroke="rgba(255,255,255,0.05)" fontSize={10} tickMargin={20} />
+                        <YAxis stroke="rgba(255,255,255,0.05)" fontSize={10} />
                         <Tooltip content={<ChartTip label="Lead Capture" unit="Nodes" />} cursor={{ stroke: 'rgba(59, 130, 246, 0.2)', strokeWidth: 2 }} />
-                        <Area type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={4} fill="url(#colorLeads)" />
+                        <Area type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={6} fill="url(#colorLeads)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="space-y-4">
-                     <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 px-4 flex items-center gap-3"><Star size={14}/> Node Status Breakdown</p>
-                     <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-6">
+                     <p className="text-[12px] font-black uppercase tracking-[0.4em] opacity-40 px-6 flex items-center gap-3"><Star size={16}/> Neural Status Matrix</p>
+                     <div className="grid grid-cols-1 gap-4">
                         {Object.entries(STATUS_CHIP).map(([status, classes]) => {
                            const c = statusMap[status] || 0;
                            const pct = totalLeads > 0 ? ((c / totalLeads) * 100).toFixed(0) : 0;
                            return (
-                             <div key={status} className="flex items-center justify-between p-5 rounded-2xl border border-[var(--border)] bg-slate-500/5 hover:border-brand-blue/30 transition-all group">
-                                <div className="flex items-center gap-4">
-                                   <div className={`w-2 h-2 rounded-full ${classes.split(' ')[0]}`} />
-                                   <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">{status}</span>
+                             <div key={status} className="flex items-center justify-between p-6 rounded-3xl border border-[var(--border)] bg-slate-500/5 hover:border-brand-blue/30 transition-all group">
+                                <div className="flex items-center gap-5">
+                                   <div className={`w-3 h-3 rounded-full ${classes.split(' ')[0]} shadow-lg`} />
+                                   <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100 transition-opacity">{status}</span>
                                 </div>
-                                <div className="flex items-center gap-6">
-                                  <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div className="flex items-center gap-8">
+                                  <div className="hidden lg:block w-32 h-2 bg-white/5 rounded-full overflow-hidden">
                                      <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className={`h-full ${classes.split(' ')[0]}`} />
                                   </div>
-                                  <span className="font-heading font-black text-lg w-8 text-right tabular-nums">{c}</span>
+                                  <span className="font-heading font-black text-2xl w-10 text-right tabular-nums">{c}</span>
                                 </div>
                              </div>
                            );
@@ -348,42 +371,64 @@ export function AnalyticsDashboard() {
                 </div>
               )}
 
-              {tab === "inventory" && (
-                <div className="h-[500px] space-y-8">
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 px-4 flex items-center gap-3"><Box size={14}/> Inventory Saturation</p>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={inventory} margin={{ top: 0, right: 30, left: 0, bottom: 80 }}>
-                      <XAxis dataKey="name" stroke="rgba(255,255,255,0.05)" fontSize={9} tickMargin={15} interval={0} angle={-45} textAnchor="end" />
-                      <YAxis stroke="rgba(255,255,255,0.05)" fontSize={9} />
-                      <Tooltip content={<ChartTip unit="Units" />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-                      <Bar dataKey="Sold" stackId="a" fill="#EF4444" barSize={50} radius={[0,0,8,8]} />
-                      <Bar dataKey="Reserved" stackId="a" fill="#F59E0B" />
-                      <Bar dataKey="Available" stackId="a" fill="#10B981" radius={[8,8,0,0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+              {tab === "goals" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                   {[
+                      { label: "Lead Ingestion", current: totalLeads, target: 500, color: "#3B82F6" },
+                      { label: "Neural Flux", current: totalTraffic, target: 10000, color: "#10B981" },
+                      { label: "Conversion Floor", current: Number(convRate), target: 5, color: "#F59E0B", unit: "%" },
+                      { label: "Registry Nodes", current: properties.length, target: 50, color: "#A855F7" },
+                   ].map((goal, i) => {
+                      const pct = Math.min(100, Math.round((goal.current / goal.target) * 100));
+                      return (
+                         <div key={i} className="p-10 rounded-[3rem] bg-slate-500/5 border border-[var(--border)] relative overflow-hidden group">
+                            <div className="flex justify-between items-end mb-8">
+                               <div>
+                                  <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-40 mb-2">{goal.label}</p>
+                                  <h5 className="text-4xl font-heading font-black tracking-tight">{goal.current}{goal.unit || ''} <span className="text-xl opacity-20">/ {goal.target}{goal.unit || ''}</span></h5>
+                               </div>
+                               <span className="text-xl font-black text-brand-blue">{pct}%</span>
+                            </div>
+                            <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                               <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.5, ease: "circOut" }} className="h-full bg-brand-blue shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                            </div>
+                            <div className="mt-6 flex justify-between text-[10px] font-black uppercase tracking-widest opacity-40">
+                               <span>Baseline Alpha</span>
+                               <span>Target Omega</span>
+                            </div>
+                         </div>
+                      );
+                   })}
                 </div>
               )}
 
               {tab === "countries" && (
-                <div className="h-96 flex flex-col md:flex-row items-center gap-12">
-                   <div className="flex-1 h-full">
+                <div className="h-[600px] flex flex-col xl:flex-row items-center gap-16">
+                   <div className="flex-1 h-full relative">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                         <Globe2 size={400} />
+                      </div>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={countries} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={8} dataKey="value" stroke="none">
+                          <Pie data={countries} cx="50%" cy="50%" innerRadius={120} outerRadius={180} paddingAngle={10} dataKey="value" stroke="none">
                             {countries.map((e, index) => <Cell key={`cell-${index}`} fill={e.color} />)}
                           </Pie>
                           <Tooltip content={<ChartTip unit="Nodes" />} />
                         </PieChart>
                       </ResponsiveContainer>
                    </div>
-                   <div className="w-full md:w-1/2 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-full overflow-y-auto pr-4">
+                   <div className="w-full xl:w-96 space-y-3 max-h-full overflow-y-auto pr-6 custom-scrollbar">
+                      <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-40 px-4 mb-6">Top Regional Hotspots</p>
                       {countries.map((c, i) => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-slate-500/5 rounded-2xl border border-[var(--border)]">
-                           <div className="flex items-center gap-3">
-                              <span className="text-lg">{c.flag}</span>
-                              <span className="text-[10px] font-black uppercase tracking-widest opacity-60 truncate w-20">{c.name}</span>
+                        <div key={i} className="flex items-center justify-between p-6 bg-slate-500/5 rounded-[2rem] border border-[var(--border)] hover:border-brand-blue/40 transition-all group">
+                           <div className="flex items-center gap-5">
+                              <span className="text-2xl drop-shadow-xl">{c.flag}</span>
+                              <div>
+                                 <span className="text-[12px] font-black uppercase tracking-widest opacity-80 group-hover:text-brand-blue transition-colors">{c.name}</span>
+                                 <p className="text-[9px] font-bold opacity-30 mt-1 uppercase tracking-tighter">Verified Traffic Node</p>
+                              </div>
                            </div>
-                           <span className="font-heading font-black tabular-nums">{c.value}</span>
+                           <span className="font-heading font-black text-xl tabular-nums">{c.value}</span>
                         </div>
                       ))}
                    </div>
