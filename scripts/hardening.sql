@@ -106,6 +106,21 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='unit_type_id') THEN
         ALTER TABLE public.property_units ADD COLUMN unit_type_id UUID REFERENCES public.property_unit_types(id) ON DELETE SET NULL;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='unit_number') THEN
+        ALTER TABLE public.property_units ADD COLUMN unit_number TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='floor_number') THEN
+        ALTER TABLE public.property_units ADD COLUMN floor_number INTEGER DEFAULT 1;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='status') THEN
+        ALTER TABLE public.property_units ADD COLUMN status TEXT DEFAULT 'available';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='notes') THEN
+        ALTER TABLE public.property_units ADD COLUMN notes TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='image_url') THEN
+        ALTER TABLE public.property_units ADD COLUMN image_url TEXT;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='view_type') THEN
         ALTER TABLE public.property_units ADD COLUMN view_type TEXT;
     END IF;
