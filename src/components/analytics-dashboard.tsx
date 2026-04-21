@@ -145,7 +145,7 @@ function ChartTip({ active, payload, label, unit = "" }: { active?: boolean; pay
       {payload.map((p, i) => (
          <div key={i} className="flex items-center justify-between gap-6 py-1">
             <div className="flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" style={{ backgroundColor: p.color }} />
+               <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)] bg-[var(--marker-color)]" style={{ "--marker-color": p.color } as React.CSSProperties} />
                <span className="opacity-60 uppercase font-black tracking-widest leading-none">{p.name}</span>
             </div>
             <p className="font-black text-white">{p.value.toLocaleString()} {unit}</p>
@@ -305,7 +305,7 @@ export function AnalyticsDashboard() {
         ].map((k, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[var(--card)] border border-[var(--border)] p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-brand-blue/40 transition-all shadow-2xl shadow-black/5">
             <div className="flex justify-between items-start mb-6">
-              <div className="p-3 rounded-2xl bg-white/5 opacity-40 group-hover:opacity-100 transition-all" style={{ color: k.color }}>
+              <div className="p-3 rounded-2xl bg-white/5 opacity-40 group-hover:opacity-100 transition-all text-[var(--icon-color)]" style={{ "--icon-color": k.color } as React.CSSProperties}>
                  <k.icon size={24} />
               </div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{k.label}</p>
@@ -317,7 +317,7 @@ export function AnalyticsDashboard() {
               <span className="text-xs font-black uppercase tracking-widest opacity-30">{k.sup}</span>
             </div>
             <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 opacity-60">{k.sub}</p>
-            <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-10 group-hover:opacity-30 transition-opacity" style={{ backgroundColor: k.color }} />
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-10 group-hover:opacity-30 transition-opacity bg-[var(--glow-color)]" style={{ "--glow-color": k.color } as React.CSSProperties} />
           </motion.div>
         ))}
       </div>

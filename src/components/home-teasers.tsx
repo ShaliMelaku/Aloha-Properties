@@ -79,8 +79,7 @@ export function VisionTeaser() {
           ref={containerRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center"
-          style={{ perspective: '1200px' }}
+          className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center [perspective:1200px]"
         >
           {/* Card 1 — Back Left */}
           <motion.div

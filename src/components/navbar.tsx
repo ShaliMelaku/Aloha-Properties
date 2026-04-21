@@ -187,7 +187,7 @@ export function Navbar() {
                 <div className="pt-6 border-t border-[var(--border)] flex justify-between items-center">
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-bold text-slate-400">Current Theme</span>
-                    <span className="text-xs uppercase tracking-widest font-black text-brand-blue">{currentTheme}</span>
+                    <span className="text-xs uppercase tracking-widest font-black text-brand-blue">{theme}</span>
                   </div>
                   <button
                     onClick={toggleTheme}

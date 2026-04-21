@@ -7,15 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, X, User, Share2, ExternalLink } from "lucide-react";
 import Image from "next/image";
 
-interface NewsArticle {
-  title: string;
-  url: string;
-  description: string;
-  publishedAt: string;
-  source: {
-    name: string;
-  };
-}
 
 interface Post {
   id: string;
@@ -160,10 +151,16 @@ export function MarketTrends() {
                     transition={{ delay: idx * 0.1 }}
                     className="block group cursor-pointer bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden hover:border-brand-blue/40 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col h-full"
                   >
-                      {/* Cover image â€” shown for API news that has images */}
+                      {/* Cover image — shown for API news that has images */}
                       {post.cover_image && (
                         <div className="relative h-44 w-full overflow-hidden flex-shrink-0">
-                          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                          <Image 
+                            src={post.cover_image} 
+                            alt={post.title} 
+                            fill 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                          />
                           <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
                         </div>
                       )}
@@ -210,7 +207,7 @@ export function MarketTrends() {
                            <div className="w-1 h-1 rounded-full bg-slate-500/20" />
                            <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{new Date(selectedPost.created_at).toLocaleDateString()}</span>
                            {selectedPost.source_label && (
-                             <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest hidden sm:block">â€” {selectedPost.source_label}</span>
+                             <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest hidden sm:block">— {selectedPost.source_label}</span>
                            )}
                         </div>
                         <div className="flex items-center gap-3">
@@ -262,7 +259,13 @@ export function MarketTrends() {
                              </div>
                           ) : selectedPost.cover_image && (
                              <div className="relative aspect-[21/9] rounded-3xl overflow-hidden mb-12 border border-[var(--border)] shadow-xl">
-                                <img src={selectedPost.cover_image} alt={selectedPost.title} className="absolute inset-0 w-full h-full object-cover" />
+                                <Image 
+                                  src={selectedPost.cover_image} 
+                                  alt={selectedPost.title} 
+                                  fill 
+                                  className="absolute inset-0 w-full h-full object-cover"
+                                  sizes="(max-width: 1280px) 100vw, 1200px"
+                                />
                              </div>
                           )}
 
