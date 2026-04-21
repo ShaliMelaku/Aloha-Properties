@@ -521,6 +521,15 @@ export function PortfolioTab({
                                  <input type="number" title="Base Price" placeholder="0" value={editingUnitType.price_from} onChange={e => setEditingUnitType({...editingUnitType, price_from: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                               </div>
                            </div>
+                           <div className="space-y-4">
+                              <label className="text-[9px] font-black uppercase opacity-40 ml-4">Model Layout / Render</label>
+                              <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitType({...editingUnitType, type_image: url})} label="Upload model render" />
+                              {editingUnitType.type_image && (
+                                 <div className="relative h-40 w-full rounded-2xl overflow-hidden border border-brand-blue/20">
+                                    <Image src={editingUnitType.type_image} alt="Type Preview" fill className="object-cover" />
+                                 </div>
+                              )}
+                           </div>
                            <button onClick={handleSaveUnitType} className="w-full py-5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-brand-blue/20">Sync Model Parameters</button>
                         </motion.div>
                      )}
@@ -557,6 +566,11 @@ export function PortfolioTab({
                            <div className="space-y-4">
                               <label className="text-[9px] font-black uppercase opacity-40 ml-4">Unit Specific Image</label>
                               <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitInstance({...editingUnitInstance, image_url: url})} label="Change unit visual" />
+                              {editingUnitInstance.image_url && (
+                                 <div className="relative h-40 w-full rounded-2xl overflow-hidden border border-emerald-500/20">
+                                    <Image src={editingUnitInstance.image_url} alt="Unit Preview" fill className="object-cover" />
+                                 </div>
+                              )}
                            </div>
                            <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20">Sync Unit Node</button>
                         </motion.div>
