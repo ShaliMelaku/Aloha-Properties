@@ -5,12 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { 
   Plus, Edit3, Trash2, FileText, Send, 
-  Activity, Zap, Download,
+  Activity, Zap, Download, Database,
   X, ImageIcon, CheckCircle2,
-  Users
+  UserPlus, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Post, Lead } from "@/types/admin";
+import { Post, Lead, Campaign } from "@/types/admin";
 import { MediaUpload } from "./MediaUpload";
 import { savePost, saveLead } from "@/lib/admin-actions";
 
