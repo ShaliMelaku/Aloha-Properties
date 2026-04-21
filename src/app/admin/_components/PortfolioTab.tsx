@@ -420,11 +420,11 @@ export function PortfolioTab({
                 <div className="space-y-6">
                    <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Milestone Label</label>
-                      <input type="text" placeholder="e.g. Foundation Works" value={editingProgress?.label || ''} onChange={e => setEditingProgress({...editingProgress, label: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                      <input type="text" placeholder="e.g. Foundation Works" title="Milestone Label" value={editingProgress?.label || ''} onChange={e => setEditingProgress({...editingProgress, label: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
                    </div>
                    <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Percentage (0-100)</label>
-                      <input type="number" value={editingProgress?.percentage || 0} onChange={e => setEditingProgress({...editingProgress, percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                      <input type="number" placeholder="Percentage" title="Progress Percentage" value={editingProgress?.percentage || 0} onChange={e => setEditingProgress({...editingProgress, percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
                    </div>
                    <button onClick={handleSaveProgress} className="w-full py-5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">Sync Milestone</button>
                 </div>
@@ -521,11 +521,11 @@ export function PortfolioTab({
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                            <label htmlFor="unit-identity" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Number</label>
-                           <input id="unit-identity" type="text" placeholder="e.g. A-402" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                           <input id="unit-identity" type="text" placeholder="e.g. A-402" title="Unit Number" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
                         </div>
                         <div className="space-y-2">
                            <label htmlFor="unit-price-spec" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Specific Price (ETB)</label>
-                           <input id="unit-price-spec" type="number" placeholder="Price override" value={editingUnitInstance?.price || 0} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                           <input id="unit-price-spec" type="number" placeholder="Price override" title="Specific Price" value={editingUnitInstance?.price || 0} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
                         </div>
                      </div>
 

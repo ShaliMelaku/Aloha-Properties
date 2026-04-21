@@ -60,9 +60,9 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
 
   const dynamicProgress = property.progress && property.progress.length > 0 ? property.progress[0] : null;
   const progress = dynamicProgress ? {
-    progress: (dynamicProgress as any).percentage,
-    statusText: (dynamicProgress as any).label,
-    estimated: (dynamicProgress as any).estimated_completion || 'TBD'
+    progress: dynamicProgress.percentage || dynamicProgress.percent,
+    statusText: dynamicProgress.label || dynamicProgress.status_text,
+    estimated: dynamicProgress.estimated_completion || 'TBD'
   } : getProductProgress(property.name);
 
   const loanPercent = property.loan_percentage ? `${property.loan_percentage}% Bank Financing` : getLoanPercentage(property.developer, property.name);
@@ -330,7 +330,6 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
                     )}
                   </button>
                 ))}
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

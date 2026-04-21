@@ -45,8 +45,10 @@ export interface SupabaseProgress {
   id: string;
   property_id: string;
   percent: number;
+  percentage: number;
   status: string;
   status_text: string;
+  label: string;
   estimated_completion: string;
 }
 
@@ -71,6 +73,8 @@ export interface SupabaseProperty {
   air_quality_index?: number;
   urban_heat_index?: number;
   env_risk_level?: string;
+  loan_percentage?: number;
+  discount_conditions?: string;
   unit_types: SupabaseUnitType[];   // NEW — apartment configurations
   units: SupabaseUnit[];             // individual unit tracker
   progress: SupabaseProgress[];
