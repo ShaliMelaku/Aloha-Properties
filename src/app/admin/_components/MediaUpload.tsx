@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { ImageOptimizer } from "./ImageOptimizer";
 import { Upload, File, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabaseClient } from "@/lib/supabase";
@@ -11,6 +11,7 @@ interface MediaUploadProps {
   accept?: string;
   label?: string;
   maxSizeMB?: number;
+  aspect?: number;
 }
 
 export function MediaUpload({ 
@@ -18,29 +19,44 @@ export function MediaUpload({
   bucket, 
   accept = "image/*", 
   label = "Drop assets here or click to browse",
-  maxSizeMB = 10 
+  maxSizeMB = 10,
+  aspect = 16/9
 }: MediaUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (file: File) => {
+  const handleFileSelect = (file: File) => {
     if (!file) return;
-
-    // Validation
     if (file.size > maxSizeMB * 1024 * 1024) {
       setError(`File too large (Max ${maxSizeMB}MB)`);
       return;
     }
 
+    if (file.type.startsWith('image/') && !file.type.includes('svg')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPendingImage(reader.result as string);
+        setOriginalFile(file);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      handleUpload(file);
+    }
+  };
+
+  const handleUpload = async (file: File | Blob) => {
     setUploading(true);
     setError(null);
     setSuccess(false);
+    setPendingImage(null);
 
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = originalFile?.name.split('.').pop() || 'jpg';
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
@@ -69,7 +85,7 @@ export function MediaUpload({
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) handleUpload(file);
+    if (file) handleFileSelect(file);
   };
 
   return (
@@ -88,11 +104,11 @@ export function MediaUpload({
           ref={fileInputRef} 
           className="hidden" 
           accept={accept}
-          id={`media-upload-${bucket}`}
+          id={`media-upload-${Math.random().toString(36).substring(7)}`}
           aria-label={label}
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleUpload(file);
+            if (file) handleFileSelect(file);
           }}
         />
 
@@ -120,6 +136,17 @@ export function MediaUpload({
         {/* Glossy overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
       </div>
+
+      <AnimatePresence>
+        {pendingImage && (
+          <ImageOptimizer 
+            image={pendingImage} 
+            aspect={aspect}
+            onComplete={(blob) => handleUpload(blob)}
+            onCancel={() => setPendingImage(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {error && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-[9px] font-bold uppercase tracking-widest px-4">

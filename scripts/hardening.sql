@@ -112,10 +112,31 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='amenities') THEN
         ALTER TABLE public.property_unit_types ADD COLUMN amenities TEXT[];
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='discount_rules') THEN
+        ALTER TABLE public.property_unit_types ADD COLUMN discount_rules JSONB DEFAULT '[]'::jsonb;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='payment_schedule') THEN
+        ALTER TABLE public.property_unit_types ADD COLUMN payment_schedule TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='downpayment_percentage') THEN
+        ALTER TABLE public.property_unit_types ADD COLUMN downpayment_percentage INTEGER DEFAULT 0;
+    END IF;
 
     -- Property Units Extensions
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='unit_type_id') THEN
         ALTER TABLE public.property_units ADD COLUMN unit_type_id UUID REFERENCES public.property_unit_types(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='discount_rules') THEN
+        ALTER TABLE public.property_units ADD COLUMN discount_rules JSONB DEFAULT '[]'::jsonb;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='payment_schedule') THEN
+        ALTER TABLE public.property_units ADD COLUMN payment_schedule TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='downpayment_percentage') THEN
+        ALTER TABLE public.property_units ADD COLUMN downpayment_percentage INTEGER DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='availability_date') THEN
+        ALTER TABLE public.property_units ADD COLUMN availability_date TEXT;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='unit_number') THEN
         ALTER TABLE public.property_units ADD COLUMN unit_number TEXT;

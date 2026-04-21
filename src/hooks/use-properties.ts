@@ -15,6 +15,8 @@ export interface SupabaseUnitType {
   discount_percentage?: number;
   downpayment_percentage?: number;
   description?: string;
+  discount_rules?: { downpayment: number; discount: number }[];
+  payment_schedule?: string;
   // Derived: count of units by status for this type
   available_count?: number;
   reserved_count?: number;
@@ -38,6 +40,10 @@ export interface SupabaseUnit {
   sqm?: number;
   is_sold?: boolean;
   variety_img?: string;
+  discount_rules?: { downpayment: number; discount: number }[];
+  payment_schedule?: string;
+  downpayment_percentage?: number;
+  availability_date?: string;
 }
 
 // ── Progress ──────────────────────────────────────────────────

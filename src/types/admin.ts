@@ -81,6 +81,9 @@ export interface UnitType {
   total_units: number;
   description?: string;
   amenities?: string[];
+  discount_rules?: { downpayment: number; discount: number }[];
+  payment_schedule?: string;
+  downpayment_percentage?: number;
 }
 
 export interface Unit {
@@ -97,6 +100,10 @@ export interface Unit {
   view_type?: string;
   balcony_sqm?: number;
   is_furnished?: boolean;
+  discount_rules?: { downpayment: number; discount: number }[];
+  payment_schedule?: string;
+  downpayment_percentage?: number;
+  availability_date?: string;
 }
 
 export interface Post {

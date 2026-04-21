@@ -521,9 +521,19 @@ export function PortfolioTab({
                                  <input type="number" title="Base Price" placeholder="0" value={editingUnitType.price_from} onChange={e => setEditingUnitType({...editingUnitType, price_from: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                               </div>
                            </div>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Payment Schedule</label>
+                                 <input type="text" placeholder="e.g. Quarterly" value={editingUnitType.payment_schedule || ''} onChange={e => setEditingUnitType({...editingUnitType, payment_schedule: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Standard Downpayment (%)</label>
+                                 <input type="number" placeholder="20" value={editingUnitType.downpayment_percentage || 0} onChange={e => setEditingUnitType({...editingUnitType, downpayment_percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                           </div>
                            <div className="space-y-4">
                               <label className="text-[9px] font-black uppercase opacity-40 ml-4">Model Layout / Render</label>
-                              <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitType({...editingUnitType, type_image: url})} label="Upload model render" />
+                              <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitType({...editingUnitType, type_image: url})} label="Upload model render" aspect={4/3} />
                               {editingUnitType.type_image && (
                                  <div className="relative h-40 w-full rounded-2xl overflow-hidden border border-brand-blue/20">
                                     <Image src={editingUnitType.type_image} alt="Type Preview" fill className="object-cover" />
@@ -563,9 +573,19 @@ export function PortfolioTab({
                                  <input type="number" title="Premium Price" placeholder="0" value={editingUnitInstance.price} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                               </div>
                            </div>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Availability Date / Notes</label>
+                                 <input type="text" placeholder="e.g. Ready for Occupancy" value={editingUnitInstance.availability_date || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, availability_date: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Specific Payment Schedule</label>
+                                 <input type="text" placeholder="Overrides model schedule" value={editingUnitInstance.payment_schedule || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, payment_schedule: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                           </div>
                            <div className="space-y-4">
                               <label className="text-[9px] font-black uppercase opacity-40 ml-4">Unit Specific Image</label>
-                              <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitInstance({...editingUnitInstance, image_url: url})} label="Change unit visual" />
+                              <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitInstance({...editingUnitInstance, image_url: url})} label="Change unit visual" aspect={16/9} />
                               {editingUnitInstance.image_url && (
                                  <div className="relative h-40 w-full rounded-2xl overflow-hidden border border-emerald-500/20">
                                     <Image src={editingUnitInstance.image_url} alt="Unit Preview" fill className="object-cover" />

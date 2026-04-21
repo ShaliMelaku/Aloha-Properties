@@ -46,17 +46,17 @@ function AvailabilityBadge({ type }: { type: SupabaseUnitType }) {
 export function PropertyCard({ property }: { property: SupabaseProperty }) {
   const { formatPrice } = useCurrency();
   const { toggleCompare, compared, setActivePulse } = useComparison();
-  const [typeIdx, setTypeIdx] = useState(0);
+  const [typeIdx, setTypeIdx] = useState<number | null>(null);
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
 
   // Use unit_types (new model) with fallback to legacy units
   const hasTypes = property.unit_types && property.unit_types.length > 0;
-  const activeType: SupabaseUnitType | null = hasTypes ? property.unit_types[typeIdx] : null;
+  const activeType: SupabaseUnitType | null = (hasTypes && typeIdx !== null) ? property.unit_types[typeIdx] : null;
 
   // Fallback to legacy unit model if no types
-  const legacyUnit = !hasTypes ? (property.units?.[typeIdx] || property.units?.[0]) : null;
+  const legacyUnit = (!hasTypes && typeIdx !== null) ? (property.units?.[typeIdx] || property.units?.[0]) : null;
 
   const dynamicProgress = property.progress && property.progress.length > 0 ? property.progress[0] : null;
   const progress = dynamicProgress ? {
@@ -67,12 +67,9 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
 
   const loanPercent = property.loan_percentage ? `${property.loan_percentage}% Bank Financing` : getLoanPercentage(property.developer, property.name);
 
-  // If neither types nor units exist, skip rendering
-  // if (!activeType && !legacyUnit) return null; // Allow rendering even if no units are defined
-
   // Pricing from active type or legacy unit
-  const basePrice = activeType?.price_from || legacyUnit?.price || 0;
-  const unitTypeName = activeType?.name || legacyUnit?.type || "Unit";
+  const basePrice = activeType?.price_from || legacyUnit?.price || property.price_start || 0;
+  const unitTypeName = activeType?.name || legacyUnit?.type || property.name;
   const unitImage = activeType?.type_image || legacyUnit?.variety_img || property.cover_image || "/images/cover.jpg";
   const beds = activeType?.beds ?? legacyUnit?.beds ?? 0;
   const baths = activeType?.baths ?? legacyUnit?.baths ?? 0;
