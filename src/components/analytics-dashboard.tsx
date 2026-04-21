@@ -259,6 +259,7 @@ export function AnalyticsDashboard() {
     { id: "traffic",    label: "Traffic Pulse",  icon: Activity },
     { id: "countries",  label: "Global Reach",   icon: Globe2 },
     { id: "sources",    label: "Channels",      icon: TrendingUp },
+    { id: "devices",    label: "Device Pulse",  icon: Zap },
   ];
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Activity className="animate-spin text-brand-blue opacity-50" size={32}/></div>;
@@ -444,6 +445,109 @@ export function AnalyticsDashboard() {
                               </div>
                            </div>
                            <span className="font-heading font-black text-xl tabular-nums">{c.value}</span>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {tab === "traffic" && (
+                <div className="h-[500px] bg-slate-500/5 rounded-[3rem] p-10 border border-[var(--border)] relative overflow-hidden">
+                   <p className="text-[12px] font-black uppercase tracking-[0.4em] opacity-40 mb-10 flex items-center gap-3"><Activity size={16}/> 7-Day Traffic Flux</p>
+                   <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={buildTrafficTrend(visitors)}>
+                       <defs>
+                         <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
+                           <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
+                           <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                         </linearGradient>
+                       </defs>
+                       <XAxis dataKey="day" stroke="rgba(255,255,255,0.05)" fontSize={10} />
+                       <YAxis stroke="rgba(255,255,255,0.05)" fontSize={10} />
+                       <Tooltip content={<ChartTip label="Daily Visitors" unit="Nodes" />} />
+                       <Area type="monotone" dataKey="count" stroke="#10B981" strokeWidth={4} fill="url(#colorTraffic)" />
+                     </AreaChart>
+                   </ResponsiveContainer>
+                </div>
+              )}
+
+              {tab === "inventory" && (
+                <div className="grid grid-cols-1 gap-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+                  <p className="text-[12px] font-black uppercase tracking-[0.4em] opacity-40 mb-4 px-4 flex items-center gap-3"><Box size={16}/> Project Inventory Status</p>
+                  {buildInventory(properties).map((item, i) => (
+                    <div key={i} className="p-8 rounded-[2rem] bg-slate-500/5 border border-[var(--border)] hover:border-brand-blue/30 transition-all group">
+                       <div className="flex justify-between items-center mb-6">
+                          <h5 className="text-xl font-black uppercase tracking-tighter">{item.name}</h5>
+                          <span className="text-xs font-bold opacity-30 uppercase tracking-widest">{item.total} Total Units</span>
+                       </div>
+                       <div className="grid grid-cols-3 gap-4">
+                          {[
+                             { label: 'Available', val: item.Available, color: 'bg-emerald-500' },
+                             { label: 'Reserved', val: item.Reserved, color: 'bg-amber-500' },
+                             { label: 'Sold', val: item.Sold, color: 'bg-blue-500' }
+                          ].map((s, j) => (
+                             <div key={j} className="space-y-2">
+                                <div className="flex justify-between items-end">
+                                   <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{s.label}</span>
+                                   <span className="text-lg font-black">{s.val}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                   <motion.div initial={{ width: 0 }} animate={{ width: `${(s.val / item.total) * 100}%` }} className={`h-full ${s.color}`} />
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {tab === "sources" && (
+                <div className="h-[500px] flex flex-col md:flex-row items-center gap-12">
+                   <div className="flex-1 h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={buildSources(leads)} cx="50%" cy="50%" innerRadius={80} outerRadius={140} paddingAngle={5} dataKey="value">
+                            {buildSources(leads).map((e, i) => <Cell key={i} fill={e.color} />)}
+                          </Pie>
+                          <Tooltip content={<ChartTip unit="Leads" />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                   </div>
+                   <div className="w-full md:w-64 space-y-4">
+                      {buildSources(leads).map((s, i) => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-slate-500/5 rounded-2xl border border-[var(--border)]">
+                           <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{s.name}</span>
+                           </div>
+                           <span className="font-black">{s.value}</span>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {tab === "devices" && (
+                <div className="h-[500px] flex flex-col md:flex-row items-center gap-12">
+                   <div className="flex-1 h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={buildDevices(visitors)} cx="50%" cy="50%" innerRadius={80} outerRadius={140} paddingAngle={5} dataKey="value">
+                            {buildDevices(visitors).map((e, i) => <Cell key={i} fill={e.color} />)}
+                          </Pie>
+                          <Tooltip content={<ChartTip unit="Visitors" />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                   </div>
+                   <div className="w-full md:w-64 space-y-4">
+                      {buildDevices(visitors).map((s, i) => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-slate-500/5 rounded-2xl border border-[var(--border)]">
+                           <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{s.name}</span>
+                           </div>
+                           <span className="font-black">{s.value}</span>
                         </div>
                       ))}
                    </div>
