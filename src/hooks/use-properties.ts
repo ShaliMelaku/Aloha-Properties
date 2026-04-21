@@ -60,6 +60,7 @@ export interface SupabaseProperty {
   lat: number;
   lng: number;
   price_start?: number;
+  property_type?: 'Villa' | 'Apartment' | 'Compound' | 'Village' | 'Commercial';
   pay_schedule?: string;
   payment_schedule?: string;
   amenities: string[];

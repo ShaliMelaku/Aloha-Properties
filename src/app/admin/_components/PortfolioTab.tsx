@@ -201,20 +201,33 @@ export function PortfolioTab({
                </div>
 
                <div className="lg:col-span-7 space-y-8">
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-4">
-                         <label htmlFor="prop-name" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Building2 size={12}/> Property Name</label>
-                         <input id="prop-name" type="text" placeholder="e.g. Skyline Residence" value={editingProperty?.name || newProp.name || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, name: e.target.value}) : setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                      </div>
-                      <div className="space-y-4">
-                         <label htmlFor="prop-developer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Users size={12}/> Developer</label>
-                         <input id="prop-developer" type="text" placeholder="e.g. Aloha Global" value={editingProperty?.developer || newProp.developer || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, developer: e.target.value}) : setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                      </div>
-                      <div className="space-y-4">
-                         <label htmlFor="prop-location" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapPin size={12}/> Location</label>
-                         <input id="prop-location" type="text" placeholder="e.g. Bole, Addis" value={editingProperty?.location || newProp.location || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, location: e.target.value}) : setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                      </div>
-                   </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                       <div className="space-y-4">
+                          <label htmlFor="prop-name" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Building2 size={12}/> Property Name</label>
+                          <input id="prop-name" type="text" placeholder="e.g. Skyline Residence" value={editingProperty?.name || newProp.name || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, name: e.target.value}) : setNewProp({...newProp, name: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                       </div>
+                       <div className="space-y-4">
+                          <label htmlFor="prop-type" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Box size={12}/> Property Type</label>
+                          <select id="prop-type" value={editingProperty?.property_type || newProp.property_type || 'Apartment'} onChange={e => {
+                             const val = e.target.value as any;
+                             editingProperty ? setEditingProperty({...editingProperty, property_type: val}) : setNewProp({...newProp, property_type: val});
+                          }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner appearance-none">
+                             <option value="Apartment">Apartment</option>
+                             <option value="Villa">Villa</option>
+                             <option value="Compound">Compound</option>
+                             <option value="Village">Village</option>
+                             <option value="Commercial">Commercial</option>
+                          </select>
+                       </div>
+                       <div className="space-y-4">
+                          <label htmlFor="prop-developer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Users size={12}/> Developer</label>
+                          <input id="prop-developer" type="text" placeholder="e.g. Aloha Global" value={editingProperty?.developer || newProp.developer || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, developer: e.target.value}) : setNewProp({...newProp, developer: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                       </div>
+                       <div className="space-y-4">
+                          <label htmlFor="prop-location" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapPin size={12}/> Location</label>
+                          <input id="prop-location" type="text" placeholder="e.g. Bole, Addis" value={editingProperty?.location || newProp.location || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, location: e.target.value}) : setNewProp({...newProp, location: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                       </div>
+                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
@@ -252,8 +265,14 @@ export function PortfolioTab({
                       <MapPicker 
                          lat={editingProperty?.lat || newProp.lat || 9.0192} 
                          lng={editingProperty?.lng || newProp.lng || 38.7525} 
-                         onChange={(lat, lng) => editingProperty ? setEditingProperty({...editingProperty, lat, lng}) : setNewProp({...newProp, lat, lng})} 
-                         onAddressChange={(location) => editingProperty ? setEditingProperty({...editingProperty, location}) : setNewProp({...newProp, location})}
+                         onChange={(lat, lng) => {
+                           if (editingProperty) setEditingProperty({...editingProperty, lat, lng});
+                           else setNewProp({...newProp, lat, lng});
+                         }} 
+                         onAddressChange={(location) => {
+                           if (editingProperty) setEditingProperty({...editingProperty, location});
+                           else setNewProp({...newProp, location});
+                         }}
                       />
                    </div>
                </div>
@@ -263,7 +282,10 @@ export function PortfolioTab({
                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Camera size={12}/> Cover Image</label>
                      <MediaUpload 
                         bucket="property-assets" 
-                        onUploadComplete={(url) => editingProperty ? setEditingProperty({...editingProperty, cover_image: url}) : setNewProp({...newProp, cover_image: url})} 
+                        onUploadComplete={(url) => {
+                          if (editingProperty) setEditingProperty({...editingProperty, cover_image: url});
+                          else setNewProp({...newProp, cover_image: url});
+                        }} 
                         label="Upload cover image"
                      />
                      {(editingProperty?.cover_image || newProp.cover_image) && (
@@ -426,7 +448,7 @@ export function PortfolioTab({
                      </div>
                   </div>
 
-                  <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Save Unit Instance</button>
+                  <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02]">Deploy Unit Instance</button>
                </motion.div>
             </div>
          )}

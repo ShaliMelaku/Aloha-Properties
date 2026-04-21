@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { 
-  Plus, Edit3, Trash2, Globe, FileText, Send, 
-  Activity, Mail, Zap, Download, FileUp, Database,
-  Search, X, File, Image as ImageIcon, CheckCircle2,
-  AlertCircle, ChevronRight, Share2, Eye, UserPlus,
+  Plus, Edit3, Trash2, FileText, Send, 
+  Activity, Zap, Download,
+  X, ImageIcon, CheckCircle2,
   Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Post, Campaign, Lead } from "@/types/admin";
+import { Post, Lead } from "@/types/admin";
 import { MediaUpload } from "./MediaUpload";
 import { savePost, saveLead } from "@/lib/admin-actions";
 
@@ -24,8 +24,8 @@ interface ContentTabProps {
 }
 
 export function ContentTab({ 
-  posts, loading, refreshing, onRefresh, onNotify, setConfirmDelete
-}: ContentTabProps & { refreshing?: boolean }) {
+  posts, loading, onRefresh, onNotify, setConfirmDelete
+}: ContentTabProps) {
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Partial<Post> | null>(null);
 
@@ -65,7 +65,7 @@ export function ContentTab({
         {posts.map((post) => (
           <div key={post.id} className="bg-[var(--card)] rounded-3xl border border-[var(--border)] overflow-hidden hover:border-brand-blue/30 transition-all group">
              <div className="h-40 relative">
-               <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+               <Image src={post.cover_image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" unoptimized />
                <div className="absolute top-4 left-4 px-3 py-1 bg-black/50 backdrop-blur-md rounded-lg text-[9px] font-black uppercase tracking-widest text-white">{post.type}</div>
              </div>
              <div className="p-6 space-y-4">
@@ -74,9 +74,9 @@ export function ContentTab({
                     <div className="flex gap-2">
                        <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-brand-blue/60 hover:text-brand-blue transition-colors flex items-center gap-1"><Edit3 size={12}/> Edit</button>
                        {post.file_url ? (
-                          <a href={post.file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1 transition-all hover:scale-105 active:scale-95"><FileText size={12}/> PDF View</a>
+                          <Link href={`/pdf-viewer?url=${encodeURIComponent(post.file_url)}&title=${encodeURIComponent(post.title)}`} className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1 transition-all hover:scale-105 active:scale-95"><FileText size={12}/> Secure View</Link>
                        ) : (
-                          <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1"><Eye size={12}/> Details</button>
+                          <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">Details</button>
                        )}
                     </div>
                     <button 
@@ -234,8 +234,8 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
                 const data = await res.json();
                 if (data.success) onNotify('success', `Broadcast sent to ${data.sent} contacts.`);
                 else throw new Error(data.error || 'Broadcast failed');
-              } catch (e: any) {
-                onNotify('error', e.message);
+              } catch (e: unknown) {
+                onNotify('error', e instanceof Error ? e.message : 'Broadcast failed');
               } finally {
                 setSending(false);
               }
@@ -290,11 +290,20 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
                   <div className="space-y-4">
                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Full Name</label>
-                        <input placeholder="Customer Name" value={newLead.name || ''} onChange={e => setNewLead({...newLead, name: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" />
+                        <input 
+                           placeholder="Customer Name" 
+                           value={newLead.name || ''} 
+                           onChange={e => {
+                             const val = e.target.value;
+                             const normalized = val.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(' ');
+                             setNewLead({...newLead, name: normalized});
+                           }} 
+                           className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" 
+                        />
                      </div>
                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Email Address</label>
-                        <input type="email" placeholder="email@example.com" value={newLead.email || ''} onChange={e => setNewLead({...newLead, email: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" />
+                        <input type="email" placeholder="email@example.com" value={newLead.email || ''} onChange={e => setNewLead({...newLead, email: e.target.value.toLowerCase()})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" />
                      </div>
                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Property Interest</label>

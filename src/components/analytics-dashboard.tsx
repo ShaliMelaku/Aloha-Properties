@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp, Users, Globe2, BarChart3, Activity,
+  TrendingUp, Globe2, BarChart3, Activity,
   Zap, RefreshCw, AlertTriangle,
-  Telescope, Star, Smartphone, Box, MousePointer2
+  Telescope, Star, Box
 } from "lucide-react";
 import { supabaseClient } from "@/lib/supabase";
 
@@ -109,12 +109,21 @@ function buildDevices(visitors: VisitorRecord[]) {
   return Object.entries(map).map(([name, value], i) => ({ name, value, color: PIE_COLORS[i % PIE_COLORS.length] })).sort((a, b) => b.value - a.value);
 }
 
+function buildOperationalValue(leads: LeadRecord[], properties: AnalyticsProperty[]) {
+  // Mock operational value calculation based on leads and unit status
+  const leadValue = leads.length * 150000; // Average potential per lead
+  const soldUnits = properties.reduce((acc, p) => acc + (p.units?.filter(u => u.status === 'sold').length || 0), 0);
+  const totalValue = leadValue + (soldUnits * 450000); 
+  return totalValue;
+}
+
 function buildInventory(properties: AnalyticsProperty[]) {
   return properties.map(p => {
      let available = 0; let reserved = 0; let sold = 0;
-     p.units?.forEach(u => {
-        if(u.status === 'sold') sold++;
-        else if(u.status === 'reserved') reserved++;
+     (p.units || []).forEach((u: AnalyticsUnit) => {
+        const s = u.status?.toLowerCase();
+        if(s === 'sold') sold++;
+        else if(s === 'reserved') reserved++;
         else available++;
      });
      return {
@@ -122,7 +131,7 @@ function buildInventory(properties: AnalyticsProperty[]) {
         Available: available,
         Reserved: reserved,
         Sold: sold,
-        total: available + reserved + sold
+        total: available + (reserved || 0) + (sold || 0)
      };
   }).filter(p => p.total > 0).sort((a,b) => b.total - a.total);
 }
@@ -207,11 +216,19 @@ export function AnalyticsDashboard() {
   useEffect(() => {
     fetchData();
     channelRef.current = supabaseClient.channel("live-pulse")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "visitors" }, (p) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (p) => {
         const v = p.new as VisitorRecord;
-        setVisitors((prev) => [v, ...prev]);
-        setLiveVisitors(prev => prev + 1);
-        if (new Date(v.created_at).toDateString() === new Date().toDateString()) setActiveToday((n) => n + 1);
+        if (p.eventType === 'INSERT') {
+          setVisitors((prev) => [v, ...prev]);
+          setLiveVisitors(prev => prev + 1);
+          if (new Date(v.created_at).toDateString() === new Date().toDateString()) setActiveToday((n) => n + 1);
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => {
+        fetchData(); // Refresh on lead change
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => {
+        fetchData(); // Refresh on property change
       })
       .subscribe();
     
@@ -227,16 +244,13 @@ export function AnalyticsDashboard() {
   }, [fetchData]);
 
   const trendData   = buildLeadTrend(leads);
-  const trafficData = buildTrafficTrend(visitors);
   const countries   = buildCountries(visitors);
-  const sources     = buildSources(leads);
-  const devices     = buildDevices(visitors);
-  const inventory   = buildInventory(properties);
   const statusMap   = leads.reduce((acc, l) => { const s = l.status || "new"; acc[s] = (acc[s] || 0) + 1; return acc; }, {} as Record<string, number>);
 
   const totalLeads   = leads.length;
   const totalTraffic = visitors.length;
   const convRate     = totalTraffic > 0 ? ((totalLeads / totalTraffic) * 100).toFixed(1) : "0.0";
+  const opValue      = buildOperationalValue(leads, properties);
 
   const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
     { id: "overview",   label: "Overview",      icon: BarChart3 },
@@ -286,6 +300,7 @@ export function AnalyticsDashboard() {
           { label: "Today's Pulse", value: activeToday, icon: Activity, color: "#10B981", sup: "Visitors", sub: "+12% from yesterday" },
           { label: "Neural Reach", value: totalTraffic, icon: Globe2, color: "#3B82F6", sup: "Total Sessions", sub: "Global footprint active" },
           { label: "Lead Capture", value: totalLeads, icon: Zap, color: "#A855F7", sup: "Registry Nodes", sub: "Qualified pipeline" },
+          { label: "Projected Rev", value: opValue, icon: TrendingUp, color: "#10B981", sup: "USD Value", unit: "+", sub: "Operational forecast" },
           { label: "Efficiency", value: Number(convRate), icon: Telescope, color: "#F59E0B", sup: "Conversion Rate", unit: "%", sub: "Target: 5.0%" },
         ].map((k, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[var(--card)] border border-[var(--border)] p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-brand-blue/40 transition-all shadow-2xl shadow-black/5">

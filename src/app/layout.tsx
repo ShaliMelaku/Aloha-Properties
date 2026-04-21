@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ScopedThemeProvider } from "@/components/scoped-theme-provider";
 import { StatusProvider } from "@/context/status-context";
 import { CurrencyProvider } from "@/context/currency-context";
 import { ComparisonProvider } from "@/context/comparison-context";
@@ -73,7 +73,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} ${plusJakarta.variable} noise-bg`} suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ScopedThemeProvider isAdmin={false}>
           <StatusProvider>
             <CurrencyProvider>
               <ComparisonProvider>
@@ -83,7 +83,7 @@ export default function RootLayout({
               </ComparisonProvider>
             </CurrencyProvider>
           </StatusProvider>
-        </ThemeProvider>
+        </ScopedThemeProvider>
       </body>
     </html>
   );

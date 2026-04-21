@@ -57,6 +57,7 @@ export interface Property {
   progress?: PropertyProgress[];
   created_at?: string;
   // Extended Fields
+  property_type?: 'Villa' | 'Apartment' | 'Compound' | 'Village' | 'Commercial';
   tenure_type?: string;
   parking_spots?: number;
   virtual_tour_url?: string;

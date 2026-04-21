@@ -93,6 +93,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='completion_date') THEN
         ALTER TABLE public.properties ADD COLUMN completion_date TEXT;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='property_type') THEN
+        ALTER TABLE public.properties ADD COLUMN property_type TEXT DEFAULT 'Apartment';
+    END IF;
 
     -- Unit Types Extensions
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='amenities') THEN

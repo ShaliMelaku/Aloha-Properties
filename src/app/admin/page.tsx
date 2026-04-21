@@ -10,7 +10,7 @@ import { useStatus } from "@/context/status-context";
 import { useCurrency } from "@/context/currency-context";
 import { supabaseClient } from "@/lib/supabase";
 import { useAdminData } from "@/hooks/use-admin-data";
-import { useTheme } from "next-themes";
+import { useScopedTheme } from "@/components/scoped-theme-provider";
 
 // Modular Components
 import { AnalyticsTab } from "./_components/AnalyticsTab";
@@ -19,16 +19,16 @@ import { PortfolioTab } from "./_components/PortfolioTab";
 import { ContentTab, MarketingTab, HistoryTab } from "./_components/ContentTabs";
 
 // Shared Types
-import { Lead, Property, Unit, Post, AdminTab } from "@/types/admin";
+import { Lead, Property, Unit, AdminTab } from "@/types/admin";
 import { createProperty, updateProperty } from "@/lib/admin-actions";
 
 export default function AdminDashboard() {
   const { notify } = useStatus();
   const { formatPrice } = useCurrency();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useScopedTheme();
   const { 
     properties, leads, posts, history, loading, refreshAll,
-    fetchLeads, fetchProperties, fetchPosts, fetchHistory
+    fetchLeads, fetchProperties, fetchPosts
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
 
          <div className="pt-4 border-t border-[var(--border)] space-y-2">
             <button 
-               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+               onClick={toggleTheme}
                className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-foreground/40 hover:bg-slate-500/5 hover:text-foreground transition-all"
             >
                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}

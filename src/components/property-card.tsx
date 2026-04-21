@@ -73,7 +73,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
   // Pricing from active type or legacy unit
   const basePrice = activeType?.price_from || legacyUnit?.price || 0;
   const unitTypeName = activeType?.name || legacyUnit?.type || "Unit";
-  const unitImage = property.cover_image || activeType?.type_image || legacyUnit?.variety_img || "/images/cover.jpg";
+  const unitImage = activeType?.type_image || legacyUnit?.variety_img || property.cover_image || "/images/cover.jpg";
   const beds = activeType?.beds ?? legacyUnit?.beds ?? 0;
   const baths = activeType?.baths ?? legacyUnit?.baths ?? 0;
   const sqm = activeType?.sqm ?? legacyUnit?.sqm ?? 0;

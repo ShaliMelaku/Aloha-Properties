@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
+import { useScopedTheme } from "@/components/scoped-theme-provider";
 import { Moon, Sun, Menu, X, Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import Image from "next/image";
 
 export function Navbar() {
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useScopedTheme();
   const { currency, setCurrency, usdRate } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -27,8 +27,6 @@ export function Navbar() {
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
-
-  const currentTheme = theme === 'system' ? 'dark' : theme;
 
   return (
     <>
@@ -97,18 +95,18 @@ export function Navbar() {
 
               {/* Theme Toggle */}
               <button
-                onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+                onClick={toggleTheme}
                 suppressHydrationWarning
                 className={`relative w-14 h-8 rounded-full p-1 transition-all duration-500 flex items-center group overflow-hidden border ${scrolled ? "bg-slate-200 dark:bg-slate-800 border-[var(--border)]" : "bg-white/10 border-white/20 backdrop-blur-md"}`}
-                aria-label={`Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
-                title={`Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
                <motion.div 
-                 animate={{ x: currentTheme === "dark" ? 24 : 0 }}
+                 animate={{ x: theme === "dark" ? 24 : 0 }}
                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
                  className="w-6 h-6 bg-white dark:bg-brand-blue rounded-full shadow-md flex items-center justify-center relative z-10"
                >
-                 {currentTheme === "dark" ? <Moon size={12} className="text-white" /> : <Sun size={12} className="text-amber-500" />}
+                 {theme === "dark" ? <Moon size={12} className="text-white" /> : <Sun size={12} className="text-amber-500" />}
                </motion.div>
              </button>
  
@@ -192,11 +190,11 @@ export function Navbar() {
                     <span className="text-xs uppercase tracking-widest font-black text-brand-blue">{currentTheme}</span>
                   </div>
                   <button
-                    onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+                    onClick={toggleTheme}
                     className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-blue border border-[var(--border)]"
-                    aria-label={`Toggle to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
+                    aria-label={`Toggle to ${theme === 'dark' ? 'light' : 'dark'} mode`}
                   >
-                    {currentTheme === "dark" ? <Moon size={24} /> : <Sun size={24} />}
+                    {theme === "dark" ? <Moon size={24} /> : <Sun size={24} />}
                   </button>
                 </div>
               </div>
