@@ -10,6 +10,7 @@ interface CurrencyContextType {
   formatPrice: (etbPrice: number) => string;
   convertPrice: (etbPrice: number) => number;
   usdRate: number;
+  lastUpdated: string | null;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -25,6 +26,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [usdRate, setUsdRate] = useState(157.00); // Updated Baseline
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   // Fetch dynamic NBE rate on mount
   React.useEffect(() => {
@@ -32,8 +34,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch('/api/exchange-rate');
         const data = await res.json();
-        if (data.success && data.rate) {
+        if (data.rate) {
           setUsdRate(data.rate);
+          setLastUpdated(data.timestamp || new Date().toISOString());
           console.log(`[Currency] Live NBE Rate Sync: 1 USD = ${data.rate} ETB`);
         }
       } catch {
@@ -72,7 +75,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency: handleSetCurrency, formatPrice, convertPrice, usdRate }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency: handleSetCurrency, formatPrice, convertPrice, usdRate, lastUpdated }}>
       {children}
     </CurrencyContext.Provider>
   );

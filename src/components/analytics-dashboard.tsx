@@ -333,10 +333,10 @@ export function AnalyticsDashboard() {
       {/* KPI Cards */}
       <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {[
-          { label: "Today's Hits", value: activeToday, icon: Activity, color: "emerald", sub: "Live interactions" },
-          { label: "Total Traffic", value: totalTraffic, icon: Globe2, color: "blue", sub: "Platform footprint" },
-          { label: "New Leads", value: totalLeads, icon: Zap, color: "purple", sub: "Qualified registry" },
-          { label: "Est. Revenue", value: opValue, icon: TrendingUp, color: "amber", sub: "Potential value", isCurrency: true },
+          { label: "Active Today", value: activeToday, icon: Activity, color: "emerald", sub: "Live interactions" },
+          { label: "Market Reach", value: totalTraffic, icon: Globe2, color: "blue", sub: "Platform footprint" },
+          { label: "Acquisition", value: totalLeads, icon: Zap, color: "purple", sub: "Potential clients" },
+          { label: "Portfolio Value", value: opValue, icon: TrendingUp, color: "amber", sub: "Asset valuation", isCurrency: true },
         ].map((k, i) => (
           <motion.div 
             key={i} 
@@ -367,14 +367,14 @@ export function AnalyticsDashboard() {
       {/* Main Content Area */}
       <div className="relative z-10 bg-slate-900/40 backdrop-blur-2xl rounded-3xl border border-white/5 overflow-hidden">
         {/* Navigation Tabs */}
-        <div className="flex overflow-x-auto hide-scrollbar border-b border-white/5 bg-white/2 p-2 gap-2">
+        <div className="flex overflow-x-auto hide-scrollbar border-b border-white/5 bg-white/2 p-1.5 gap-1.5">
           {TABS.map((t) => (
             <button 
               key={t.id} 
               onClick={() => setTab(t.id)} 
-              className={`flex items-center gap-3 px-6 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all relative ${tab === t.id ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-white/40 hover:text-white hover:bg-white/5"}`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg text-[9px] font-bold uppercase tracking-widest whitespace-nowrap transition-all relative ${tab === t.id ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-white/40 hover:text-white hover:bg-white/5"}`}
             >
-              <t.icon size={14} />
+              <t.icon size={12} />
               {t.label}
               {tab === t.id && (
                 <motion.div layoutId="activeTab" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
@@ -383,7 +383,7 @@ export function AnalyticsDashboard() {
           ))}
         </div>
 
-        <div className="p-8">
+        <div className="p-6">
           <AnimatePresence mode="wait">
             <motion.div 
               key={tab} 

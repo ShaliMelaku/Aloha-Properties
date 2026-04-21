@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 
-// Cache valid for 12 hours
+// Cache valid for 1 hour
 let cachedRate: number | null = null;
 let lastFetchTime = 0;
-const CACHE_DURATION = 12 * 60 * 60 * 1000; 
+const CACHE_DURATION = 1 * 60 * 60 * 1000; 
 
 export async function GET() {
   const now = Date.now();
@@ -19,9 +19,11 @@ export async function GET() {
   }
 
   try {
-    const response = await fetch("https://www.google.com/search?q=1+usd+to+etb", {
+    const response = await fetch("https://www.google.com/search?q=1+usd+to+etb+rate", {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
       },
       next: { revalidate: 3600 }
     });
@@ -31,27 +33,40 @@ export async function GET() {
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    // Google typically embeds the conversion in a data attribute or specific span
-    // One common class is .a61j6 or we can look for the data-exchange-rate attribute
-    const rateText = $('.BNeawe.iBp4i.AP7Wnd').text() || $('span[data-value]').attr('data-value');
-    
+    // Multiple possible selectors for Google's conversion result
+    const rateStr = $('.BNeawe.iBp4i.AP7Wnd').first().text() || 
+                  $('.DFlfde.SwHCTb').first().text() ||
+                  $('.vk_ans').first().text();
+
     let rate = null;
-    if (rateText) {
-      const match = rateText.match(/(\d+[,\.]\d+)/);
+    
+    // Attempt 1: Scraper
+    if (rateStr) {
+      const match = rateStr.match(/(\d+[\.\,]\d+)/);
       if (match) {
         rate = parseFloat(match[1].replace(',', ''));
       }
     }
 
-    if (!rate) {
-      // Fallback regex over raw HTML if cheerio selector missed
-      const fallbackMatch = html.match(/([\d,\.]+)\s*Ethiopian Birr/i);
+    // Attempt 2: Direct Regex on HTML (resilient to selector changes)
+    if (!rate || isNaN(rate)) {
+      const dataValueMatch = html.match(/data-value="(\d+\.\d+)"/);
+      if (dataValueMatch) {
+        rate = parseFloat(dataValueMatch[1]);
+      }
+    }
+
+    // Attempt 3: Currency string match
+    if (!rate || isNaN(rate)) {
+      const regex = /([\d\.]+)\s*Ethiopian Birr/i;
+      const fallbackMatch = html.match(regex);
       if (fallbackMatch) {
-         rate = parseFloat(fallbackMatch[1].replace(',', ''));
+        rate = parseFloat(fallbackMatch[1]);
       }
     }
     
-    if (rate && !isNaN(rate)) {
+    // If Google fails, try a direct finance page if needed, but let's stick to this for now
+    if (rate && !isNaN(rate) && rate > 50) { // Sanity check
       cachedRate = rate;
       lastFetchTime = now;
       
@@ -64,11 +79,12 @@ export async function GET() {
     } else {
       throw new Error("Invalid Conversion Data");
     }
-  } catch (e) {
+  } catch {
     return NextResponse.json({ 
       success: false, 
-      rate: cachedRate || 157.00, // Updated Baseline April 2026 (~157 ETB)
-      error: "Using fallback data due to connectivity or parsing issues" 
+      rate: cachedRate || 157.15, // Baseline for April 2026
+      error: "Using fallback data",
+      msg: "Live NBE Sync currently delayed"
     }, { status: 200 });
   }
 }

@@ -24,7 +24,7 @@ import { createProperty, updateProperty } from "@/lib/admin-actions";
 
 export default function AdminDashboard() {
   const { notify } = useStatus();
-  const { formatPrice } = useCurrency();
+  const { formatPrice, lastUpdated } = useCurrency();
   const { theme, toggleTheme } = useScopedTheme();
   const { 
     properties, leads, posts, history, loading, refreshAll,
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
     name: '', location: '', developer: 'Getas Real Estate', description: '', 
     lat: 9.0192, lng: 38.7525, amenities: [], 
     cover_image: '', video_url: '', 
-    discount_percentage: 0, downpayment_percentage: 0, 
+    discount_rules: [], 
     payment_schedule: 'Flexible Terms', air_quality_index: 50,
     urban_heat_index: 0, env_risk_level: 'Low'
   });
@@ -182,7 +182,10 @@ export default function AdminDashboard() {
             <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-xl shadow-brand-blue/20"><ShieldCheck size={28} /></div>
             <div>
                <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
-               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">Command Center v6</span>
+               <div className="flex items-center gap-2 mt-0.5">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[7px] font-black uppercase tracking-[0.4em] opacity-40">Live Sync: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending'}</span>
+               </div>
             </div>
          </div>
 

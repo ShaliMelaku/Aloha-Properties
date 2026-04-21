@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { 
   Building2, MapPin, Plus, 
-  Trash2, TrendingUp, Shield, Wind, Sun, Info,
+  Trash2, TrendingUp, Shield, Wind, Sun,
   DollarSign, Calendar, Activity, Camera,
   Home, Map as MapIcon, X, PlusCircle, Settings2,
   Box, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Property, Unit, UnitType } from "@/types/admin";
+import { Property, Unit, UnitType, PropertyProgress } from "@/types/admin";
 import dynamic from "next/dynamic";
 const MapPicker = dynamic(() => import("./MapPicker").then(mod => mod.MapPicker), { ssr: false });
 import { MediaUpload } from "./MediaUpload";
@@ -52,19 +52,18 @@ export function PortfolioTab({
 }: PortfolioTabProps) {
 
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
-  const [showUnitTypeModal, setShowUnitTypeModal] = useState(false);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingUnitType, setEditingUnitType] = useState<Partial<UnitType> | null>(null);
-  const [showUnitModal, setShowUnitModal] = useState(false);
   const [editingUnitInstance, setEditingUnitInstance] = useState<Partial<Unit> | null>(null);
-  const [editingProgress, setEditingProgress] = useState<any | null>(null);
+  const [editingProgress, setEditingProgress] = useState<Partial<PropertyProgress> | null>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
+  const [expandedUnitType, setExpandedUnitType] = useState<string | null>(null);
 
   const handleSaveUnitType = async () => {
     if (!editingUnitType || !activePropertyId) return;
     try {
       await saveUnitType({ ...editingUnitType, property_id: activePropertyId });
       notify('success', 'Unit Type parameters synchronized.');
-      setShowUnitTypeModal(false);
       setEditingUnitType(null);
       fetchProperties();
     } catch (e: unknown) {
@@ -78,7 +77,6 @@ export function PortfolioTab({
     try {
       await saveUnit({ ...editingUnitInstance, property_id: activePropertyId });
       notify('success', 'Unit Node deployed.');
-      setShowUnitModal(false);
       setEditingUnitInstance(null);
       fetchProperties();
     } catch (e: unknown) {
@@ -184,7 +182,7 @@ export function PortfolioTab({
                             <div className="flex items-center gap-4">
                                <p className="text-xs font-black text-brand-blue">{formatPrice(ut.price_from)}</p>
                                <button 
-                                  onClick={() => { setActivePropertyId(prop.id); setEditingUnitType(ut); setShowUnitTypeModal(true); }} 
+                                  onClick={() => { setActivePropertyId(prop.id); setEditingUnitType(ut); setShowInventoryModal(true); }} 
                                   className="p-2 opacity-40 hover:opacity-100 transition-opacity"
                                   aria-label={`Edit ${ut.name}`}
                                   title="Edit Type"
@@ -210,7 +208,7 @@ export function PortfolioTab({
                                     </div>
                                  </div>
                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance(u); setShowUnitModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors" title="Edit Unit Instance"><Settings2 size={12}/></button>
+                                    <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance(u); setShowInventoryModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors" title="Edit Unit Instance"><Settings2 size={12}/></button>
                                     <button onClick={() => setConfirmDelete({ type: 'unit', id: u.id, name: u.unit_number })} className="p-1.5 hover:text-red-500 transition-colors" title="Delete Unit Instance"><Trash2 size={12}/></button>
                                  </div>
                               </div>
@@ -220,7 +218,7 @@ export function PortfolioTab({
                    )}
 
                    <div className="flex gap-2 pt-2">
-                      <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitType({ name: '', beds: 0, baths: 0, sqm: 0, price_from: 0 }); setShowUnitTypeModal(true); }} className="flex-1 py-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all shadow-md"><PlusCircle size={14}/> Manage Unit Inventory & Types</button>
+                      <button onClick={() => { setActivePropertyId(prop.id); setShowInventoryModal(true); }} className="flex-1 py-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all shadow-md"><PlusCircle size={14}/> Manage Unit Inventory & Types</button>
                    </div>
                 </div>
              </div>
@@ -287,33 +285,51 @@ export function PortfolioTab({
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                           <label htmlFor="prop-discount" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><DollarSign size={12}/> Discount %</label>
-                           <input id="prop-discount" type="number" value={editingProperty?.discount_percentage || newProp.discount_percentage || 0} onChange={e => {
-                              const val = parseFloat(e.target.value);
-                              if (editingProperty) setEditingProperty({...editingProperty, discount_percentage: val});
-                              else setNewProp({...newProp, discount_percentage: val});
-                           }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                   <div className="space-y-6 bg-[var(--background)] p-8 rounded-3xl border border-[var(--border)]">
+                        <div className="flex justify-between items-center">
+                           <h4 className="text-xs font-black uppercase tracking-widest opacity-40 px-4">Discount Tiers</h4>
+                           <button onClick={() => {
+                              const currentRules = editingProperty?.discount_rules || newProp.discount_rules || [];
+                              const updated = [...currentRules, { downpayment: 0, discount: 0 }];
+                              if (editingProperty) setEditingProperty({...editingProperty, discount_rules: updated});
+                              else setNewProp({...newProp, discount_rules: updated});
+                           }} className="text-[9px] font-black uppercase text-brand-blue flex items-center gap-2 hover:opacity-70 transition-all"><Plus size={10}/> Add Rule</button>
                         </div>
+                        
                         <div className="space-y-4">
-                           <label htmlFor="prop-loan" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><TrendingUp size={12}/> Loan/Financing %</label>
-                           <input id="prop-loan" type="number" placeholder="Max Financing Available" value={editingProperty?.loan_percentage || newProp.loan_percentage || 0} onChange={e => {
-                              const val = parseFloat(e.target.value);
-                              if (editingProperty) setEditingProperty({...editingProperty, loan_percentage: val});
-                              else setNewProp({...newProp, loan_percentage: val});
-                           }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                           {(editingProperty?.discount_rules || newProp.discount_rules || []).map((rule, idx) => (
+                              <div key={idx} className="flex items-center gap-4 bg-[var(--card)] p-4 rounded-2xl border border-[var(--border)] group">
+                                 <div className="flex-1 space-y-2">
+                                    <label className="text-[8px] font-black uppercase opacity-30 ml-2">Downpayment %</label>
+                                    <input type="number" title="Downpayment Percentage" placeholder="0" value={rule.downpayment} onChange={e => {
+                                       const rules = [...(editingProperty?.discount_rules || newProp.discount_rules || [])];
+                                       rules[idx].downpayment = parseFloat(e.target.value);
+                                       if (editingProperty) setEditingProperty({...editingProperty, discount_rules: rules});
+                                       else setNewProp({...newProp, discount_rules: rules});
+                                    }} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border border-[var(--border)] focus:border-brand-blue outline-none" />
+                                 </div>
+                                 <div className="flex-1 space-y-2">
+                                    <label className="text-[8px] font-black uppercase opacity-30 ml-2">Discount %</label>
+                                    <input type="number" title="Discount Percentage" placeholder="0" value={rule.discount} onChange={e => {
+                                       const rules = [...(editingProperty?.discount_rules || newProp.discount_rules || [])];
+                                       rules[idx].discount = parseFloat(e.target.value);
+                                       if (editingProperty) setEditingProperty({...editingProperty, discount_rules: rules});
+                                       else setNewProp({...newProp, discount_rules: rules});
+                                    }} className="w-full px-4 py-3 bg-[var(--background)] rounded-xl text-xs font-bold border border-[var(--border)] focus:border-brand-blue outline-none" />
+                                 </div>
+                                 <button onClick={() => {
+                                    const rules = [...(editingProperty?.discount_rules || newProp.discount_rules || [])];
+                                    rules.splice(idx, 1);
+                                    if (editingProperty) setEditingProperty({...editingProperty, discount_rules: rules});
+                                    else setNewProp({...newProp, discount_rules: rules});
+                                 }} title="Remove Rule" className="mt-6 p-3 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={14}/></button>
+                              </div>
+                           ))}
+                           {(editingProperty?.discount_rules || newProp.discount_rules || []).length === 0 && (
+                              <p className="text-[9px] font-black uppercase opacity-20 text-center py-4 italic">No discount tiers defined.</p>
+                           )}
                         </div>
-                   </div>
-
-                   <div className="space-y-4">
-                      <label htmlFor="prop-disc-cond" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Info size={12}/> Discount Conditions</label>
-                      <textarea id="prop-disc-cond" placeholder="e.g. 5% discount for 50% downpayment" value={editingProperty?.discount_conditions || newProp.discount_conditions || ''} onChange={e => {
-                          const val = e.target.value;
-                          if (editingProperty) setEditingProperty({...editingProperty, discount_conditions: val});
-                          else setNewProp({...newProp, discount_conditions: val});
-                       }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner min-h-[100px]" />
-                   </div>
+                    </div>
 
                    <div className="space-y-4">
                       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapIcon size={12}/> Map Location</label>
@@ -362,11 +378,11 @@ export function PortfolioTab({
                               <button onClick={() => { setActivePropertyId(editingProperty.id); setEditingProgress({ label: '', percentage: 0 }); setShowProgressModal(true); }} className="flex items-center gap-2 text-[10px] font-black uppercase text-brand-blue hover:opacity-70 transition-all"><Plus size={12}/> Add Milestone</button>
                            </div>
                            <div className="space-y-3">
-                              {(editingProperty as any).progress?.map((p: any) => (
+                              {(editingProperty as Property).progress?.map((p: PropertyProgress) => (
                                  <div key={p.id} className="flex items-center justify-between p-4 bg-[var(--background)] rounded-xl border border-[var(--border)] group">
                                     <div>
-                                       <p className="text-[10px] font-black uppercase tracking-tighter">{p.label || p.stage_name}</p>
-                                       <p className="text-[10px] font-bold text-brand-blue">{p.percentage || p.percent}%</p>
+                                       <p className="text-[10px] font-black uppercase tracking-tighter">{p.label || p.status_text}</p>
+                                       <p className="text-[10px] font-bold text-brand-blue">{p.percentage ?? p.percent}%</p>
                                     </div>
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                        <button onClick={() => { setActivePropertyId(editingProperty.id); setEditingProgress(p); setShowProgressModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors" title="Edit Milestone"><Settings2 size={12}/></button>
@@ -416,161 +432,199 @@ export function PortfolioTab({
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] w-full max-w-md p-10 shadow-2xl relative">
                 <button onClick={() => setShowProgressModal(false)} className="absolute top-6 right-6 p-2 hover:bg-slate-500/10 rounded-xl transition-all" title="Close"><X size={18}/></button>
-                <h4 className="text-xl font-heading font-black tracking-tighter uppercase mb-8">Manual <span className="opacity-30 italic">Progress Editor.</span></h4>
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Milestone Label</label>
-                      <input type="text" placeholder="e.g. Foundation Works" title="Milestone Label" value={editingProgress?.label || ''} onChange={e => setEditingProgress({...editingProgress, label: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                <h4 className="text-xl font-heading font-black tracking-tighter uppercase mb-8">Progress <span className="opacity-30 italic">Editor.</span></h4>
+                <div className="space-y-8">
+                   <div className="space-y-4">
+                      <div className="flex justify-between items-center px-4">
+                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40">Milestone Label</label>
+                         <span className="text-[10px] font-black text-brand-blue uppercase bg-brand-blue/10 px-2 py-0.5 rounded">Active Phase</span>
+                      </div>
+                      <input type="text" placeholder="e.g. Foundation Works" title="Milestone Label" value={editingProgress?.label || ''} onChange={e => setEditingProgress({...editingProgress, label: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold focus:border-brand-blue outline-none" />
                    </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Percentage (0-100)</label>
-                      <input type="number" placeholder="Percentage" title="Progress Percentage" value={editingProgress?.percentage || 0} onChange={e => setEditingProgress({...editingProgress, percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                   
+                   <div className="space-y-6">
+                      <div className="flex justify-between items-center px-4">
+                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40">Completion Status</label>
+                         <span className="text-2xl font-black font-heading text-brand-blue tabular-nums">{editingProgress?.percentage || 0}%</span>
+                      </div>
+                      <div className="relative h-12 flex items-center">
+                         <input 
+                           type="range" 
+                           min="0" 
+                           max="100" 
+                           step="1"
+                           title="Progress Slider"
+                           value={editingProgress?.percentage || 0} 
+                           onChange={e => setEditingProgress({...editingProgress, percentage: parseInt(e.target.value)})} 
+                           className="w-full h-2 bg-[var(--background)] rounded-full appearance-none cursor-pointer accent-brand-blue border border-[var(--border)]" 
+                         />
+                      </div>
+                      <div className="flex justify-between text-[8px] font-black uppercase opacity-20 tracking-[0.2em] px-2">
+                         <span>Initiated</span>
+                         <span>Delivered</span>
+                      </div>
                    </div>
-                   <button onClick={handleSaveProgress} className="w-full py-5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">Sync Milestone</button>
+
+                   <button onClick={handleSaveProgress} className="w-full py-5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02] active:scale-95">Update Milestone</button>
                 </div>
              </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Unit Type Modal */}
+      {/* Unified Inventory Modal */}
       <AnimatePresence>
-         {showUnitTypeModal && (
+         {showInventoryModal && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-xl p-10 space-y-8 relative">
-                  <button onClick={() => setShowUnitTypeModal(false)} aria-label="Close Unit Type Modal" title="Close Modal" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
-                  <div className="space-y-1">
-                     <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">{editingUnitType?.id ? 'Edit' : 'Add'} <span className="opacity-30 italic">Unit Type.</span></h4>
-                     <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Define specifications for this unit category.</p>
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3.5rem] border border-[var(--border)] w-full max-w-6xl p-12 space-y-10 relative overflow-y-auto max-h-[90vh]">
+                  <button onClick={() => setShowInventoryModal(false)} aria-label="Close Inventory Modal" title="Close Modal" className="absolute top-10 right-10 w-12 h-12 bg-slate-500/10 rounded-2xl flex items-center justify-center opacity-40 hover:opacity-100 transition-all"><X/></button>
+                  
+                  <div className="flex justify-between items-end border-b border-[var(--border)] pb-8">
+                     <div className="space-y-2">
+                        <h4 className="text-4xl font-heading font-black tracking-tighter uppercase">Inventory <span className="opacity-30 italic">Manager.</span></h4>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Property: {properties.find(p => p.id === activePropertyId)?.name}</p>
+                     </div>
+                     <button 
+                        onClick={() => setEditingUnitType({ name: '', beds: 0, baths: 0, sqm: 0, price_from: 0 })} 
+                        className="px-8 py-4 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                     >
+                        <PlusCircle size={14}/> Add New Unit Type
+                     </button>
                   </div>
 
-                  <div className="space-y-4">
-                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={() => setEditingUnitType({...editingUnitType, name: 'Luxury Villa'})} className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${editingUnitType?.name?.toLowerCase().includes('villa') ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>
-                           <Home size={24}/> <span className="text-[10px] font-black uppercase tracking-widest">Villa</span>
-                        </button>
-                        <button onClick={() => setEditingUnitType({...editingUnitType, name: 'Studio Suite'})} className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${!editingUnitType?.name?.toLowerCase().includes('villa') ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>
-                           <Building2 size={24}/> <span className="text-[10px] font-black uppercase tracking-widest">Apartment</span>
-                        </button>
-                     </div>
-                     
-                     <div className="space-y-2">
-                        <label htmlFor="unit-model-name" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Model Name</label>
-                        <input id="unit-model-name" type="text" placeholder="e.g. 3-BR Luxury" value={editingUnitType?.name || ''} onChange={e => setEditingUnitType({...editingUnitType, name: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
-                     </div>
-
-                     <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-1">
-                           <label htmlFor="unit-beds" className="text-[9px] font-black uppercase opacity-40 ml-2">Beds</label>
-                           <input id="unit-beds" type="number" value={editingUnitType?.beds || 0} onChange={e => setEditingUnitType({...editingUnitType, beds: parseInt(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
-                        </div>
-                        <div className="space-y-1">
-                           <label htmlFor="unit-baths" className="text-[9px] font-black uppercase opacity-40 ml-2">Baths</label>
-                           <input id="unit-baths" type="number" value={editingUnitType?.baths || 0} onChange={e => setEditingUnitType({...editingUnitType, baths: parseFloat(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
-                        </div>
-                        <div className="space-y-1">
-                           <label htmlFor="unit-sqm" className="text-[9px] font-black uppercase opacity-40 ml-2">SQM</label>
-                           <input id="unit-sqm" type="number" value={editingUnitType?.sqm || 0} onChange={e => setEditingUnitType({...editingUnitType, sqm: parseInt(e.target.value)})} className="w-full px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
-                        </div>
-                     </div>
-
-                     <div className="space-y-2">
-                        <label htmlFor="unit-price-from" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Starting Price</label>
-                        <input id="unit-price-from" type="number" value={editingUnitType?.price_from || 0} onChange={e => setEditingUnitType({...editingUnitType, price_from: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
-                     </div>
-
-                     {editingUnitType?.id && (
-                        <div className="space-y-4 pt-4 border-t border-[var(--border)]">
-                           <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4"><Box size={12} className="inline mr-1" /> Quick Inventory Setup</span>
-                              <button onClick={() => { setShowUnitTypeModal(false); setShowUnitModal(true); setEditingUnitInstance({ status: 'available', floor_number: 1, unit_type_id: editingUnitType?.id }); }} className="text-[9px] py-2 px-4 bg-emerald-500/10 text-emerald-500 uppercase font-black rounded-lg hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-md flex items-center gap-2"><PlusCircle size={10} /> Add Specific Unit Instance</button>
+                  <div className="grid grid-cols-1 gap-6">
+                     {/* Unit Type Editor (Inline) */}
+                     {editingUnitType && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-brand-blue/5 border border-brand-blue/20 rounded-[2.5rem] p-10 space-y-8">
+                           <div className="flex justify-between items-center">
+                              <h5 className="text-lg font-black uppercase tracking-tight">{editingUnitType.id ? 'Edit' : 'Configure'} Model Type</h5>
+                              <button onClick={() => setEditingUnitType(null)} className="text-[10px] font-black uppercase opacity-40 hover:text-red-500">Cancel</button>
                            </div>
-                        </div>
+                           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Model Name</label>
+                                 <input type="text" title="Model Name" placeholder="e.g. Type A" value={editingUnitType.name} onChange={e => setEditingUnitType({...editingUnitType, name: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Beds / Baths</label>
+                                 <div className="flex gap-2">
+                                    <input type="number" title="Bedrooms" placeholder="1" value={editingUnitType.beds} onChange={e => setEditingUnitType({...editingUnitType, beds: parseInt(e.target.value)})} className="w-full px-4 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                                    <input type="number" title="Bathrooms" placeholder="1" value={editingUnitType.baths} onChange={e => setEditingUnitType({...editingUnitType, baths: parseFloat(e.target.value)})} className="w-full px-4 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                                 </div>
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Area (SQM)</label>
+                                 <input type="number" title="Area SQM" placeholder="0" value={editingUnitType.sqm} onChange={e => setEditingUnitType({...editingUnitType, sqm: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Base Price (ETB)</label>
+                                 <input type="number" title="Base Price" placeholder="0" value={editingUnitType.price_from} onChange={e => setEditingUnitType({...editingUnitType, price_from: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                           </div>
+                           <button onClick={handleSaveUnitType} className="w-full py-5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-brand-blue/20">Sync Model Parameters</button>
+                        </motion.div>
                      )}
+
+                     {/* Unit Instance Editor (Inline) */}
+                     {editingUnitInstance && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-emerald-500/5 border border-emerald-500/20 rounded-[2.5rem] p-10 space-y-8">
+                           <div className="flex justify-between items-center">
+                              <h5 className="text-lg font-black uppercase tracking-tight">{editingUnitInstance.id ? 'Modify' : 'Deploy'} Unit Node</h5>
+                              <button onClick={() => setEditingUnitInstance(null)} className="text-[10px] font-black uppercase opacity-40 hover:text-red-500">Cancel</button>
+                           </div>
+                           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Unit #</label>
+                                 <input type="text" title="Unit Number" placeholder="e.g. 101" value={editingUnitInstance.unit_number} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Status</label>
+                                 <select title="Unit Status" value={editingUnitInstance.status} onChange={e => setEditingUnitInstance({...editingUnitInstance, status: e.target.value as Unit['status']})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
+                                    <option value="available">Available</option>
+                                    <option value="reserved">Reserved</option>
+                                    <option value="sold">Sold</option>
+                                 </select>
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Floor</label>
+                                 <input type="number" title="Floor Number" placeholder="1" value={editingUnitInstance.floor_number} onChange={e => setEditingUnitInstance({...editingUnitInstance, floor_number: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Premium Price</label>
+                                 <input type="number" title="Premium Price" placeholder="0" value={editingUnitInstance.price} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                           </div>
+                           <div className="space-y-4">
+                              <label className="text-[9px] font-black uppercase opacity-40 ml-4">Unit Specific Image</label>
+                              <MediaUpload bucket="property-assets" onUploadComplete={url => setEditingUnitInstance({...editingUnitInstance, image_url: url})} label="Change unit visual" />
+                           </div>
+                           <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20">Sync Unit Node</button>
+                        </motion.div>
+                     )}
+
+                     {/* Main Inventory List */}
+                     <div className="space-y-6">
+                        {properties.find(p => p.id === activePropertyId)?.unit_types?.map(ut => (
+                           <div key={ut.id} className="bg-[var(--background)] rounded-3xl border border-[var(--border)] overflow-hidden">
+                              <div className="p-8 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer" onClick={() => setExpandedUnitType(expandedUnitType === ut.id ? null : (ut.id || null))}>
+                                 <div className="flex items-center gap-6">
+                                    <div className="w-16 h-16 rounded-2xl bg-brand-blue/10 flex items-center justify-center text-brand-blue border border-brand-blue/20">
+                                       <Home size={24}/>
+                                    </div>
+                                    <div>
+                                       <h6 className="text-xl font-heading font-black tracking-tight">{ut.name}</h6>
+                                       <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{ut.beds} Bed • {ut.baths} Bath • {ut.sqm} SQM</p>
+                                    </div>
+                                 </div>
+                                 <div className="flex items-center gap-12">
+                                    <div className="text-right">
+                                       <p className="text-[9px] font-black uppercase opacity-30 tracking-widest">Base Value</p>
+                                       <p className="text-lg font-heading font-black text-brand-blue">{formatPrice(ut.price_from)}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                       <button onClick={(e) => { e.stopPropagation(); setEditingUnitType(ut); }} className="p-4 bg-white/5 rounded-2xl hover:bg-brand-blue hover:text-white transition-all" title="Edit Model"><Settings2 size={18}/></button>
+                                       <button onClick={(e) => { e.stopPropagation(); if(confirm('Delete entire unit type?')) deleteUnitType(ut.id!); fetchProperties(); }} className="p-4 bg-white/5 rounded-2xl hover:bg-red-500 hover:text-white transition-all text-red-400" title="Delete Model"><Trash2 size={18}/></button>
+                                       <button onClick={(e) => { e.stopPropagation(); setEditingUnitInstance({ unit_type_id: ut.id, status: 'available', price: ut.price_from }); }} className="px-6 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center gap-2 border border-emerald-500/20"><Plus size={14}/> Add Unit</button>
+                                    </div>
+                                 </div>
+                              </div>
+                              
+                              <AnimatePresence>
+                                 {expandedUnitType === ut.id && (
+                                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="border-t border-[var(--border)] bg-black/20 p-6">
+                                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                          {properties.find(p => p.id === activePropertyId)?.units?.filter(u => u.unit_type_id === ut.id).map(unit => (
+                                             <div key={unit.id} className="p-5 bg-[var(--card)] rounded-2xl border border-white/5 flex items-center justify-between group">
+                                                <div>
+                                                   <div className="flex items-center gap-2 mb-1">
+                                                      <span className="text-[10px] font-black uppercase tracking-tight">{unit.unit_number}</span>
+                                                      <div className={`w-1.5 h-1.5 rounded-full ${unit.status === 'available' ? 'bg-emerald-500' : unit.status === 'reserved' ? 'bg-amber-500' : 'bg-red-500'}`} />
+                                                   </div>
+                                                   <p className="text-[9px] font-black opacity-30 uppercase tracking-widest">Floor {unit.floor_number}</p>
+                                                </div>
+                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                   <button onClick={() => setEditingUnitInstance(unit)} className="p-2 hover:text-brand-blue" title="Edit"><Settings2 size={14}/></button>
+                                                   <button onClick={async () => { if(confirm('Delete unit instance?')) { await deleteUnit(unit.id); fetchProperties(); } }} className="p-2 hover:text-red-500" title="Delete"><Trash2 size={14}/></button>
+                                                </div>
+                                             </div>
+                                          ))}
+                                          {properties.find(p => p.id === activePropertyId)?.units?.filter(u => u.unit_type_id === ut.id).length === 0 && (
+                                             <div className="col-span-full py-8 text-center text-[9px] font-black uppercase opacity-20 italic">No specific units deployed for this model.</div>
+                                          )}
+                                       </div>
+                                    </motion.div>
+                                 )}
+                              </AnimatePresence>
+                           </div>
+                        ))}
+                        {(!properties.find(p => p.id === activePropertyId)?.unit_types || properties.find(p => p.id === activePropertyId)?.unit_types?.length === 0) && (
+                           <div className="py-20 text-center space-y-4 bg-white/2 rounded-[3rem] border-2 border-dashed border-white/10">
+                              <Box size={48} className="mx-auto opacity-10" />
+                              <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-20">Registry Empty. Define a unit type to begin.</p>
+                           </div>
+                        )}
+                     </div>
                   </div>
-
-                  <button onClick={handleSaveUnitType} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Save Unit Type</button>
-               </motion.div>
-            </div>
-         )}
-      </AnimatePresence>
-
-      {/* Unit Modal */}
-      <AnimatePresence>
-         {showUnitModal && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-xl p-10 space-y-8 relative overflow-y-auto max-h-[90vh]">
-                  <button onClick={() => setShowUnitModal(false)} aria-label="Close Unit Modal" title="Close Modal" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
-                  <div className="space-y-1">
-                     <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">{editingUnitInstance?.id ? 'Edit' : 'Add'} <span className="opacity-30 italic">Unit Instance.</span></h4>
-                     <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Manage inventory for specific property units.</p>
-                  </div>
-
-                  <div className="space-y-6">
-                     <div className="p-4 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex items-center justify-between">
-                        <div>
-                           <p className="text-[8px] font-black uppercase tracking-widest text-brand-blue opacity-60">Linked to Model</p>
-                           <p className="text-xs font-black uppercase text-white/80">{properties.find(p => p.id === activePropertyId)?.unit_types?.find(ut => ut.id === editingUnitInstance?.unit_type_id)?.name || 'Unknown Type'}</p>
-                        </div>
-                        <div className="text-right">
-                           <p className="text-[8px] font-black uppercase tracking-widest text-brand-blue opacity-60">Property ID</p>
-                           <p className="text-[8px] font-mono opacity-30">{activePropertyId?.split('-')[0]}...</p>
-                        </div>
-                     </div>
-
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                           <label htmlFor="unit-identity" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Number</label>
-                           <input id="unit-identity" type="text" placeholder="e.g. A-402" title="Unit Number" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
-                        </div>
-                        <div className="space-y-2">
-                           <label htmlFor="unit-price-spec" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Specific Price (ETB)</label>
-                           <input id="unit-price-spec" type="number" placeholder="Price override" title="Specific Price" value={editingUnitInstance?.price || 0} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
-                        </div>
-                     </div>
-
-                     <div className="space-y-2">
-                         <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Camera size={12}/> Unit Image</label>
-                         <MediaUpload 
-                            bucket="property-assets" 
-                            onUploadComplete={(url) => setEditingUnitInstance({...editingUnitInstance, image_url: url})} 
-                            label="Upload unit-specific image"
-                         />
-                         {editingUnitInstance?.image_url && (
-                            <div className="relative h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
-                               <Image 
-                                   src={editingUnitInstance?.image_url} 
-                                   alt="Unit Preview"
-                                   fill
-                                   className="w-full h-full object-cover" 
-                                   sizes="(max-width: 1280px) 100vw, 400px"
-                                />
-                            </div>
-                         )}
-                      </div>
-
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                           <label htmlFor="unit-status" className="text-[9px] font-black uppercase opacity-40 ml-2">Sale Status</label>
-                           <select id="unit-status" value={editingUnitInstance?.status || 'available'} onChange={e => setEditingUnitInstance({...editingUnitInstance, status: e.target.value as 'available' | 'reserved' | 'sold'})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
-                              <option value="available">Available</option>
-                              <option value="reserved">Reserved</option>
-                              <option value="sold">Sold</option>
-                           </select>
-                        </div>
-                         <div className="space-y-1">
-                            <label htmlFor="unit-floor" className="text-[9px] font-black uppercase opacity-40 ml-2">Floor Level</label>
-                            <input id="unit-floor" type="number" value={editingUnitInstance?.floor_number || 1} onChange={e => setEditingUnitInstance({...editingUnitInstance, floor_number: parseInt(e.target.value)})} className="w-full px-4 py-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
-                         </div>
-                     </div>
-
-                     <div className="space-y-2">
-                        <label htmlFor="unit-notes" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Notes</label>
-                        <textarea id="unit-notes" value={editingUnitInstance?.notes || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, notes: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold min-h-[100px]" />
-                     </div>
-                  </div>
-
-                  <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02]">                     {editingUnitInstance?.id ? 'Update Unit Node' : 'Deploy Unit Instance'}</button>
                </motion.div>
             </div>
          )}

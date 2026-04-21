@@ -104,6 +104,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='discount_conditions') THEN
         ALTER TABLE public.properties ADD COLUMN discount_conditions TEXT;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='discount_rules') THEN
+        ALTER TABLE public.properties ADD COLUMN discount_rules JSONB DEFAULT '[]'::jsonb;
+    END IF;
 
     -- Unit Types Extensions
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='amenities') THEN

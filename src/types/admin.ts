@@ -65,6 +65,7 @@ export interface Property {
   virtual_tour_url?: string;
   total_sqm?: number;
   loan_percentage?: number;
+  discount_rules?: { downpayment: number; discount: number }[];
   discount_conditions?: string;
 }
 
