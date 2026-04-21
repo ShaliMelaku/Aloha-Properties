@@ -168,17 +168,28 @@ BEGIN
         ALTER TABLE public.visitors ADD COLUMN path TEXT;
     END IF;
 
-    -- Leads Extensions
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='leads' AND column_name='property_id') THEN
-        ALTER TABLE public.leads ADD COLUMN property_id UUID REFERENCES public.properties(id) ON DELETE SET NULL;
+    -- Posts Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='status') THEN
+        ALTER TABLE public.posts ADD COLUMN status TEXT DEFAULT 'published';
     END IF;
 
     -- Campaigns Extensions (for campaign redux / repeat)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='status') THEN
+        ALTER TABLE public.campaigns ADD COLUMN status TEXT DEFAULT 'sent';
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='body') THEN
         ALTER TABLE public.campaigns ADD COLUMN body TEXT;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='target_filter') THEN
         ALTER TABLE public.campaigns ADD COLUMN target_filter TEXT;
+    END IF;
+
+    -- Leads Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='leads' AND column_name='status') THEN
+        ALTER TABLE public.leads ADD COLUMN status TEXT DEFAULT 'new';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='leads' AND column_name='property_id') THEN
+        ALTER TABLE public.leads ADD COLUMN property_id UUID REFERENCES public.properties(id) ON DELETE SET NULL;
     END IF;
 END $$;
 
