@@ -147,6 +147,19 @@ function VisualBackground() {
   );
 }
 
+const getBgClass = (color?: string) => {
+  if (!color) return "bg-transparent";
+  const map: Record<string, string> = {
+    "#3B82F6": "bg-blue-500",
+    "#10B981": "bg-emerald-500",
+    "#F59E0B": "bg-amber-500",
+    "#A855F7": "bg-purple-500",
+    "#EC4899": "bg-pink-500",
+    "#64748B": "bg-slate-500"
+  };
+  return map[color] || "bg-brand-blue";
+};
+
 function ChartTip({ active, payload, label, unit = "" }: { active?: boolean; payload?: Array<{ value: number; name?: string; color?: string }>; label?: string; unit?: string }) {
   if (!active || !payload?.length) return null;
   return (
@@ -155,10 +168,7 @@ function ChartTip({ active, payload, label, unit = "" }: { active?: boolean; pay
       {payload.map((p, i) => (
          <div key={i} className="flex items-center justify-between gap-8 py-1">
             <div className="flex items-center gap-2">
-                <div 
-                  className="w-2 h-2 rounded-full" 
-                  style={{ backgroundColor: p.color || 'transparent' } as any} 
-                />
+               <div className={`w-2 h-2 rounded-full ${getBgClass(p.color)}`} />
                <span className="opacity-50 uppercase font-bold tracking-widest text-[8px]">{p.name}</span>
             </div>
             <p className="font-bold text-white text-xs">{p.value.toLocaleString()} {unit}</p>
@@ -323,10 +333,10 @@ export function AnalyticsDashboard() {
       {/* KPI Cards */}
       <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {[
-          { label: "Today's Hits", value: activeToday, icon: Activity, color: "#10B981", sub: "Live interactions" },
-          { label: "Total Traffic", value: totalTraffic, icon: Globe2, color: "#3B82F6", sub: "Platform footprint" },
-          { label: "New Leads", value: totalLeads, icon: Zap, color: "#A855F7", sub: "Qualified registry" },
-          { label: "Est. Revenue", value: opValue, icon: TrendingUp, color: "#F59E0B", sub: "Potential value", isCurrency: true },
+          { label: "Today's Hits", value: activeToday, icon: Activity, color: "emerald", sub: "Live interactions" },
+          { label: "Total Traffic", value: totalTraffic, icon: Globe2, color: "blue", sub: "Platform footprint" },
+          { label: "New Leads", value: totalLeads, icon: Zap, color: "purple", sub: "Qualified registry" },
+          { label: "Est. Revenue", value: opValue, icon: TrendingUp, color: "amber", sub: "Potential value", isCurrency: true },
         ].map((k, i) => (
           <motion.div 
             key={i} 
@@ -336,10 +346,7 @@ export function AnalyticsDashboard() {
             className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl overflow-hidden hover:bg-white/10 transition-all cursor-default"
           >
             <div className="flex justify-between items-center mb-6">
-              <div 
-                className="p-3 rounded-xl bg-white/5 text-[var(--color)]" 
-                style={{ '--color': k.color } as any}
-              >
+              <div className={`p-3 rounded-xl bg-white/5 text-${k.color}-500`}>
                  <k.icon size={20} />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">{k.label}</p>
@@ -351,14 +358,8 @@ export function AnalyticsDashboard() {
               </h4>
               <p className="text-[9px] font-bold uppercase tracking-widest opacity-30">{k.sub}</p>
             </div>
-            <div 
-              className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--line-color)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" 
-              style={{ '--line-color': k.color } as any} 
-            />
-            <div 
-              className="absolute -bottom-10 -right-10 w-24 h-24 rounded-full blur-[60px] opacity-10" 
-              style={{ backgroundColor: k.color } as any} 
-            />
+            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-${k.color}-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+            <div className={`absolute -bottom-10 -right-10 w-24 h-24 rounded-full blur-[60px] opacity-10 bg-${k.color}-500`} />
           </motion.div>
         ))}
       </div>
@@ -540,8 +541,7 @@ export function AnalyticsDashboard() {
                                       <motion.div 
                                         initial={{ width: 0 }} 
                                         animate={{ width: `${(s.val / item.total) * 100}%` }} 
-                                        className="h-full" 
-                                        style={{ backgroundColor: s.color } as any}
+                                        className={`h-full ${getBgClass(s.color)}`} 
                                       />
                                    </div>
                                 </div>
@@ -605,7 +605,7 @@ export function AnalyticsDashboard() {
                       {(tab === "sources" ? buildSources(leads) : buildDevices(visitors)).map((s, i) => (
                         <div key={i} className="flex items-center justify-between p-6 bg-white/2 rounded-2xl border border-white/5 hover:bg-white/5 transition-all">
                            <div className="flex items-center gap-4">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                              <div className={`w-3 h-3 rounded-full ${getBgClass(s.color)}`} />
                               <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">{s.name}</span>
                            </div>
                            <span className="font-heading font-black text-xl tabular-nums">{s.value}</span>

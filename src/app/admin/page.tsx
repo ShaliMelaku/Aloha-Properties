@@ -65,27 +65,7 @@ export default function AdminDashboard() {
     setActiveTab('marketing');
   };
 
-  // Stats Logic
-  const stats = (() => {
-    const totalLeads = leads.length;
-    const activeProperties = properties.length;
-    const campaignReach = history.reduce((a, b) => a + b.audience_size, 0);
-    
-    // Growth calculation
-    const now = new Date();
-    const lastWeek = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-    const recent = leads.filter(l => l.created_at && new Date(l.created_at).getTime() > lastWeek.getTime()).length;
-    const prevWeek = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
-    const archive = leads.filter(l => {
-      if (!l.created_at) return false;
-      const d = new Date(l.created_at).getTime();
-      return d > prevWeek.getTime() && d <= lastWeek.getTime();
-    }).length;
-    const growthVal = archive > 0 ? ((recent - archive) / archive) * 100 : (recent > 0 ? 100 : 0);
-    const growth = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(1) + '%';
-    
-    return { totalLeads, activeProperties, campaignReach, growth };
-  })();
+
 
   // Auth Effect
   useEffect(() => {
