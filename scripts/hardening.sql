@@ -168,6 +168,11 @@ BEGIN
         ALTER TABLE public.visitors ADD COLUMN path TEXT;
     END IF;
 
+    -- Leads Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='leads' AND column_name='property_id') THEN
+        ALTER TABLE public.leads ADD COLUMN property_id UUID REFERENCES public.properties(id) ON DELETE SET NULL;
+    END IF;
+
     -- Campaigns Extensions (for campaign redux / repeat)
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='body') THEN
         ALTER TABLE public.campaigns ADD COLUMN body TEXT;
