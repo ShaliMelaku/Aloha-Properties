@@ -61,7 +61,7 @@ export function MediaUpload({
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { data, error: uploadError } = await supabaseClient.storage
+      const { error: uploadError } = await supabaseClient.storage
         .from(bucket)
         .upload(filePath, file);
 

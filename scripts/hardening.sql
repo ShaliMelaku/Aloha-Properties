@@ -214,3 +214,42 @@ END $$;
 
 CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id IN ('property-assets', 'media-assets'));
 CREATE POLICY "Authenticated Upload" ON storage.objects FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND bucket_id IN ('property-assets', 'media-assets'));
+
+-- 7. Performance Indexing (Speed Hardening)
+CREATE INDEX IF NOT EXISTS idx_property_unit_types_property_id ON public.property_unit_types(property_id);
+CREATE INDEX IF NOT EXISTS idx_property_units_property_id ON public.property_units(property_id);
+CREATE INDEX IF NOT EXISTS idx_property_units_unit_type_id ON public.property_units(unit_type_id);
+CREATE INDEX IF NOT EXISTS idx_property_units_status ON public.property_units(status);
+CREATE INDEX IF NOT EXISTS idx_property_progress_property_id ON public.property_progress(property_id);
+CREATE INDEX IF NOT EXISTS idx_visitors_created_at ON public.visitors(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_visitors_country_code ON public.visitors(country_code);
+
+-- 8. Advanced Security Hardening (RLS & Service Roles)
+-- Ensure leads and visitors are protected
+ALTER TABLE public.visitors ENABLE ROW LEVEL SECURITY;
+
+DO $$ 
+BEGIN 
+    DROP POLICY IF EXISTS "Allow anonymous insert" ON public.visitors;
+    DROP POLICY IF EXISTS "Allow authenticated read" ON public.visitors;
+END $$;
+
+CREATE POLICY "Allow anonymous insert" ON public.visitors FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated read" ON public.visitors FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 9. Storage Security Hardening
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Authenticated Delete" ON storage.objects;
+END $$;
+
+CREATE POLICY "Authenticated Delete" ON storage.objects FOR DELETE USING (auth.role() = 'authenticated' AND bucket_id IN ('property-assets', 'media-assets'));
+
+-- 10. Integrity Checks & Modern Constraints
+DO $$ 
+BEGIN 
+    -- Ensure status is valid
+    IF NOT EXISTS (SELECT 1 FROM information_schema.constraint_column_usage WHERE table_name = 'property_units' AND constraint_name = 'check_unit_status') THEN
+        ALTER TABLE public.property_units ADD CONSTRAINT check_unit_status CHECK (status IN ('available', 'reserved', 'sold'));
+    END IF;
+END $$;
