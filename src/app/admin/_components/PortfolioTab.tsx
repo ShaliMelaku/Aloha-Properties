@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { 
-  Building2, MapPin, Ruler, Bed, Bath, Plus, Eye, 
+  Building2, MapPin, Plus, 
   Trash2, TrendingUp, Shield, Wind, Sun, Info,
-  DollarSign, Calendar, ChevronRight, Activity, Camera, Download,
-  Home, Map as MapIcon, X, PlusCircle, ArrowRight, Settings2,
+  DollarSign, Calendar, Activity, Camera,
+  Home, Map as MapIcon, X, PlusCircle, Settings2,
   Box, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,7 +13,8 @@ import { Property, Unit, UnitType } from "@/types/admin";
 import dynamic from "next/dynamic";
 const MapPicker = dynamic(() => import("./MapPicker").then(mod => mod.MapPicker), { ssr: false });
 import { MediaUpload } from "./MediaUpload";
-import { saveUnitType, deleteUnitType, saveUnit, deleteUnit } from "@/lib/admin-actions";
+import Image from "next/image";
+import { saveUnitType, saveUnit } from "@/lib/admin-actions";
 
 interface PortfolioTabProps {
   properties: Property[];
@@ -37,15 +38,15 @@ interface PortfolioTabProps {
   setSelectedPropertyId: (id: string | null) => void;
   selectedPropertyId: string | null;
   editingUnit: Unit | null;
-  fetchProperties: () => void;
   notify: (type: 'success' | 'error' | 'info', msg: string) => void;
   editingProperty: Property | null;
+  fetchProperties: () => void;
 }
 
 export function PortfolioTab({
   properties, loading, isAddingProperty, setIsAddingProperty,
   newProp, setNewProp, handleCreateProperty, setEditingProperty,
-  setConfirmDelete, togglePropertyUnits, expandedProperties,
+  setConfirmDelete,
   formatPrice, notify, editingProperty, handleUpdateProperty,
   fetchProperties
 }: PortfolioTabProps) {
@@ -100,7 +101,13 @@ export function PortfolioTab({
         {properties.map((prop) => (
           <motion.div key={prop.id} layout className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] overflow-hidden hover:border-brand-blue/30 transition-all group flex flex-col xl:flex-row">
              <div className="h-64 xl:h-auto xl:w-96 relative shrink-0">
-                <img src={prop.cover_image} alt={prop.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <Image 
+                  src={prop.cover_image || "/placeholder.jpg"} 
+                  alt={prop.name} 
+                  fill 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                  sizes="(max-width: 1280px) 100vw, 384px"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8">
                    <p className="text-[9px] font-black uppercase tracking-widest text-brand-blue mb-1">{prop.developer}</p>
                    <h3 className="text-2xl font-heading font-black text-white tracking-tighter uppercase">{prop.name}</h3>
@@ -170,7 +177,6 @@ export function PortfolioTab({
                       ))}
                    </div>
 
-                   {/* Specific Units Inventory List */}
                    {prop.units && prop.units.length > 0 && (
                      <div className="pt-4 border-t border-[var(--border)] mt-4">
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 mb-4 px-2">Deployed Units (Inventory)</p>
@@ -185,8 +191,8 @@ export function PortfolioTab({
                                     </div>
                                  </div>
                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance(u); setShowUnitModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors"><Settings2 size={12}/></button>
-                                    <button onClick={() => setConfirmDelete({ type: 'unit', id: u.id, name: u.unit_number })} className="p-1.5 hover:text-red-500 transition-colors"><Trash2 size={12}/></button>
+                                    <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance(u); setShowUnitModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors" title="Edit Unit Instance"><Settings2 size={12}/></button>
+                                    <button onClick={() => setConfirmDelete({ type: 'unit', id: u.id, name: u.unit_number })} className="p-1.5 hover:text-red-500 transition-colors" title="Delete Unit Instance"><Trash2 size={12}/></button>
                                  </div>
                               </div>
                            ))}
@@ -203,9 +209,6 @@ export function PortfolioTab({
         ))}
       </div>
 
-      {/* ─── MODALS ────────────────────────────────────────────────────────────────── */}
-
-      {/* Property Modal */}
       <AnimatePresence>
         {(isAddingProperty || editingProperty) && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
@@ -233,8 +236,9 @@ export function PortfolioTab({
                        <div className="space-y-4">
                           <label htmlFor="prop-type" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Box size={12}/> Property Type</label>
                           <select id="prop-type" value={editingProperty?.property_type || newProp.property_type || 'Apartment'} onChange={e => {
-                             const val = e.target.value as any;
-                             editingProperty ? setEditingProperty({...editingProperty, property_type: val}) : setNewProp({...newProp, property_type: val});
+                             const val = e.target.value as Property['property_type'];
+                             if (editingProperty) setEditingProperty({...editingProperty, property_type: val});
+                             else setNewProp({...newProp, property_type: val});
                           }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner appearance-none">
                              <option value="Apartment">Apartment</option>
                              <option value="Villa">Villa</option>
@@ -313,11 +317,13 @@ export function PortfolioTab({
                         label="Upload cover image"
                      />
                      {(editingProperty?.cover_image || newProp.cover_image) && (
-                        <div className="h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
-                           <img 
-                                src={editingProperty?.cover_image || newProp.cover_image} 
+                        <div className="relative h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
+                           <Image 
+                                src={editingProperty?.cover_image || newProp.cover_image || ''} 
                                 alt="Property Cover"
+                                fill
                                 className="w-full h-full object-cover" 
+                                sizes="(max-width: 1280px) 100vw, 400px"
                              />
                         </div>
                      )}
@@ -441,11 +447,13 @@ export function PortfolioTab({
                             label="Upload unit-specific image"
                          />
                          {editingUnitInstance?.image_url && (
-                            <div className="h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
-                               <img 
+                            <div className="relative h-40 rounded-2xl overflow-hidden border border-[var(--border)] mt-2">
+                               <Image 
                                    src={editingUnitInstance?.image_url} 
                                    alt="Unit Preview"
+                                   fill
                                    className="w-full h-full object-cover" 
+                                   sizes="(max-width: 1280px) 100vw, 400px"
                                 />
                             </div>
                          )}

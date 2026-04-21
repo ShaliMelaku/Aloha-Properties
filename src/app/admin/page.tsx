@@ -269,7 +269,7 @@ export default function AdminDashboard() {
                 }}
                 setEditingProperty={setEditingProperty}
                 setConfirmDelete={setConfirmDelete}
-                togglePropertyUnits={(id) => {
+                togglePropertyUnits={(id: string) => {
                    const next = new Set(expandedProperties);
                    if (next.has(id)) next.delete(id);
                    else next.add(id);
