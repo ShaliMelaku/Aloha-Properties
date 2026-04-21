@@ -62,6 +62,8 @@ export interface Property {
   parking_spots?: number;
   virtual_tour_url?: string;
   total_sqm?: number;
+  loan_percentage?: number;
+  discount_conditions?: string;
 }
 
 export interface UnitType {

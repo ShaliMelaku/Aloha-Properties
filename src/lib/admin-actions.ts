@@ -94,6 +94,30 @@ export async function deleteUnitType(id: string) {
   if (error) throw error;
 }
 
+export async function saveProgress(prog: any) {
+  const { id, ...payload } = prog;
+  if (id) {
+    const { error } = await supabaseClient
+      .from('property_progress')
+      .update(payload)
+      .eq('id', id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabaseClient
+      .from('property_progress')
+      .insert(payload);
+    if (error) throw error;
+  }
+}
+
+export async function deleteProgress(id: string) {
+  const { error } = await supabaseClient
+    .from('property_progress')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
 /**
  * LEAD ACTIONS
  */

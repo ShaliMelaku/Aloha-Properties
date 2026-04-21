@@ -58,14 +58,14 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
   // Fallback to legacy unit model if no types
   const legacyUnit = !hasTypes ? (property.units?.[typeIdx] || property.units?.[0]) : null;
 
-  const dynamicProgress = property.progress?.[0];
+  const dynamicProgress = property.progress && property.progress.length > 0 ? property.progress[0] : null;
   const progress = dynamicProgress ? {
-    progress: dynamicProgress.percent,
-    statusText: dynamicProgress.status_text,
-    estimated: dynamicProgress.estimated_completion
+    progress: (dynamicProgress as any).percentage,
+    statusText: (dynamicProgress as any).label,
+    estimated: (dynamicProgress as any).estimated_completion || 'TBD'
   } : getProductProgress(property.name);
 
-  const loanPercent = getLoanPercentage(property.developer, property.name);
+  const loanPercent = property.loan_percentage ? `${property.loan_percentage}% Bank Financing` : getLoanPercentage(property.developer, property.name);
 
   // If neither types nor units exist, skip rendering
   // if (!activeType && !legacyUnit) return null; // Allow rendering even if no units are defined
@@ -310,7 +310,12 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="pt-6 space-y-2">
+                {property.discount_conditions && (
+                  <div className="p-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl mb-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue mb-1">Offer Terms</p>
+                    <p className="text-[11px] font-bold opacity-80 leading-relaxed italic">&quot;{property.discount_conditions}&quot;</p>
+                  </div>
+                )}
                 {[20, 30, 50, 70, 100].map((pct) => (
                   <button
                     key={pct}
@@ -329,6 +334,10 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
             </motion.div>
           )}
         </AnimatePresence>
+        <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center opacity-40">
+           <span className="text-[9px] font-black uppercase tracking-widest">Schedule: {property.payment_schedule || 'Flexible'}</span>
+           <span className="text-[9px] font-black uppercase tracking-widest">Type: {property.property_type || 'Apartment'}</span>
+        </div>
       </div>
 
       {/* Map Modal */}

@@ -14,7 +14,7 @@ import dynamic from "next/dynamic";
 const MapPicker = dynamic(() => import("./MapPicker").then(mod => mod.MapPicker), { ssr: false });
 import { MediaUpload } from "./MediaUpload";
 import Image from "next/image";
-import { saveUnitType, saveUnit } from "@/lib/admin-actions";
+import { saveUnitType, saveUnit, saveProgress, deleteProgress, deleteUnit, deleteUnitType } from "@/lib/admin-actions";
 
 interface PortfolioTabProps {
   properties: Property[];
@@ -56,6 +56,8 @@ export function PortfolioTab({
   const [editingUnitType, setEditingUnitType] = useState<Partial<UnitType> | null>(null);
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [editingUnitInstance, setEditingUnitInstance] = useState<Partial<Unit> | null>(null);
+  const [editingProgress, setEditingProgress] = useState<any | null>(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   const handleSaveUnitType = async () => {
     if (!editingUnitType || !activePropertyId) return;
@@ -82,6 +84,19 @@ export function PortfolioTab({
     } catch (e: unknown) {
       console.error("Unit Instance Sync Error:", e);
       notify('error', e instanceof Error ? `Sync Fault: ${e.message}` : 'Sync Fault: Database Linkage Error');
+    }
+  };
+
+  const handleSaveProgress = async () => {
+    if (!editingProgress || !activePropertyId) return;
+    try {
+      await saveProgress({ ...editingProgress, property_id: activePropertyId });
+      notify('success', 'Progress milestone updated.');
+      setShowProgressModal(false);
+      setEditingProgress(null);
+      fetchProperties();
+    } catch (e: unknown) {
+      notify('error', e instanceof Error ? e.message : 'Progress Sync Fault');
     }
   };
 
@@ -120,7 +135,9 @@ export function PortfolioTab({
                 <div className="space-y-6">
                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
                       <div className="flex items-center gap-1"><MapPin size={12} /> {prop.location}</div>
-                      <div className="flex items-center gap-1"><TrendingUp size={12} /> {(prop.progress?.[0]?.percent || 0)}% Complete</div>
+                      <div className="flex items-center gap-1 cursor-pointer hover:text-brand-blue" onClick={() => { setActivePropertyId(prop.id); setEditingProgress(prop.progress?.[0] || {}); setShowProgressModal(true); }}>
+                        <TrendingUp size={12} /> {(prop.progress?.[0]?.percentage || 0)}% Complete
+                      </div>
                    </div>
 
                    <div className="grid grid-cols-3 gap-3">
@@ -270,27 +287,35 @@ export function PortfolioTab({
                       </div>
                    </div>
 
+                   <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                           <label htmlFor="prop-discount" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><DollarSign size={12}/> Discount %</label>
+                           <input id="prop-discount" type="number" value={editingProperty?.discount_percentage || newProp.discount_percentage || 0} onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              if (editingProperty) setEditingProperty({...editingProperty, discount_percentage: val});
+                              else setNewProp({...newProp, discount_percentage: val});
+                           }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                        </div>
+                        <div className="space-y-4">
+                           <label htmlFor="prop-loan" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><TrendingUp size={12}/> Loan/Financing %</label>
+                           <input id="prop-loan" type="number" placeholder="Max Financing Available" value={editingProperty?.loan_percentage || newProp.loan_percentage || 0} onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              if (editingProperty) setEditingProperty({...editingProperty, loan_percentage: val});
+                              else setNewProp({...newProp, loan_percentage: val});
+                           }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
+                        </div>
+                   </div>
+
                    <div className="space-y-4">
-                      <label htmlFor="prop-description" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Info size={12}/> Description</label>
-                      <textarea id="prop-description" placeholder="Describe the property..." value={editingProperty?.description || newProp.description || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, description: e.target.value}) : setNewProp({...newProp, description: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner h-32" />
+                      <label htmlFor="prop-disc-cond" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><Info size={12}/> Discount Conditions</label>
+                      <textarea id="prop-disc-cond" placeholder="e.g. 5% discount for 50% downpayment" value={editingProperty?.discount_conditions || newProp.discount_conditions || ''} onChange={e => {
+                          const val = e.target.value;
+                          if (editingProperty) setEditingProperty({...editingProperty, discount_conditions: val});
+                          else setNewProp({...newProp, discount_conditions: val});
+                       }} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner min-h-[100px]" />
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-4">
-                         <label htmlFor="prop-discount" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4">Discount (%)</label>
-                         <input id="prop-discount" type="number" placeholder="e.g. 5" value={editingProperty?.discount_percentage || newProp.discount_percentage || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, discount_percentage: parseInt(e.target.value) || 0}) : setNewProp({...newProp, discount_percentage: parseInt(e.target.value) || 0})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                      </div>
-                      <div className="space-y-4">
-                         <label htmlFor="prop-downpayment" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4">Downpayment (%)</label>
-                         <input id="prop-downpayment" type="number" placeholder="e.g. 20" value={editingProperty?.downpayment_percentage || newProp.downpayment_percentage || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, downpayment_percentage: parseInt(e.target.value) || 0}) : setNewProp({...newProp, downpayment_percentage: parseInt(e.target.value) || 0})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                      </div>
-                      <div className="space-y-4">
-                         <label htmlFor="prop-schedule" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4">Payment Schedule</label>
-                         <input id="prop-schedule" type="text" placeholder="e.g. Flexible Terms" value={editingProperty?.payment_schedule || newProp.payment_schedule || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, payment_schedule: e.target.value}) : setNewProp({...newProp, payment_schedule: e.target.value})} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-sm font-bold border border-[var(--border)] focus:border-brand-blue outline-none transition-all shadow-inner" />
-                      </div>
-                   </div>
-
-                   <div className="space-y-6">
+                   <div className="space-y-4">
                       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 px-4"><MapIcon size={12}/> Map Location</label>
                       <MapPicker 
                          lat={editingProperty?.lat || newProp.lat || 9.0192} 
@@ -329,6 +354,29 @@ export function PortfolioTab({
                              />
                         </div>
                      )}
+
+                     {editingProperty && (
+                        <div className="pt-8 border-t border-[var(--border)] mt-8">
+                           <div className="flex justify-between items-center mb-6">
+                              <h4 className="text-sm font-black uppercase tracking-widest opacity-60">Construction Milestones</h4>
+                              <button onClick={() => { setActivePropertyId(editingProperty.id); setEditingProgress({ label: '', percentage: 0 }); setShowProgressModal(true); }} className="flex items-center gap-2 text-[10px] font-black uppercase text-brand-blue hover:opacity-70 transition-all"><Plus size={12}/> Add Milestone</button>
+                           </div>
+                           <div className="space-y-3">
+                              {(editingProperty as any).progress?.map((p: any) => (
+                                 <div key={p.id} className="flex items-center justify-between p-4 bg-[var(--background)] rounded-xl border border-[var(--border)] group">
+                                    <div>
+                                       <p className="text-[10px] font-black uppercase tracking-tighter">{p.label || p.stage_name}</p>
+                                       <p className="text-[10px] font-bold text-brand-blue">{p.percentage || p.percent}%</p>
+                                    </div>
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                       <button onClick={() => { setActivePropertyId(editingProperty.id); setEditingProgress(p); setShowProgressModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors" title="Edit Milestone"><Settings2 size={12}/></button>
+                                       <button onClick={async () => { if(confirm('Delete milestone?')) { await deleteProgress(p.id); fetchProperties(); } }} className="p-1.5 hover:text-red-500 transition-colors" title="Delete Milestone"><Trash2 size={12}/></button>
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     )}
                   </div>
 
                   <div className="p-8 bg-brand-blue/5 rounded-[2.5rem] border border-brand-blue/10 space-y-6">
@@ -358,6 +406,29 @@ export function PortfolioTab({
                   </button>
                </div>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress Modal */}
+      <AnimatePresence>
+        {showProgressModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] w-full max-w-md p-10 shadow-2xl relative">
+                <button onClick={() => setShowProgressModal(false)} className="absolute top-6 right-6 p-2 hover:bg-slate-500/10 rounded-xl transition-all" title="Close"><X size={18}/></button>
+                <h4 className="text-xl font-heading font-black tracking-tighter uppercase mb-8">Manual <span className="opacity-30 italic">Progress Editor.</span></h4>
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Milestone Label</label>
+                      <input type="text" placeholder="e.g. Foundation Works" value={editingProgress?.label || ''} onChange={e => setEditingProgress({...editingProgress, label: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Percentage (0-100)</label>
+                      <input type="number" value={editingProgress?.percentage || 0} onChange={e => setEditingProgress({...editingProgress, percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                   </div>
+                   <button onClick={handleSaveProgress} className="w-full py-5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20">Sync Milestone</button>
+                </div>
+             </motion.div>
           </div>
         )}
       </AnimatePresence>

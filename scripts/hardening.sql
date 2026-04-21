@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS public.property_progress (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     property_id UUID REFERENCES public.properties(id) ON DELETE CASCADE,
     stage_name TEXT,
+    label TEXT,
     percent INTEGER DEFAULT 0,
+    percentage INTEGER DEFAULT 0,
     status TEXT DEFAULT 'under-construction',
     status_text TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
@@ -95,6 +97,12 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='property_type') THEN
         ALTER TABLE public.properties ADD COLUMN property_type TEXT DEFAULT 'Apartment';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='loan_percentage') THEN
+        ALTER TABLE public.properties ADD COLUMN loan_percentage NUMERIC DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='discount_conditions') THEN
+        ALTER TABLE public.properties ADD COLUMN discount_conditions TEXT;
     END IF;
 
     -- Unit Types Extensions
