@@ -200,11 +200,12 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
               ) : (
                 <div className="relative">
                   <select
-                    value={typeIdx}
-                    onChange={(e) => setTypeIdx(Number(e.target.value))}
+                    value={typeIdx ?? ''}
+                    onChange={(e) => setTypeIdx(e.target.value === '' ? null : Number(e.target.value))}
                     title="Select Apartment Type"
                     className="w-full appearance-none bg-slate-500/5 border border-[var(--border)] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-brand-blue outline-none cursor-pointer transition-all"
                   >
+                    <option value="">Property Overview</option>
                     {property.unit_types.map((ut, i) => (
                       <option key={ut.id} value={i}>
                         {ut.name} — {ut.sqm}m² · {ut.available_count || 0} avail.
@@ -230,11 +231,12 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
             /* Legacy unit dropdown for properties without types yet */
             <div className="relative">
               <select
-                value={typeIdx}
-                onChange={(e) => setTypeIdx(Number(e.target.value))}
+                value={typeIdx ?? ''}
+                onChange={(e) => setTypeIdx(e.target.value === '' ? null : Number(e.target.value))}
                 title="Select Unit"
                 className="w-full appearance-none bg-slate-500/5 border border-[var(--border)] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-brand-blue outline-none cursor-pointer transition-all"
               >
+                <option value="">Property Overview</option>
                 {property.units?.map((u, i) => (
                   <option key={i} value={i}>{u.type} — {u.sqm}m²</option>
                 ))}

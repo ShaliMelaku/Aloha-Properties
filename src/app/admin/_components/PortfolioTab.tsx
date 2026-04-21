@@ -521,14 +521,30 @@ export function PortfolioTab({
                                  <input type="number" title="Base Price" placeholder="0" value={editingUnitType.price_from} onChange={e => setEditingUnitType({...editingUnitType, price_from: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                               </div>
                            </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Payment Schedule</label>
-                                 <input type="text" placeholder="e.g. Quarterly" value={editingUnitType.payment_schedule || ''} onChange={e => setEditingUnitType({...editingUnitType, payment_schedule: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                           <div className="space-y-4">
+                              <div className="flex justify-between items-center px-4">
+                                 <label className="text-[9px] font-black uppercase opacity-40">Discount / Downpayment Rules</label>
+                                 <button onClick={() => setEditingUnitType({...editingUnitType, discount_rules: [...(editingUnitType.discount_rules || []), { downpayment: 0, discount: 0 }]})} className="text-[9px] font-black text-brand-blue uppercase">Add Tier</button>
                               </div>
-                              <div className="space-y-2">
-                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Standard Downpayment (%)</label>
-                                 <input type="number" placeholder="20" value={editingUnitType.downpayment_percentage || 0} onChange={e => setEditingUnitType({...editingUnitType, downpayment_percentage: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                 {editingUnitType.discount_rules?.map((rule, idx) => (
+                                    <div key={idx} className="flex gap-2 p-3 bg-white/5 rounded-xl border border-white/5 relative group/rule">
+                                       <input type="number" title="Downpayment %" placeholder="DP %" value={rule.downpayment} onChange={e => {
+                                          const newRules = [...(editingUnitType.discount_rules || [])];
+                                          newRules[idx].downpayment = parseInt(e.target.value);
+                                          setEditingUnitType({...editingUnitType, discount_rules: newRules});
+                                       }} className="w-full bg-transparent text-[10px] font-bold outline-none" />
+                                       <input type="number" title="Discount %" placeholder="Disc %" value={rule.discount} onChange={e => {
+                                          const newRules = [...(editingUnitType.discount_rules || [])];
+                                          newRules[idx].discount = parseInt(e.target.value);
+                                          setEditingUnitType({...editingUnitType, discount_rules: newRules});
+                                       }} className="w-full bg-transparent text-[10px] font-bold outline-none text-emerald-500" />
+                                       <button onClick={() => {
+                                          const newRules = (editingUnitType.discount_rules || []).filter((_, i) => i !== idx);
+                                          setEditingUnitType({...editingUnitType, discount_rules: newRules});
+                                       }} className="p-1 hover:text-red-500 opacity-0 group-hover/rule:opacity-100 transition-opacity" title="Remove Tier"><X size={10}/></button>
+                                    </div>
+                                 ))}
                               </div>
                            </div>
                            <div className="space-y-4">
@@ -571,6 +587,32 @@ export function PortfolioTab({
                               <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase opacity-40 ml-4">Premium Price</label>
                                  <input type="number" title="Premium Price" placeholder="0" value={editingUnitInstance.price} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                           </div>
+                           <div className="space-y-4">
+                              <div className="flex justify-between items-center px-4">
+                                 <label className="text-[9px] font-black uppercase opacity-40">Unit Specific Discount Tiers</label>
+                                 <button onClick={() => setEditingUnitInstance({...editingUnitInstance, discount_rules: [...(editingUnitInstance.discount_rules || []), { downpayment: 0, discount: 0 }]})} className="text-[9px] font-black text-emerald-500 uppercase">Add Rule</button>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                 {editingUnitInstance.discount_rules?.map((rule, idx) => (
+                                    <div key={idx} className="flex gap-2 p-3 bg-white/5 rounded-xl border border-white/5 relative group/rule">
+                                       <input type="number" title="Downpayment %" placeholder="DP %" value={rule.downpayment} onChange={e => {
+                                          const newRules = [...(editingUnitInstance.discount_rules || [])];
+                                          newRules[idx].downpayment = parseInt(e.target.value);
+                                          setEditingUnitInstance({...editingUnitInstance, discount_rules: newRules});
+                                       }} className="w-full bg-transparent text-[10px] font-bold outline-none" />
+                                       <input type="number" title="Discount %" placeholder="Disc %" value={rule.discount} onChange={e => {
+                                          const newRules = [...(editingUnitInstance.discount_rules || [])];
+                                          newRules[idx].discount = parseInt(e.target.value);
+                                          setEditingUnitInstance({...editingUnitInstance, discount_rules: newRules});
+                                       }} className="w-full bg-transparent text-[10px] font-bold outline-none text-emerald-500" />
+                                       <button onClick={() => {
+                                          const newRules = (editingUnitInstance.discount_rules || []).filter((_, i) => i !== idx);
+                                          setEditingUnitInstance({...editingUnitInstance, discount_rules: newRules});
+                                       }} className="p-1 hover:text-red-500 opacity-0 group-hover/rule:opacity-100 transition-opacity" title="Remove Rule"><X size={10}/></button>
+                                    </div>
+                                 ))}
                               </div>
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

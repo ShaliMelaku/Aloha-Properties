@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { ImageOptimizer } from "./ImageOptimizer";
-import { Upload, File, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, File, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabaseClient } from "@/lib/supabase";
 

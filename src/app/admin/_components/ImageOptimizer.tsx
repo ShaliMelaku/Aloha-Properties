@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import Cropper from 'react-easy-crop';
-import { motion, AnimatePresence } from 'framer-motion';
+import Cropper, { Area } from 'react-easy-crop';
+import { motion } from 'framer-motion';
 import { X, Check, Scissors, Maximize, RotateCcw } from 'lucide-react';
 
 interface ImageOptimizerProps {
@@ -16,9 +16,9 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -80,7 +80,7 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={onCancel} className="p-4 rounded-2xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"><X size={20}/></button>
+          <button onClick={onCancel} className="p-4 rounded-2xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all" title="Discard Changes"><X size={20}/></button>
           <button onClick={createCroppedImage} className="flex items-center gap-3 px-8 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 hover:scale-105 active:scale-95 transition-all">
             <Check size={16} /> Finalize Asset
           </button>
@@ -119,6 +119,7 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
                   max={3} 
                   step={0.01} 
                   value={zoom} 
+                  title="Scale Factor"
                   onChange={(e) => setZoom(Number(e.target.value))}
                   className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-brand-blue"
                 />
@@ -134,6 +135,7 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
                   max={360} 
                   step={1} 
                   value={rotation} 
+                  title="Rotation Angle"
                   onChange={(e) => setRotation(Number(e.target.value))}
                   className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-brand-blue"
                 />
