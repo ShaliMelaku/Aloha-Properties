@@ -215,14 +215,35 @@ END $$;
 CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id IN ('property-assets', 'media-assets'));
 CREATE POLICY "Authenticated Upload" ON storage.objects FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND bucket_id IN ('property-assets', 'media-assets'));
 
--- 7. Performance Indexing (Speed Hardening)
+-- 7. Performance Indexing (Full Database Suite)
+-- Core Inventory & Progress
 CREATE INDEX IF NOT EXISTS idx_property_unit_types_property_id ON public.property_unit_types(property_id);
 CREATE INDEX IF NOT EXISTS idx_property_units_property_id ON public.property_units(property_id);
 CREATE INDEX IF NOT EXISTS idx_property_units_unit_type_id ON public.property_units(unit_type_id);
 CREATE INDEX IF NOT EXISTS idx_property_units_status ON public.property_units(status);
 CREATE INDEX IF NOT EXISTS idx_property_progress_property_id ON public.property_progress(property_id);
+
+-- Analytics & Traffic
 CREATE INDEX IF NOT EXISTS idx_visitors_created_at ON public.visitors(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visitors_country_code ON public.visitors(country_code);
+CREATE INDEX IF NOT EXISTS idx_visitors_path ON public.visitors(path);
+
+-- Leads & CRM
+CREATE INDEX IF NOT EXISTS idx_leads_property_id ON public.leads(property_id);
+CREATE INDEX IF NOT EXISTS idx_leads_email ON public.leads(email);
+CREATE INDEX IF NOT EXISTS idx_leads_created_at ON public.leads(created_at DESC);
+
+-- Content & Marketing
+CREATE INDEX IF NOT EXISTS idx_posts_slug ON public.posts(slug);
+CREATE INDEX IF NOT EXISTS idx_posts_status ON public.posts(status);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_campaigns_status ON public.campaigns(status);
+CREATE INDEX IF NOT EXISTS idx_campaigns_created_at ON public.campaigns(created_at DESC);
+
+-- Global Search Optimization
+CREATE INDEX IF NOT EXISTS idx_properties_developer ON public.properties(developer);
+CREATE INDEX IF NOT EXISTS idx_properties_location ON public.properties(location);
+CREATE INDEX IF NOT EXISTS idx_properties_created_at ON public.properties(created_at DESC);
 
 -- 8. Advanced Security Hardening (RLS & Service Roles)
 -- Ensure leads and visitors are protected
