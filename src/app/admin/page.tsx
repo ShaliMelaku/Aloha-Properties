@@ -235,7 +235,7 @@ export default function AdminDashboard() {
       {/* Main Content Area */}
       <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
          <AnimatePresence mode="wait">
-            {activeTab === 'overview' && <AnalyticsTab key="analytics" stats={stats} />}
+            {activeTab === 'overview' && <AnalyticsTab key="analytics" />}
             {activeTab === 'portfolio' && (
               <PortfolioTab 
                 key="portfolio"

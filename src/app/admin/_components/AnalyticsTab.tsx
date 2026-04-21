@@ -2,21 +2,12 @@
 
 import React from 'react';
 import { motion } from "framer-motion";
-import { TrendingUp, Zap, Mail, ShieldCheck, PieChart, Activity, Globe, Users } from "lucide-react";
+import { Activity } from "lucide-react";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 
-interface Stats {
-  totalLeads: number;
-  activeProperties: number;
-  campaignReach: number;
-  growth: string;
-}
 
-interface AnalyticsTabProps {
-  stats?: Stats;
-}
 
-export function AnalyticsTab({ stats = { totalLeads: 0, activeProperties: 0, campaignReach: 0, growth: '0%' } }: AnalyticsTabProps) {
+export function AnalyticsTab() {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}

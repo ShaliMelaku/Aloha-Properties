@@ -155,7 +155,10 @@ function ChartTip({ active, payload, label, unit = "" }: { active?: boolean; pay
       {payload.map((p, i) => (
          <div key={i} className="flex items-center justify-between gap-8 py-1">
             <div className="flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                <div 
+                  className="w-2 h-2 rounded-full" 
+                  style={{ backgroundColor: p.color || 'transparent' } as any} 
+                />
                <span className="opacity-50 uppercase font-bold tracking-widest text-[8px]">{p.name}</span>
             </div>
             <p className="font-bold text-white text-xs">{p.value.toLocaleString()} {unit}</p>
@@ -169,7 +172,6 @@ function Counter({ value }: { value: number }) {
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     let start = 0;
-    if (start === value) { setDisplay(value); return; }
     const duration = 800;
     const stepTime = 20;
     const steps = duration / stepTime;
@@ -334,7 +336,10 @@ export function AnalyticsDashboard() {
             className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl overflow-hidden hover:bg-white/10 transition-all cursor-default"
           >
             <div className="flex justify-between items-center mb-6">
-              <div className="p-3 rounded-xl bg-white/5 text-[var(--color)]" style={{ '--color': k.color } as React.CSSProperties}>
+              <div 
+                className="p-3 rounded-xl bg-white/5 text-[var(--color)]" 
+                style={{ '--color': k.color } as any}
+              >
                  <k.icon size={20} />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">{k.label}</p>
@@ -346,7 +351,14 @@ export function AnalyticsDashboard() {
               </h4>
               <p className="text-[9px] font-bold uppercase tracking-widest opacity-30">{k.sub}</p>
             </div>
-            <div className="absolute -bottom-10 -right-10 w-24 h-24 rounded-full blur-[60px] opacity-10 bg-[var(--color)]" style={{ '--color': k.color } as React.CSSProperties} />
+            <div 
+              className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--line-color)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" 
+              style={{ '--line-color': k.color } as any} 
+            />
+            <div 
+              className="absolute -bottom-10 -right-10 w-24 h-24 rounded-full blur-[60px] opacity-10" 
+              style={{ backgroundColor: k.color } as any} 
+            />
           </motion.div>
         ))}
       </div>
@@ -525,7 +537,12 @@ export function AnalyticsDashboard() {
                                       <span className="text-[10px] font-bold tabular-nums">{s.val}</span>
                                    </div>
                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                      <motion.div initial={{ width: 0 }} animate={{ width: `${(s.val / item.total) * 100}%` }} className="h-full" style={{ backgroundColor: s.color }} />
+                                      <motion.div 
+                                        initial={{ width: 0 }} 
+                                        animate={{ width: `${(s.val / item.total) * 100}%` }} 
+                                        className="h-full" 
+                                        style={{ backgroundColor: s.color } as any}
+                                      />
                                    </div>
                                 </div>
                              ))}
