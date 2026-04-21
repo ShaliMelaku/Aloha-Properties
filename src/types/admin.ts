@@ -17,6 +17,8 @@ export interface Campaign {
   id: string;
   created_at: string;
   subject: string;
+  body?: string;
+  target_filter?: string;
   audience_size: number;
 }
 
@@ -54,6 +56,11 @@ export interface Property {
   unit_types?: UnitType[];
   progress?: PropertyProgress[];
   created_at?: string;
+  // Extended Fields
+  tenure_type?: string;
+  parking_spots?: number;
+  virtual_tour_url?: string;
+  total_sqm?: number;
 }
 
 export interface UnitType {
@@ -67,6 +74,7 @@ export interface UnitType {
   type_image?: string;
   total_units: number;
   description?: string;
+  amenities?: string[];
 }
 
 export interface Unit {
@@ -79,6 +87,10 @@ export interface Unit {
   price: number;
   image_url?: string;
   notes?: string;
+  // Extended Fields
+  view_type?: string;
+  balcony_sqm?: number;
+  is_furnished?: boolean;
 }
 
 export interface Post {

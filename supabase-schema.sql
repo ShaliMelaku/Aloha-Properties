@@ -72,6 +72,8 @@ CREATE TABLE IF NOT EXISTS public.campaigns (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   subject TEXT NOT NULL,
+  body TEXT,
+  target_filter TEXT,
   audience_size INTEGER NOT NULL,
   sent_by UUID REFERENCES auth.users(id)
 );

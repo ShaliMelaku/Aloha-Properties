@@ -58,6 +58,12 @@ export default function AdminDashboard() {
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead' | 'unit' | 'unitType', id: string, name: string } | null>(null);
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [draftCampaign, setDraftCampaign] = useState<{ subject: string; body: string; targetFilter: string } | null>(null);
+
+  const openMarketingWithDraft = (draft: { subject: string; body: string; targetFilter: string }) => {
+    setDraftCampaign(draft);
+    setActiveTab('marketing');
+  };
 
   // Stats Logic
   const stats = (() => {
@@ -280,7 +286,7 @@ export default function AdminDashboard() {
                 editingProperty={editingProperty}
               />
             )}
-            {activeTab === 'marketing' && <MarketingTab key="marketing" onNotify={notify} onRefreshLeads={fetchLeads} />}
+            {activeTab === 'marketing' && <MarketingTab key={draftCampaign ? `marketing-${Date.now()}` : 'marketing'} onNotify={notify} onRefreshLeads={fetchLeads} initialDraft={draftCampaign} onDraftConsumed={() => setDraftCampaign(null)} />}
             {activeTab === 'content' && (
               <ContentTab 
                 key="content"
@@ -307,7 +313,7 @@ export default function AdminDashboard() {
                 selectedLead={selectedLead}
               />
             )}
-            {activeTab === 'history' && <HistoryTab key="history" history={history} loading={loading} />}
+            {activeTab === 'history' && <HistoryTab key="history" history={history} loading={loading} onRepeatCampaign={openMarketingWithDraft} />}
          </AnimatePresence>
       </main>
 

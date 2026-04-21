@@ -105,6 +105,8 @@ export function ContentTab({
                   </div>
                    <button 
                       onClick={() => setIsAddingPost(false)} 
+                      aria-label="Close Article Editor"
+                      title="Close"
                       className="p-2 opacity-40 hover:opacity-100 transition-opacity"
                    >
                       <X/>
@@ -143,9 +145,14 @@ export function ContentTab({
                      <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4 px-2 flex items-center gap-2"><FileText size={12}/> PDF Brochure</label>
                      <MediaUpload bucket="media-assets" accept="application/pdf" onUploadComplete={(url) => setEditingPost({...editingPost, file_url: url})} label="Upload PDF document" />
                      {editingPost?.file_url && (
-                        <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                           <CheckCircle2 className="text-emerald-500" size={16}/>
-                           <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">PDF Attached</span>
+                        <div className="space-y-4">
+                           <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                              <CheckCircle2 className="text-emerald-500" size={16}/>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">PDF Attached</span>
+                           </div>
+                           <div className="h-64 sm:h-96 w-full rounded-2xl overflow-hidden border border-[var(--border)] relative bg-white">
+                              <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(editingPost.file_url)}&embedded=true`} className="absolute inset-0 w-full h-full border-0" title="PDF Preview" />
+                           </div>
                         </div>
                      )}
                   </div>
@@ -162,14 +169,25 @@ export function ContentTab({
 interface MarketingTabProps {
   onNotify: (type: 'success' | 'error' | 'info', msg: string) => void;
   onRefreshLeads: () => void;
+  initialDraft?: { subject: string; body: string; targetFilter: string } | null;
+  onDraftConsumed?: () => void;
 }
 
-export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
+export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftConsumed }: MarketingTabProps) {
   const [sending, setSending] = useState(false);
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [subject, setSubject] = useState(initialDraft?.subject ?? "");
+  const [body, setBody] = useState(initialDraft?.body ?? "");
+  const [targetFilter, setTargetFilter] = useState(initialDraft?.targetFilter ?? "");
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLead, setNewLead] = useState<Partial<Lead>>({ status: 'new' });
+
+  // consume the draft once mounted
+  const draftConsumedRef = useRef(false);
+  if (initialDraft && !draftConsumedRef.current) {
+    draftConsumedRef.current = true;
+    // already seeded via useState initial values
+    onDraftConsumed?.();
+  }
 
   const handleManualAddLead = async () => {
     if (!newLead.name || !newLead.email) {
@@ -198,7 +216,7 @@ export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
         <div className="space-y-6 relative z-10">
            <div className="space-y-2">
               <label htmlFor="target-recipient" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Recipient Filter (Optional)</label>
-              <input id="target-recipient" placeholder="All Qualified Leads..." className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+              <input id="target-recipient" placeholder="e.g. qualified, all, bole..." value={targetFilter} onChange={e => setTargetFilter(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
            </div>
            <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Subject</label>
@@ -208,7 +226,20 @@ export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Message Body</label>
               <textarea rows={10} placeholder="Type your message here..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] text-sm border border-[var(--border)] focus:border-brand-blue outline-none resize-none" />
            </div>
-           <button onClick={() => onNotify('success', 'Broadcast initialized.')} disabled={sending} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+           <button onClick={async () => {
+              if (!subject.trim() || !body.trim()) { onNotify('error', 'Subject and message body are required.'); return; }
+              setSending(true);
+              try {
+                const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject, body, targetFilter }) });
+                const data = await res.json();
+                if (data.success) onNotify('success', `Broadcast sent to ${data.sent} contacts.`);
+                else throw new Error(data.error || 'Broadcast failed');
+              } catch (e: any) {
+                onNotify('error', e.message);
+              } finally {
+                setSending(false);
+              }
+           }} disabled={sending} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
              {sending ? <Activity className="animate-spin" /> : <>Send Broadcast <Send size={18} /></>}
            </button>
         </div>
@@ -250,7 +281,7 @@ export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
          {isAddingLead && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-lg p-10 space-y-8 relative">
-                  <button onClick={() => setIsAddingLead(false)} className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                  <button onClick={() => setIsAddingLead(false)} aria-label="Close Lead Registration" title="Close" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
                   <div className="space-y-1 text-center">
                      <h4 className="text-3xl font-heading font-black tracking-tighter uppercase">New <span className="opacity-30 italic">Lead.</span></h4>
                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Register a new contact node manually.</p>
@@ -283,9 +314,10 @@ export function MarketingTab({ onNotify, onRefreshLeads }: MarketingTabProps) {
 interface HistoryTabProps {
   history: Campaign[];
   loading: boolean;
+  onRepeatCampaign: (draft: { subject: string; body: string; targetFilter: string }) => void;
 }
 
-export function HistoryTab({ history, loading }: HistoryTabProps) {
+export function HistoryTab({ history, loading, onRepeatCampaign }: HistoryTabProps) {
   if (loading) return <div className="h-40 flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
 
   return (
@@ -307,19 +339,26 @@ export function HistoryTab({ history, loading }: HistoryTabProps) {
                  <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40">Date</th>
                  <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40">Subject</th>
                  <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40 text-right">Audience</th>
+                 <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40 text-right">Actions</th>
               </tr>
            </thead>
            <tbody className="divide-y divide-[var(--border)]">
               {history.map((c) => (
-                <tr key={c.id} className="hover:bg-brand-blue/5 transition-all">
+                <tr key={c.id} className="hover:bg-brand-blue/5 transition-all group">
                   <td className="px-8 py-6 text-xs font-bold opacity-60 tabular-nums">{new Date(c.created_at).toLocaleDateString()}</td>
                   <td className="px-8 py-6 text-sm font-bold">{c.subject}</td>
-                  <td className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-brand-blue text-right">{c.audience_size.toLocaleString()} Contacts</td>
+                  <td className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-brand-blue text-right whitespace-nowrap">{c.audience_size.toLocaleString()} Contacts</td>
+                  <td className="px-8 py-6">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => onRepeatCampaign({ subject: c.subject, body: c.body ?? '', targetFilter: c.target_filter ?? '' })} title="Edit & Repeat" aria-label="Edit and Repeat Campaign" className="px-3 py-2 rounded-lg bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center gap-1"><Edit3 size={11} /> Edit &amp; Repeat</button>
+                      <button onClick={() => onRepeatCampaign({ subject: '', body: '', targetFilter: c.target_filter ?? '' })} title="Same Leads" aria-label="Reuse Campaign Audience" className="px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1"><Users size={11} /> Same Leads</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {history.length === 0 && (
                 <tr>
-                   <td colSpan={3} className="px-8 py-20 text-center text-[10px] font-black uppercase tracking-widest opacity-20">No campaign records found.</td>
+                   <td colSpan={4} className="px-8 py-20 text-center text-[10px] font-black uppercase tracking-widest opacity-20">No campaign records found.</td>
                 </tr>
               )}
            </tbody>

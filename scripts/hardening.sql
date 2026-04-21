@@ -40,9 +40,26 @@ CREATE TABLE IF NOT EXISTS public.property_progress (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- 4. Extend Properties with Modern Metrics
+-- 4. Create Visitors Table for Analytics
+CREATE TABLE IF NOT EXISTS public.visitors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    country TEXT,
+    country_code TEXT,
+    city TEXT,
+    region TEXT,
+    lat NUMERIC,
+    lng NUMERIC,
+    device_type TEXT,
+    browser TEXT,
+    traffic_source TEXT DEFAULT 'direct',
+    path TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- 5. Extend Meta-Tables with Modern Metrics
 DO $$ 
 BEGIN 
+    -- Properties Extensions
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='air_quality_index') THEN
         ALTER TABLE public.properties ADD COLUMN air_quality_index INTEGER DEFAULT 50;
     END IF;
@@ -52,14 +69,53 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='urban_heat_index') THEN
         ALTER TABLE public.properties ADD COLUMN urban_heat_index INTEGER DEFAULT 0;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='discount_percentage') THEN
-        ALTER TABLE public.properties ADD COLUMN discount_percentage INTEGER DEFAULT 0;
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='downpayment_percentage') THEN
         ALTER TABLE public.properties ADD COLUMN downpayment_percentage INTEGER DEFAULT 0;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='discount_percentage') THEN
+        ALTER TABLE public.properties ADD COLUMN discount_percentage INTEGER DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='payment_schedule') THEN
+        ALTER TABLE public.properties ADD COLUMN payment_schedule TEXT DEFAULT 'Flexible Terms';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='tenure_type') THEN
+        ALTER TABLE public.properties ADD COLUMN tenure_type TEXT DEFAULT 'Freehold';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='parking_spots') THEN
+        ALTER TABLE public.properties ADD COLUMN parking_spots INTEGER DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='virtual_tour_url') THEN
+        ALTER TABLE public.properties ADD COLUMN virtual_tour_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='total_sqm') THEN
+        ALTER TABLE public.properties ADD COLUMN total_sqm NUMERIC;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='completion_date') THEN
         ALTER TABLE public.properties ADD COLUMN completion_date TEXT;
+    END IF;
+
+    -- Unit Types Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='amenities') THEN
+        ALTER TABLE public.property_unit_types ADD COLUMN amenities TEXT[];
+    END IF;
+
+    -- Property Units Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='view_type') THEN
+        ALTER TABLE public.property_units ADD COLUMN view_type TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='balcony_sqm') THEN
+        ALTER TABLE public.property_units ADD COLUMN balcony_sqm NUMERIC DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='is_furnished') THEN
+        ALTER TABLE public.property_units ADD COLUMN is_furnished BOOLEAN DEFAULT false;
+    END IF;
+
+    -- Campaigns Extensions (for campaign redux / repeat)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='body') THEN
+        ALTER TABLE public.campaigns ADD COLUMN body TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='target_filter') THEN
+        ALTER TABLE public.campaigns ADD COLUMN target_filter TEXT;
     END IF;
 END $$;
 

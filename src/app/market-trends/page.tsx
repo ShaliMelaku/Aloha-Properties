@@ -201,10 +201,10 @@ export default function MarketTrendsHub() {
                            
                            <div className="flex gap-3">
                                                                <button 
-                                 onClick={() => setSelectedPost(pub)}
+                                 onClick={() => pub.file_url ? setViewingPDF(pub) : setSelectedPost(pub)}
                                  className="flex-1 py-3 bg-brand-blue/5 border border-brand-blue/10 text-brand-blue rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"
                                >
-                                 View Details <ArrowRight size={14} />
+                                 {pub.file_url ? 'View Document' : 'View Details'} <ArrowRight size={14} />
                                </button>
                                <button 
                                  onClick={() => handleShare(pub)}
