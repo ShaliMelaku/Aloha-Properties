@@ -163,6 +163,11 @@ BEGIN
         ALTER TABLE public.property_units ADD COLUMN is_furnished BOOLEAN DEFAULT false;
     END IF;
 
+    -- Visitors Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='visitors' AND column_name='path') THEN
+        ALTER TABLE public.visitors ADD COLUMN path TEXT;
+    END IF;
+
     -- Campaigns Extensions (for campaign redux / repeat)
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='campaigns' AND column_name='body') THEN
         ALTER TABLE public.campaigns ADD COLUMN body TEXT;
