@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { 
-  Users, Download, Filter, Trash2, Eye, Activity,
+  Download, Trash2, Eye, Activity,
   Database, UserCheck, ShieldAlert, FileUp, Search, X, Save, CheckCircle2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,9 +23,9 @@ interface LeadsTabProps {
 
 export function LeadsTab({
   leads, loading, onRefresh, onNotify, 
-  setViewingLead, setSelectedLead, setConfirmDelete, 
-  viewingLead, selectedLead
-}: LeadsTabProps) {
+  setViewingLead, setConfirmDelete, 
+  viewingLead
+}: Omit<LeadsTabProps, 'setSelectedLead' | 'selectedLead'> & { setSelectedLead?: (l: Lead | null) => void; selectedLead?: Lead | null }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showImportModal, setShowImportModal] = useState(false);
@@ -125,7 +125,13 @@ export function LeadsTab({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20" size={16} />
             <input type="text" placeholder="Search Nodes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-[var(--card)] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[var(--border)] focus:border-brand-blue outline-none transition-all" />
           </div>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-4 py-4 bg-[var(--card)] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[var(--border)] focus:border-brand-blue outline-none transition-all">
+          <select
+            title="Filter leads by status"
+            aria-label="Filter leads by status"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-4 py-4 bg-[var(--card)] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[var(--border)] focus:border-brand-blue outline-none transition-all"
+          >
             <option value="all">All Statuses</option>
             <option value="new">New</option>
             <option value="contacted">Contacted</option>
@@ -145,12 +151,12 @@ export function LeadsTab({
       {/* ── Stats ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Total Nodes', value: leads.length, Icon: Database, color: '#3b82f6' },
-          { label: 'Qualified', value: leads.filter(l => l.status === 'qualified').length, Icon: UserCheck, color: '#10b981' },
-          { label: 'New / Urgent', value: leads.filter(l => l.status === 'new').length, Icon: ShieldAlert, color: '#f87171' }
+          { label: 'Total Nodes',  value: leads.length,                                         Icon: Database,   bgCls: 'bg-brand-blue/10',    textCls: 'text-brand-blue'   },
+          { label: 'Qualified',    value: leads.filter(l => l.status === 'qualified').length,    Icon: UserCheck,  bgCls: 'bg-emerald-500/10',   textCls: 'text-emerald-500'  },
+          { label: 'New / Urgent', value: leads.filter(l => l.status === 'new').length,          Icon: ShieldAlert,bgCls: 'bg-red-400/10',       textCls: 'text-red-400'      },
         ].map((stat, i) => (
           <div key={i} className="bg-[var(--card)] p-6 rounded-3xl border border-[var(--border)] flex items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: stat.color + '20', color: stat.color }}><stat.Icon size={28} /></div>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bgCls} ${stat.textCls}`}><stat.Icon size={28} /></div>
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{stat.label}</p>
               <p className="text-2xl font-heading font-black">{stat.value}</p>
@@ -237,7 +243,7 @@ export function LeadsTab({
               >
                 <FileUp className="mx-auto mb-3 opacity-20" size={40} />
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Click to select a .csv file</p>
-                <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+                <input ref={csvInputRef} type="file" accept=".csv" aria-label="Upload CSV file" title="Select a CSV file to import leads" className="hidden" onChange={handleFileChange} />
               </div>
 
               {/* Preview */}
@@ -302,7 +308,13 @@ export function LeadsTab({
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Current Status</label>
-                  <select value={viewingLead.status || 'new'} onChange={e => setViewingLead({...viewingLead, status: e.target.value as Lead['status']})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold uppercase tracking-widest outline-none focus:border-brand-blue">
+                  <select
+                    title="Set lead status"
+                    aria-label="Set lead status"
+                    value={viewingLead.status || 'new'}
+                    onChange={e => setViewingLead({...viewingLead, status: e.target.value as Lead['status']})}
+                    className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold uppercase tracking-widest outline-none focus:border-brand-blue"
+                  >
                     <option value="new">New (Uncontacted)</option>
                     <option value="contacted">Contacted</option>
                     <option value="qualified">Qualified</option>
@@ -322,8 +334,8 @@ export function LeadsTab({
                   onNotify('success', 'Prospect profile updated.');
                   onRefresh();
                   setViewingLead(null);
-                } catch (e: any) {
-                  onNotify('error', e.message || 'Error saving profile');
+                } catch (e: unknown) {
+                  onNotify('error', e instanceof Error ? e.message : 'Error saving profile');
                 }
               }} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
                 <Save size={16} /> Save Changes
