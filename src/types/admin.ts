@@ -26,8 +26,10 @@ export interface PropertyProgress {
   id: string;
   property_id: string;
   percent: number;
+  percentage: number; // Added for compatibility
   status: 'planning' | 'under-construction' | 'topping-out' | 'finishing' | 'delivered';
   status_text: string;
+  label?: string; // Added for compatibility
   created_at: string;
 }
 
