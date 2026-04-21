@@ -134,6 +134,9 @@ export default function AdminDashboard() {
       else if (confirmDelete.type === 'lead') table = 'leads';
       else if (confirmDelete.type === 'post') table = 'posts';
       else if (confirmDelete.type === 'unit') table = 'property_units';
+      else if (confirmDelete.type === 'unitType') table = 'property_unit_types';
+
+      if (!table) throw new Error("Invalid resource type for deletion.");
 
       const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
       if (error) throw error;

@@ -66,7 +66,8 @@ export function PortfolioTab({
       setEditingUnitType(null);
       fetchProperties();
     } catch (e: unknown) {
-      notify('error', e instanceof Error ? e.message : 'Sync Fault');
+      console.error("Unit Type Sync Error:", e);
+      notify('error', e instanceof Error ? `Sync Fault: ${e.message}` : 'Sync Fault: Database Linkage Error');
     }
   };
 
@@ -79,7 +80,8 @@ export function PortfolioTab({
       setEditingUnitInstance(null);
       fetchProperties();
     } catch (e: unknown) {
-      notify('error', e instanceof Error ? e.message : 'Sync Fault');
+      console.error("Unit Instance Sync Error:", e);
+      notify('error', e instanceof Error ? `Sync Fault: ${e.message}` : 'Sync Fault: Database Linkage Error');
     }
   };
 
@@ -434,9 +436,26 @@ export function PortfolioTab({
                   </div>
 
                   <div className="space-y-6">
-                     <div className="space-y-2">
-                        <label htmlFor="unit-identity" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Number (e.g. A-402)</label>
-                        <input id="unit-identity" type="text" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                     <div className="p-4 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex items-center justify-between">
+                        <div>
+                           <p className="text-[8px] font-black uppercase tracking-widest text-brand-blue opacity-60">Linked to Model</p>
+                           <p className="text-xs font-black uppercase text-white/80">{properties.find(p => p.id === activePropertyId)?.unit_types?.find(ut => ut.id === editingUnitInstance?.unit_type_id)?.name || 'Unknown Type'}</p>
+                        </div>
+                        <div className="text-right">
+                           <p className="text-[8px] font-black uppercase tracking-widest text-brand-blue opacity-60">Property ID</p>
+                           <p className="text-[8px] font-mono opacity-30">{activePropertyId?.split('-')[0]}...</p>
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                           <label htmlFor="unit-identity" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Unit Number</label>
+                           <input id="unit-identity" type="text" placeholder="e.g. A-402" value={editingUnitInstance?.unit_number || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                           <label htmlFor="unit-price-spec" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Specific Price (ETB)</label>
+                           <input id="unit-price-spec" type="number" placeholder="Price override" value={editingUnitInstance?.price || 0} onChange={e => setEditingUnitInstance({...editingUnitInstance, price: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm font-bold" />
+                        </div>
                      </div>
 
                      <div className="space-y-2">
