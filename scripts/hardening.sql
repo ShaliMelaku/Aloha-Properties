@@ -103,6 +103,9 @@ BEGIN
     END IF;
 
     -- Property Units Extensions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='unit_type_id') THEN
+        ALTER TABLE public.property_units ADD COLUMN unit_type_id UUID REFERENCES public.property_unit_types(id) ON DELETE SET NULL;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='view_type') THEN
         ALTER TABLE public.property_units ADD COLUMN view_type TEXT;
     END IF;

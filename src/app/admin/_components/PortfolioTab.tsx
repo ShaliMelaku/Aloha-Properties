@@ -170,6 +170,30 @@ export function PortfolioTab({
                       ))}
                    </div>
 
+                   {/* Specific Units Inventory List */}
+                   {prop.units && prop.units.length > 0 && (
+                     <div className="pt-4 border-t border-[var(--border)] mt-4">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 mb-4 px-2">Deployed Units (Inventory)</p>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                           {prop.units.map(u => (
+                              <div key={u.id} className="p-3 bg-black/20 rounded-xl border border-white/5 flex items-center justify-between group">
+                                 <div>
+                                    <p className="text-[10px] font-black text-white/80">{u.unit_number}</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                       <div className={`w-1.5 h-1.5 rounded-full ${u.status === 'available' ? 'bg-emerald-500' : u.status === 'reserved' ? 'bg-amber-500' : 'bg-red-500'}`} />
+                                       <span className="text-[8px] font-bold opacity-40 uppercase">{u.status}</span>
+                                    </div>
+                                 </div>
+                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitInstance(u); setShowUnitModal(true); }} className="p-1.5 hover:text-brand-blue transition-colors"><Settings2 size={12}/></button>
+                                    <button onClick={() => setConfirmDelete({ type: 'unit', id: u.id, name: u.unit_number })} className="p-1.5 hover:text-red-500 transition-colors"><Trash2 size={12}/></button>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                   )}
+
                    <div className="flex gap-2 pt-2">
                       <button onClick={() => { setActivePropertyId(prop.id); setEditingUnitType({ name: '', beds: 0, baths: 0, sqm: 0, price_from: 0 }); setShowUnitTypeModal(true); }} className="flex-1 py-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-blue flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all shadow-md"><PlusCircle size={14}/> Manage Unit Inventory & Types</button>
                    </div>
@@ -399,7 +423,7 @@ export function PortfolioTab({
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-xl p-10 space-y-8 relative overflow-y-auto max-h-[90vh]">
                   <button onClick={() => setShowUnitModal(false)} aria-label="Close Unit Modal" title="Close Modal" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
                   <div className="space-y-1">
-                     <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">Add <span className="opacity-30 italic">Unit Instance.</span></h4>
+                     <h4 className="text-2xl font-heading font-black tracking-tighter uppercase">{editingUnitInstance?.id ? 'Edit' : 'Add'} <span className="opacity-30 italic">Unit Instance.</span></h4>
                      <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Manage inventory for specific property units.</p>
                   </div>
 
@@ -448,7 +472,7 @@ export function PortfolioTab({
                      </div>
                   </div>
 
-                  <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02]">Deploy Unit Instance</button>
+                  <button onClick={handleSaveUnitInstance} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02]">                     {editingUnitInstance?.id ? 'Update Unit Node' : 'Deploy Unit Instance'}</button>
                </motion.div>
             </div>
          )}
