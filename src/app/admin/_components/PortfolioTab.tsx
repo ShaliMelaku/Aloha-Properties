@@ -48,7 +48,7 @@ export function PortfolioTab({
   newProp, setNewProp, handleCreateProperty, setEditingProperty,
   setConfirmDelete,
   formatPrice, notify, editingProperty, handleUpdateProperty,
-  fetchProperties
+  fetchProperties, uploadFile
 }: PortfolioTabProps) {
 
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
@@ -289,6 +289,28 @@ export function PortfolioTab({
                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 px-4">PDF Brochure URL</label>
                        <div className="flex gap-2">
                           <input type="text" placeholder="https://example.com/brochure.pdf" value={editingProperty?.pdf_brochure_url || newProp.pdf_brochure_url || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, pdf_brochure_url: e.target.value}) : setNewProp({...newProp, pdf_brochure_url: e.target.value})} className="flex-1 px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-bold outline-none border border-[var(--border)] focus:border-brand-blue" />
+                          <button 
+                            type="button"
+                            onClick={async () => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'application/pdf';
+                              input.onchange = async (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
+                                if (file) {
+                                  const url = await uploadFile(file);
+                                  if (url) {
+                                    if (editingProperty) setEditingProperty({...editingProperty, pdf_brochure_url: url});
+                                    else setNewProp({...newProp, pdf_brochure_url: url});
+                                  }
+                                }
+                              };
+                              input.click();
+                            }}
+                            className="px-6 bg-brand-blue/10 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all"
+                          >
+                            Upload PDF
+                          </button>
                        </div>
                     </div>
 

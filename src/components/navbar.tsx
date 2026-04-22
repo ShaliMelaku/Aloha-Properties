@@ -110,7 +110,7 @@ export function Navbar() {
                </motion.div>
              </button>
  
-             <Link href="#contact" className="btn-premium-primary text-xs tracking-wider uppercase">
+             <Link href="/contact" className="btn-premium-primary text-xs tracking-wider uppercase">
                Inquire
              </Link>
            </div>

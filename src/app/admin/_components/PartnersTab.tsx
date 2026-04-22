@@ -109,7 +109,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
               <h3 className="text-sm font-black uppercase tracking-widest">
                 {editing.id ? 'Edit Partner' : 'New Partner'}
               </h3>
-              <button onClick={() => { setEditing(null); setIsAdding(false); }} className="w-8 h-8 rounded-full bg-slate-500/10 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition-colors">
+              <button onClick={() => { setEditing(null); setIsAdding(false); }} title="Close Modal" className="w-8 h-8 rounded-full bg-slate-500/10 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition-colors">
                 <X size={14} />
               </button>
             </div>
@@ -129,6 +129,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
                   <input
                     type="file"
                     accept="image/*"
+                    title="Upload Company Logo"
                     onChange={handleLogoUpload}
                     className="block text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:bg-brand-blue/10 file:text-brand-blue hover:file:bg-brand-blue hover:file:text-white file:transition-all cursor-pointer"
                   />
@@ -158,6 +159,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
                 <label className="text-[9px] font-black uppercase opacity-40 ml-1">Category</label>
                 <select
                   value={editing.category || 'Developer'}
+                  title="Company Category"
                   onChange={e => setEditing(prev => ({ ...prev, category: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold"
                 >
@@ -183,6 +185,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
                 <input
                   type="number"
                   min={0}
+                  title="Sort Order"
                   value={editing.sort_order ?? 0}
                   onChange={e => setEditing(prev => ({ ...prev, sort_order: Number(e.target.value) }))}
                   className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold"
@@ -203,6 +206,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setEditing(prev => ({ ...prev, is_active: !prev?.is_active }))}
+                  title="Toggle Partner Visibility"
                   className={`w-10 h-6 rounded-full transition-all relative ${editing.is_active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                 >
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${editing.is_active ? 'left-5' : 'left-1'}`} />
@@ -283,6 +287,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
                 </button>
                 <button
                   onClick={() => handleDelete(company.id!, company.name)}
+                  title="Delete Partner"
                   className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
                 >
                   <Trash2 size={12} />

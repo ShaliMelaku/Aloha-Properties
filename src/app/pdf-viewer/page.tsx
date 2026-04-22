@@ -68,16 +68,12 @@ function PDFViewerContent() {
       </header>
 
       {/* Viewer Main */}
-      <main className="flex-1 relative bg-slate-900 overflow-hidden">
-        {/* We use an iframe with the Google Docs viewer shell to mask the origin somewhat and provide a better experience than raw browser PDF loading */}
+      <main className="flex-1 relative bg-slate-900">
         <iframe 
           src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`} 
-          className="absolute inset-0 w-full h-full border-0"
+          className="w-full h-full border-0"
           title={title}
         />
-        
-        {/* Privacy Shield - prevents right click on the frame area if needed */}
-        <div className="absolute inset-0 pointer-events-none border-[12px] border-black/20" />
       </main>
 
       {/* Footer / Status */}

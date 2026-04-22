@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
-import { InquiryModal } from "./inquiry-modal";
 import { useComparison } from "@/context/comparison-context";
 import dynamic from "next/dynamic";
 
@@ -61,7 +60,6 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
   // Use unit_types (new model) with fallback to legacy units
   const hasTypes = property.unit_types && property.unit_types.length > 0;
@@ -308,13 +306,13 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
             >
               <Banknote size={20} className={accordionOpen ? 'text-brand-blue' : 'opacity-40'} />
             </button>
-            <button
-              onClick={() => setIsInquiryModalOpen(true)}
+            <Link
+              href={`/contact?interest=${encodeURIComponent(property.name)}`}
               className="col-span-4 btn-premium-primary w-full flex items-center justify-center gap-2 group/btn"
             >
               Secure Inquiry
               <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-            </button>
+            </Link>
           </div>
 
           {property.pdf_brochure_url && (
@@ -330,11 +328,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
           )}
         </div>
 
-        <InquiryModal 
-          isOpen={isInquiryModalOpen} 
-          onClose={() => setIsInquiryModalOpen(false)} 
-          propertyName={property.name} 
-        />
+
 
         {/* Payment Plans */}
         <AnimatePresence>

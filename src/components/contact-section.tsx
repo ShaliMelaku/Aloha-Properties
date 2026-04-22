@@ -1,12 +1,12 @@
-"use client";
-
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { MapPin, Mail, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStatus } from "@/context/status-context";
+import { useSearchParams } from "next/navigation";
 
-export function ContactSection() {
+function ContactForm() {
   const { notify } = useStatus();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -14,6 +14,13 @@ export function ContactSection() {
     interest: "",
     message: ""
   });
+
+  useEffect(() => {
+    const interest = searchParams.get('interest');
+    if (interest) {
+      setFormData(prev => ({ ...prev, interest: decodeURIComponent(interest) }));
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
@@ -56,6 +63,88 @@ export function ContactSection() {
     window.open(`https://wa.me/251934132115?text=${text}`, "_blank");
   };
 
+  return (
+     <div className="bg-[var(--card)] p-8 md:p-12 rounded-[2.4rem] border border-[var(--border)] relative overflow-hidden">
+        <h3 className="font-heading text-2xl font-black tracking-tight mb-8 text-[var(--foreground)]">Send a Message</h3>
+        
+        <form className="space-y-6" onSubmit={handleEmailSubmit}>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Name</label>
+                <input 
+                 id="name" 
+                 type="text" 
+                 value={formData.name}
+                 onChange={handleChange}
+                 placeholder="John Doe" 
+                 required 
+                 className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm text-[var(--foreground)]" 
+               />
+             </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Email</label>
+                <input 
+                 id="email" 
+                 type="email" 
+                 value={formData.email}
+                 onChange={handleChange}
+                 placeholder="john@example.com" 
+                 required 
+                 className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm text-[var(--foreground)]" 
+               />
+             </div>
+           </div>
+
+           <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Area of Interest</label>
+              <div className="relative">
+                <input 
+                  id="interest" 
+                  type="text"
+                  value={formData.interest}
+                  onChange={handleChange}
+                  placeholder="e.g. Residential Acquisition" 
+                  required 
+                  title="Your area of interest"
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm text-[var(--foreground)]"
+                />
+              </div>
+           </div>
+
+           <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Message</label>
+              <textarea 
+               id="message" 
+               rows={4} 
+               value={formData.message}
+               onChange={handleChange}
+               placeholder="Tell us about your requirements..." 
+               className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm resize-none text-[var(--foreground)]" 
+             />
+           </div>
+
+           <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <button 
+                 type="button" 
+                 onClick={handleWhatsApp}
+                 className="flex-1 px-8 py-5 rounded-2xl bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all"
+              >
+                 WhatsApp
+              </button>
+              <button 
+                 type="submit" 
+                 disabled={loading}
+                 className="flex-1 px-8 py-5 rounded-2xl bg-brand-blue text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 hover:bg-brand-blue-deep disabled:opacity-50 active:scale-95 transition-all"
+              >
+                 {loading ? "Transmitting..." : "Send Email"}
+              </button>
+           </div>
+        </form>
+     </div>
+  );
+}
+
+export function ContactSection() {
   return (
     <section id="contact" className="py-32 relative">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-blue/5 rounded-full blur-[100px] -z-10" />
@@ -128,84 +217,9 @@ export function ContactSection() {
             viewport={{ once: true }}
             className="p-1 w-full rounded-[2.5rem] bg-gradient-to-br from-brand-blue/20 to-transparent shadow-2xl"
           >
-            <div className="bg-[var(--card)] p-8 md:p-12 rounded-[2.4rem] border border-[var(--border)] relative overflow-hidden">
-               <h3 className="font-heading text-2xl font-black tracking-tight mb-8 text-[var(--foreground)]">Send a Message</h3>
-               
-               <form className="space-y-6" onSubmit={handleEmailSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Name</label>
-                       <input 
-                        id="name" 
-                        type="text" 
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="John Doe" 
-                        required 
-                        className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm text-[var(--foreground)]" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Email</label>
-                       <input 
-                        id="email" 
-                        type="email" 
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="john@example.com" 
-                        required 
-                        className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm text-[var(--foreground)]" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Area of Interest</label>
-                     <select 
-                      id="interest" 
-                      value={formData.interest}
-                      onChange={handleChange}
-                      required 
-                      title="Select your area of interest"
-                      className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm appearance-none cursor-pointer text-[var(--foreground)]"
-                    >
-                        <option value="">Select your interest...</option>
-                        <option>Residential Acquisition</option>
-                        <option>Developer Marketing</option>
-                        <option>Investment Advisory</option>
-                     </select>
-                  </div>
-
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-2 text-[var(--foreground)]">Message</label>
-                     <textarea 
-                      id="message" 
-                      rows={4} 
-                      value={formData.message}
-                      onChange={handleChange}
-                      placeholder="Tell us about your requirements..." 
-                      className="w-full px-6 py-4 rounded-2xl bg-slate-500/5 border border-transparent focus:border-brand-blue outline-none transition-all font-bold text-sm resize-none text-[var(--foreground)]" 
-                    />
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                     <button 
-                        type="button" 
-                        onClick={handleWhatsApp}
-                        className="flex-1 px-8 py-5 rounded-2xl bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all"
-                     >
-                        WhatsApp
-                     </button>
-                     <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="flex-1 px-8 py-5 rounded-2xl bg-brand-blue text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 hover:bg-brand-blue-deep disabled:opacity-50 active:scale-95 transition-all"
-                     >
-                        {loading ? "Transmitting..." : "Send Email"}
-                     </button>
-                  </div>
-               </form>
-            </div>
+            <Suspense fallback={<div className="bg-[var(--card)] p-12 rounded-[2.4rem] border border-[var(--border)] h-[600px] animate-pulse" />}>
+              <ContactForm />
+            </Suspense>
           </motion.div>
         </div>
       </div>
