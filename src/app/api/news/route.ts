@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
     if (countError) throw countError;
 
-    const DAILY_LIMIT = 5; 
+    const DAILY_LIMIT = 3; 
     // Cron bypasses the limit to ensure daily consistency
     if (!isCron && count && count >= DAILY_LIMIT) {
       return NextResponse.json({ 
@@ -38,14 +38,9 @@ export async function GET(request: Request) {
     // 2. Fetch fresh news
     const articles = await fetchEthiopiaRealEstateNews();
     
-    // 3. Filter by Recency (Max 30 days old)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const relevantArticles = articles.filter(art => {
-      const pubDate = new Date(art.publishedAt);
-      return pubDate >= thirtyDaysAgo;
-    });
+    // 3. Guarantee at least 3 articles (prioritizing the freshest available)
+    // We removed the strict 30-day filter because the user wants guaranteed content volume.
+    const relevantArticles = articles;
 
     const sliced = relevantArticles.slice(0, DAILY_LIMIT);
 

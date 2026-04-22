@@ -371,7 +371,7 @@ export function PortfolioTab({
                         </div>
                      )}
 
-                     {editingProperty && (
+                     {editingProperty ? (
                         <div className="pt-8 border-t border-[var(--border)] mt-8">
                            <div className="flex justify-between items-center mb-6">
                               <h4 className="text-sm font-black uppercase tracking-widest opacity-60">Construction Milestones</h4>
@@ -390,6 +390,16 @@ export function PortfolioTab({
                                     </div>
                                  </div>
                               ))}
+                           </div>
+                        </div>
+                     ) : (
+                        <div className="pt-8 border-t border-[var(--border)] mt-8 opacity-40 grayscale pointer-events-none">
+                           <div className="flex justify-between items-center mb-6">
+                              <h4 className="text-sm font-black uppercase tracking-widest">Construction Milestones</h4>
+                              <span className="text-[9px] font-black uppercase tracking-widest border border-white/20 px-2 py-1 rounded">Locked</span>
+                           </div>
+                           <div className="p-6 text-center border border-dashed border-[var(--border)] rounded-2xl">
+                              <p className="text-[10px] font-black uppercase tracking-widest">Save property to unlock milestone management.</p>
                            </div>
                         </div>
                      )}
@@ -574,10 +584,19 @@ export function PortfolioTab({
                               <h5 className="text-lg font-black uppercase tracking-tight">{editingUnitInstance.id ? 'Modify' : 'Deploy'} Unit Node</h5>
                               <button onClick={() => setEditingUnitInstance(null)} className="text-[10px] font-black uppercase opacity-40 hover:text-red-500">Cancel</button>
                            </div>
-                           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                               <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase opacity-40 ml-4">Unit #</label>
                                  <input type="text" title="Unit Number" placeholder="e.g. 101" value={editingUnitInstance.unit_number} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_number: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Model Type</label>
+                                 <select title="Model Type" value={editingUnitInstance.unit_type_id || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_type_id: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
+                                    <option value="">None / Base</option>
+                                    {properties.find(p => p.id === activePropertyId)?.unit_types?.map((ut: any) => (
+                                       <option key={ut.id} value={ut.id}>{ut.name}</option>
+                                    ))}
+                                 </select>
                               </div>
                               <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase opacity-40 ml-4">Status</label>

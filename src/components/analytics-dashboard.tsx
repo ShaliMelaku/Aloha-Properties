@@ -36,11 +36,20 @@ interface VisitorRecord {
 
 interface AnalyticsUnit {
   status: string;
+  price?: number;
+  unit_type_id?: string;
 }
+interface AnalyticsUnitType {
+  id: string;
+  price_from?: number;
+  total_units?: number;
+  status?: string;
+}
+
 interface AnalyticsProperty {
   name: string;
   units: AnalyticsUnit[];
-  unit_types: unknown[];
+  unit_types: AnalyticsUnitType[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -110,10 +119,26 @@ function buildDevices(visitors: VisitorRecord[]) {
 }
 
 function buildOperationalValue(leads: LeadRecord[], properties: AnalyticsProperty[]) {
-  const leadValue = leads.length * 150000;
-  const soldUnits = properties.reduce((acc, p) => acc + (p.units?.filter(u => u.status === 'sold').length || 0), 0);
-  const totalValue = leadValue + (soldUnits * 450000); 
-  return totalValue;
+  let soldValue = 0;
+  
+  properties.forEach(p => {
+    if (p.units && p.units.length > 0) {
+       p.units.forEach((u: any) => {
+          if (u.status === 'sold') {
+             // If physical unit has price, use it, else fall back to model type base price
+             soldValue += (u.price || p.unit_types?.find((ut: any) => ut.id === u.unit_type_id)?.price_from || 0);
+          }
+       });
+    } else if (p.unit_types && p.unit_types.length > 0) {
+       p.unit_types.forEach((ut: any) => {
+          if (ut.status === 'sold_out') {
+             soldValue += ((ut.price_from || 0) * (ut.total_units || 1));
+          }
+       });
+    }
+  });
+  
+  return soldValue;
 }
 
 function buildInventory(properties: AnalyticsProperty[]) {
@@ -233,7 +258,7 @@ export function AnalyticsDashboard() {
       const [lr, vr, pr] = await Promise.all([
         supabaseClient.from("leads").select("*").order("created_at", { ascending: false }),
         supabaseClient.from("visitors").select("*").order("created_at", { ascending: false }).limit(10000),
-        supabaseClient.from("properties").select("name, units:property_units(status), unit_types:property_unit_types(*)"),
+        supabaseClient.from("properties").select("name, units:property_units(status,price,unit_type_id), unit_types:property_unit_types(*)"),
       ]);
       if (lr.error) throw lr.error;
       if (vr.error) throw vr.error;
