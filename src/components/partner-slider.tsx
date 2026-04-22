@@ -55,43 +55,86 @@ export function PartnerSlider() {
       <div className="absolute left-0 top-0 bottom-0 w-40 bg-gradient-to-r from-[var(--background)] to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-40 bg-gradient-to-l from-[var(--background)] to-transparent z-10 pointer-events-none" />
 
-      <div className="flex select-none">
-        <motion.div
-          animate={{ x: ["0%", "-33.333%"] }}
-          transition={{
-            repeat: Infinity,
-            ease: "linear",
-            duration: 35,
-          }}
-          className="flex gap-12 px-6 w-max items-center"
-        >
-          {duplicatedPartners.map((partner, idx) => {
-            const Icon = fallbackIcons[partner.category || 'default'] || fallbackIcons.default;
-            return (
-              <a 
-                key={idx} 
-                href={partner.website_url || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-4 px-8 py-5 bg-slate-500/5 hover:bg-brand-blue transition-all duration-500 rounded-[2rem] border border-[var(--border)] group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white dark:bg-luxury-charcoal flex items-center justify-center text-brand-blue group-hover:bg-white transition-colors relative overflow-hidden">
-                  {partner.logo_url ? (
-                    <Image src={partner.logo_url} alt={partner.name} fill className="object-contain p-2" sizes="40px" />
-                  ) : (
-                    <Icon size={20} />
-                  )}
-                </div>
-                <div className="flex flex-col">
-                   <span className="font-bold text-sm group-hover:text-white transition-colors whitespace-nowrap">{partner.name}</span>
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-40 group-hover:text-white/60 transition-colors flex items-center gap-1">
-                      <Verified size={10} /> {partner.category || 'Verified Partner'}
-                   </span>
-                </div>
-              </a>
-            );
-          })}
-        </motion.div>
+      <div className="flex flex-col gap-6">
+        {/* First Line: Normal Speed, Leftward */}
+        <div className="flex select-none">
+          <motion.div
+            animate={{ x: ["0%", "-33.333%"] }}
+            transition={{
+              repeat: Infinity,
+              ease: "linear",
+              duration: 35,
+            }}
+            className="flex gap-6 md:gap-12 px-3 md:px-6 w-max items-center"
+          >
+            {duplicatedPartners.map((partner, idx) => {
+              const Icon = fallbackIcons[partner.category || 'default'] || fallbackIcons.default;
+              return (
+                <a 
+                  key={`row1-${idx}`} 
+                  href={partner.website_url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 px-8 py-5 bg-slate-500/5 hover:bg-brand-blue transition-all duration-500 rounded-[2rem] border border-[var(--border)]"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-luxury-charcoal flex items-center justify-center text-brand-blue group-hover:bg-white transition-colors relative overflow-hidden shrink-0">
+                    {partner.logo_url ? (
+                      <Image src={partner.logo_url} alt={partner.name} fill className="object-contain p-2" sizes="40px" />
+                    ) : (
+                      <Icon size={20} />
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                     <span className="font-bold text-sm group-hover:text-white transition-colors whitespace-nowrap">{partner.name}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest opacity-40 group-hover:text-white/60 transition-colors flex items-center gap-1">
+                        <Verified size={10} /> {partner.category || 'Verified Partner'}
+                     </span>
+                  </div>
+                </a>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        {/* Second Line: Off-speed, Rightward */}
+        <div className="flex select-none">
+          <motion.div
+            animate={{ x: ["-33.333%", "0%"] }}
+            transition={{
+              repeat: Infinity,
+              ease: "linear",
+              duration: 45,
+            }}
+            className="flex gap-6 md:gap-12 px-3 md:px-6 w-max items-center"
+          >
+            {duplicatedPartners.map((partner, idx) => {
+              const Icon = fallbackIcons[partner.category || 'default'] || fallbackIcons.default;
+              return (
+                <a 
+                  key={`row2-${idx}`} 
+                  href={partner.website_url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 px-8 py-5 bg-slate-500/5 hover:bg-brand-blue transition-all duration-500 rounded-[2rem] border border-[var(--border)]"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-luxury-charcoal flex items-center justify-center text-brand-blue group-hover:bg-white transition-colors relative overflow-hidden shrink-0">
+                    {partner.logo_url ? (
+                      <Image src={partner.logo_url} alt={partner.name} fill className="object-contain p-2" sizes="40px" />
+                    ) : (
+                      <Icon size={20} />
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                     <span className="font-bold text-sm group-hover:text-white transition-colors whitespace-nowrap">{partner.name}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest opacity-40 group-hover:text-white/60 transition-colors flex items-center gap-1">
+                        <Verified size={10} /> {partner.category || 'Verified Partner'}
+                     </span>
+                  </div>
+                </a>
+              );
+            })}
+          </motion.div>
+        </div>
       </div>
     </div>
   );
