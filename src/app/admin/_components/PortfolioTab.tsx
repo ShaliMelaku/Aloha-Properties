@@ -500,7 +500,7 @@ export function PortfolioTab({
                               <h5 className="text-lg font-black uppercase tracking-tight">{editingUnitType.id ? 'Edit' : 'Configure'} Model Type</h5>
                               <button onClick={() => setEditingUnitType(null)} className="text-[10px] font-black uppercase opacity-40 hover:text-red-500">Cancel</button>
                            </div>
-                           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                               <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase opacity-40 ml-4">Model Name</label>
                                  <input type="text" title="Model Name" placeholder="e.g. Type A" value={editingUnitType.name} onChange={e => setEditingUnitType({...editingUnitType, name: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
@@ -517,8 +517,15 @@ export function PortfolioTab({
                                  <input type="number" title="Area SQM" placeholder="0" value={editingUnitType.sqm} onChange={e => setEditingUnitType({...editingUnitType, sqm: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
                               </div>
                               <div className="space-y-2">
-                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Base Price (ETB)</label>
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Base Price</label>
                                  <input type="number" title="Base Price" placeholder="0" value={editingUnitType.price_from} onChange={e => setEditingUnitType({...editingUnitType, price_from: parseInt(e.target.value)})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase opacity-40 ml-4">Availability Status</label>
+                                 <select title="Model Status" value={editingUnitType.status || 'available'} onChange={e => setEditingUnitType({...editingUnitType, status: e.target.value as 'available'|'sold_out'})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
+                                    <option value="available">Available</option>
+                                    <option value="sold_out">Sold Out</option>
+                                 </select>
                               </div>
                            </div>
                            <div className="space-y-4">

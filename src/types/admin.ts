@@ -84,6 +84,7 @@ export interface UnitType {
   discount_rules?: { downpayment: number; discount: number }[];
   payment_schedule?: string;
   downpayment_percentage?: number;
+  status?: 'available' | 'sold_out';
 }
 
 export interface Unit {

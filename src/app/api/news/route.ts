@@ -38,13 +38,13 @@ export async function GET(request: Request) {
     // 2. Fetch fresh news
     const articles = await fetchEthiopiaRealEstateNews();
     
-    // 3. Filter by Recency (Max 7 days old)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // 3. Filter by Recency (Max 30 days old)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     const relevantArticles = articles.filter(art => {
       const pubDate = new Date(art.publishedAt);
-      return pubDate >= sevenDaysAgo;
+      return pubDate >= thirtyDaysAgo;
     });
 
     const sliced = relevantArticles.slice(0, DAILY_LIMIT);

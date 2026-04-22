@@ -22,23 +22,33 @@ function AvailabilityBadge({ type }: { type: SupabaseUnitType }) {
   const available = type.available_count || 0;
   const pct = total > 0 ? Math.round((available / total) * 100) : 0;
 
-  if (available === 0) {
+  if (type.status === 'sold_out' || (!type.status && available === 0)) {
     return (
       <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-red-400 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
         <XCircle size={10} /> Sold Out
       </span>
     );
   }
-  if (pct <= 20) {
+  
+  if (type.status === 'available' && available === 0) {
+    return (
+      <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+        <CheckCircle size={10} /> Available
+      </span>
+    );
+  }
+
+  if (pct <= 20 && available > 0) {
     return (
       <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
         <Clock size={10} /> {available} Left
       </span>
     );
   }
+  
   return (
     <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-      <CheckCircle size={10} /> {available} Available
+      <CheckCircle size={10} /> {available > 0 ? `${available} Available` : 'Available'}
     </span>
   );
 }

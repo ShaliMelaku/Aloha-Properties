@@ -64,7 +64,7 @@ export async function saveUnitType(type: Partial<UnitType>) {
 export async function saveUnit(unit: Partial<Unit>) {
   const { id, ...payload } = unit;
   
-  if (id) {
+  if (id && id.trim() !== '') {
     const { error } = await supabaseClient
       .from('property_units')
       .update(payload)
@@ -96,7 +96,7 @@ export async function deleteUnitType(id: string) {
 
 export async function saveProgress(prog: any) {
   const { id, ...payload } = prog;
-  if (id) {
+  if (id && id.trim() !== '') {
     const { error } = await supabaseClient
       .from('property_progress')
       .update(payload)

@@ -124,12 +124,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                         <h4 className="text-xl font-heading font-black mb-3 leading-tight">{post.type === 'report' ? 'Download Full Report' : 'Download Complete Guide'}</h4>
                         <p className="text-xs text-white/50 font-medium leading-relaxed mb-6">Get the detailed PDF asset including comprehensive data points and high-resolution visuals.</p>
                         <a 
-                          href={post.file_url} 
+                          href={`https://docs.google.com/viewer?url=${encodeURIComponent(post.file_url)}&embedded=true`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 bg-brand-blue text-white w-full justify-center px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue-deep transition-all shadow-lg shadow-brand-blue/20"
                         >
-                           Preview & Download PDF <ExternalLink size={12} />
+                           Mobile Preview & Download <ExternalLink size={12} />
                         </a>
                      </div>
                   )}

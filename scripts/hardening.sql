@@ -121,6 +121,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='downpayment_percentage') THEN
         ALTER TABLE public.property_unit_types ADD COLUMN downpayment_percentage INTEGER DEFAULT 0;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_unit_types' AND column_name='status') THEN
+        ALTER TABLE public.property_unit_types ADD COLUMN status TEXT DEFAULT 'available';
+    END IF;
 
     -- Property Units Extensions
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='property_units' AND column_name='unit_type_id') THEN
