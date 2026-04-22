@@ -370,3 +370,6 @@ BEGIN
     END IF;
 END $$;
 
+-- 14. Reload PostgREST Schema Cache
+NOTIFY pgrst, 'reload schema';
+

@@ -21,11 +21,11 @@ export async function GET(req: Request) {
     // 1. Check if trusted_companies exists
     const { error: tableError } = await supabase.from('trusted_companies').select('id').limit(1);
     
-    if (tableError && tableError.message.includes('does not exist')) {
+    if (tableError && (tableError.message.includes('does not exist') || tableError.message.includes('schema cache'))) {
        return NextResponse.json({ 
-         error: 'Schema Missing',
-         message: 'The "trusted_companies" table does not exist. Please run the SQL in scripts/hardening.sql in your Supabase SQL Editor.',
-         sql_tip: 'CREATE TABLE public.trusted_companies (...)'
+         error: 'Schema Missing or Cache Stale',
+         message: 'The "trusted_companies" table is either missing or the Supabase schema cache is stale. Please copy the contents of "scripts/hardening.sql" and run it in your Supabase SQL Editor. If the table already exists, run: NOTIFY pgrst, \'reload schema\';',
+         sql_tip: 'NOTIFY pgrst, \'reload schema\';'
        }, { status: 404 });
     }
 
