@@ -16,10 +16,18 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 
-export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+export function CurrencyProvider({ 
+  children,
+  isAdmin = false
+}: { 
+  children: React.ReactNode;
+  isAdmin?: boolean;
+}) {
+  const getStorageKey = () => isAdmin ? "aloha-admin-currency" : "aloha-visitor-currency";
+
   const [currency, setCurrency] = useState<Currency>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("aloha-currency") as Currency;
+      const saved = localStorage.getItem(getStorageKey()) as Currency;
       if (saved && (saved === "ETB" || saved === "USD")) return saved;
     }
     return "ETB";
@@ -48,7 +56,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetCurrency = (curr: Currency) => {
     setCurrency(curr);
-    localStorage.setItem("aloha-currency", curr);
+    localStorage.setItem(getStorageKey(), curr);
   };
 
   const convertPrice = (etbPrice: number) => {

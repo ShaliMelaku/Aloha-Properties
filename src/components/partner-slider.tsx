@@ -22,7 +22,7 @@ export function PartnerSlider() {
     fetchPartners();
   }, []);
 
-  const fallbackIcons: Record<string, any> = {
+  const fallbackIcons: Record<string, typeof Building2> = {
     'Developer': Building2,
     'Bank': Landmark,
     'Architecture': TowerControl,

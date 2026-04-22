@@ -45,7 +45,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
     if (!editing?.name?.trim()) { notify('error', 'Company name is required.'); return; }
     try {
       if (editing.id) {
-        const { id, created_at: _ca, ...payload } = editing as TrustedCompany;
+        const { id, created_at: _, ...payload } = editing as TrustedCompany;
         const { error } = await supabaseClient.from('trusted_companies').update(payload).eq('id', id!);
         if (error) throw error;
       } else {

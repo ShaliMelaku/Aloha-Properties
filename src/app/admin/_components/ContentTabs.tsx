@@ -7,7 +7,7 @@ import {
   Plus, Edit3, Trash2, FileText, Send, 
   Activity, Zap, Download, Database,
   X, ImageIcon, CheckCircle2,
-  UserPlus, Users
+  Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Post, Lead, Campaign } from "@/types/admin";
@@ -179,30 +179,41 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
   const [subject, setSubject] = useState(initialDraft?.subject ?? "");
   const [body, setBody] = useState(initialDraft?.body ?? "");
   const [targetFilter, setTargetFilter] = useState(initialDraft?.targetFilter ?? "");
-  const [isAddingLead, setIsAddingLead] = useState(false);
-  const [newLead, setNewLead] = useState<Partial<Lead>>({ status: 'new' });
+  const [isImporting, setIsImporting] = useState(false);
+  const [importData, setImportData] = useState<string>("");
 
   // consume the draft once mounted
   const draftConsumedRef = useRef(false);
   if (initialDraft && !draftConsumedRef.current) {
     draftConsumedRef.current = true;
-    // already seeded via useState initial values
     onDraftConsumed?.();
   }
 
-  const handleManualAddLead = async () => {
-    if (!newLead.name || !newLead.email) {
-      onNotify('error', 'Name and Email are required.');
+  const handleCsvImport = async () => {
+    if (!importData.trim()) {
+      onNotify('error', 'Please paste CSV data first.');
       return;
     }
+    
     try {
-      await saveLead(newLead);
-      onNotify('success', 'Lead successfully registered.');
-      setIsAddingLead(false);
-      setNewLead({ status: 'new' });
+      const lines = importData.split('\n').filter(l => l.trim());
+      const leads: Partial<Lead>[] = lines.map(line => {
+        const [name, email, interest] = line.split(',').map(s => s.trim());
+        return { name, email, interest, status: 'new' as const };
+      }).filter(l => l.name && l.email);
+
+      if (leads.length === 0) throw new Error("No valid lead data found (Format: Name, Email, Interest)");
+
+      for (const lead of leads) {
+        await saveLead(lead);
+      }
+
+      onNotify('success', `Successfully imported ${leads.length} leads.`);
+      setIsImporting(false);
+      setImportData("");
       onRefreshLeads();
     } catch (e: unknown) {
-      onNotify('error', e instanceof Error ? e.message : 'Registry Error');
+      onNotify('error', e instanceof Error ? e.message : 'Import Error');
     }
   };
 
@@ -251,14 +262,14 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
       <div className="space-y-8">
          <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 space-y-8 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center text-brand-blue mb-2">
-               <UserPlus size={40} />
+               <Download size={40} />
             </div>
             <div className="space-y-2">
-               <h2 className="text-2xl font-heading font-black tracking-tighter uppercase">Manual <span className="opacity-30 italic">Registration.</span></h2>
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-40 max-w-xs">Directly add potential investors and interested parties to the registry.</p>
+               <h2 className="text-2xl font-heading font-black tracking-tighter uppercase">CSV <span className="opacity-30 italic">Import.</span></h2>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-40 max-w-xs">Bulk import leads from external sources or junk datasets.</p>
             </div>
-            <button onClick={() => setIsAddingLead(true)} className="px-10 py-5 bg-[var(--background)] border border-brand-blue/30 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all">
-               Add New Lead
+            <button onClick={() => setIsImporting(true)} className="px-10 py-5 bg-[var(--background)] border border-brand-blue/30 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all">
+               Import Leads
             </button>
          </div>
 
@@ -269,50 +280,36 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Lead Database Status</p>
                </div>
                <div className="flex items-baseline gap-2">
-                  <p className="text-5xl font-heading font-black tracking-tighter tabular-nums">Connected</p>
+                  <p className="text-5xl font-heading font-black tracking-tighter tabular-nums">Active</p>
                </div>
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Real-time synchronization active.</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-60">System logging integrated with Lead CRM.</p>
             </div>
             <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform"><Database size={160} /></div>
          </div>
       </div>
 
-      {/* ─── ADD LEAD MODAL ──────────────────────────────────────────────────────── */}
+      {/* ─── IMPORT LEAD MODAL ────────────────────────────────────────────────────── */}
       <AnimatePresence>
-         {isAddingLead && (
+         {isImporting && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-lg p-10 space-y-8 relative">
-                  <button onClick={() => setIsAddingLead(false)} aria-label="Close Lead Registration" title="Close" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                  <button onClick={() => setIsImporting(false)} aria-label="Close Import" title="Close" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
                   <div className="space-y-1 text-center">
-                     <h4 className="text-3xl font-heading font-black tracking-tighter uppercase">New <span className="opacity-30 italic">Lead.</span></h4>
-                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Register a new contact node manually.</p>
+                     <h4 className="text-3xl font-heading font-black tracking-tighter uppercase">Bulk <span className="opacity-30 italic">Import.</span></h4>
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Paste CSV data below (Name, Email, Interest)</p>
                   </div>
 
                   <div className="space-y-4">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Full Name</label>
-                        <input 
-                           placeholder="Customer Name" 
-                           value={newLead.name || ''} 
-                           onChange={e => {
-                             const val = e.target.value;
-                             const normalized = val.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(' ');
-                             setNewLead({...newLead, name: normalized});
-                           }} 
-                           className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" 
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Email Address</label>
-                        <input type="email" placeholder="email@example.com" value={newLead.email || ''} onChange={e => setNewLead({...newLead, email: e.target.value.toLowerCase()})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Property Interest</label>
-                        <input placeholder="e.g. Skyline Residence" value={newLead.interest || ''} onChange={e => setNewLead({...newLead, interest: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-sm" />
-                     </div>
+                     <textarea 
+                        rows={10} 
+                        placeholder="John Doe, john@example.com, Sky Residence&#10;Jane Smith, jane@example.com, Bole Tower" 
+                        value={importData}
+                        onChange={e => setImportData(e.target.value)}
+                        className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] text-sm border border-[var(--border)] focus:border-brand-blue outline-none resize-none font-mono" 
+                     />
                   </div>
 
-                  <button onClick={handleManualAddLead} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Save Contact</button>
+                  <button onClick={handleCsvImport} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Process Import</button>
                </motion.div>
             </div>
          )}

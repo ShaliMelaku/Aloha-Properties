@@ -345,7 +345,24 @@ CREATE POLICY "Public read trusted_companies" ON public.trusted_companies FOR SE
 DROP POLICY IF EXISTS "Auth write trusted_companies" ON public.trusted_companies;
 CREATE POLICY "Auth write trusted_companies" ON public.trusted_companies FOR ALL USING (auth.role() = 'authenticated');
 
--- 12. Add pdf_brochure_url to properties
+-- 12. Admin Activity (Audit Trail)
+CREATE TABLE IF NOT EXISTS public.admin_activity (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    action TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id TEXT,
+    details TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- RLS for admin_activity
+ALTER TABLE public.admin_activity ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Auth read admin_activity" ON public.admin_activity;
+CREATE POLICY "Auth read admin_activity" ON public.admin_activity FOR SELECT USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Auth insert admin_activity" ON public.admin_activity;
+CREATE POLICY "Auth insert admin_activity" ON public.admin_activity FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- 13. Add pdf_brochure_url to properties
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='pdf_brochure_url') THEN

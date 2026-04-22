@@ -41,73 +41,78 @@ export function CompareBar() {
     return getAvgSqmPrice(prev) < getAvgSqmPrice(curr) ? prev : curr;
   }) : null;
 
-  if (compared.length === 0) return null;
+  const isEmpty = compared.length === 0;
 
   return (
     <>
       {/* ── Floating Bar ── */}
       <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
         className="fixed bottom-0 left-0 right-0 z-[250] flex justify-center p-3 md:p-6 pointer-events-none"
       >
-        <div className="bg-luxury-charcoal dark:bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-full px-4 md:px-8 py-3 md:py-4 shadow-2xl flex flex-wrap sm:flex-nowrap items-center gap-3 md:gap-8 pointer-events-auto w-full max-w-2xl">
+        <div className={`bg-luxury-charcoal dark:bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-full px-4 md:px-8 py-3 md:py-4 shadow-2xl flex items-center gap-3 md:gap-8 pointer-events-auto transition-all duration-500 ${isEmpty ? 'max-w-max' : 'w-full max-w-2xl'}`}>
           {/* Label */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 md:w-10 md:h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white flex-shrink-0">
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
               <LayoutGrid size={18} />
             </div>
-            <div className="min-w-0">
+            <div className={isEmpty ? 'hidden md:block' : 'min-w-0'}>
               <p className="text-[9px] font-black uppercase tracking-widest text-white/40 leading-none">Comparison Lab</p>
               <p className="text-sm font-bold text-white leading-tight">{compared.length} {compared.length === 1 ? 'Project' : 'Projects'}</p>
             </div>
           </div>
 
-          <div className="hidden sm:block h-8 w-px bg-white/10 flex-shrink-0" />
+          {!isEmpty && (
+            <>
+              <div className="hidden sm:block h-8 w-px bg-white/10 flex-shrink-0" />
 
-          {/* Thumbnails */}
-          <div className="flex items-center gap-3 flex-1">
-            {compared.map((prop: SupabaseProperty) => (
-              <motion.div key={prop.id} layoutId={`compare-${prop.id}`} className="relative group flex-shrink-0">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden border-2 border-brand-blue shadow-lg relative">
-                  <Image
-                    src={getImage(prop)}
-                    alt={prop.name}
-                    fill
-                    className="object-cover"
-                    sizes="48px"
-                  />
-                </div>
-                <button
-                  onClick={() => toggleCompare(prop)}
-                  title={`Remove ${prop.name}`}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={10} />
-                </button>
-              </motion.div>
-            ))}
-            {compared.length < 3 && (
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center text-white/20 flex-shrink-0">
-                <span className="text-lg">+</span>
+              {/* Thumbnails */}
+              <div className="flex items-center gap-3 flex-1 overflow-x-auto no-scrollbar">
+                {compared.map((prop: SupabaseProperty) => (
+                  <motion.div key={prop.id} layoutId={`compare-${prop.id}`} className="relative group flex-shrink-0">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden border-2 border-brand-blue shadow-lg relative">
+                      <Image
+                        src={getImage(prop)}
+                        alt={prop.name}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
+                    </div>
+                    <button
+                      onClick={() => toggleCompare(prop)}
+                      title={`Remove ${prop.name}`}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={10} />
+                    </button>
+                  </motion.div>
+                ))}
               </div>
-            )}
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-            <button
-              onClick={() => setShowModal(true)}
-              disabled={compared.length < 2}
-              title="Open comparison"
-              className="btn-premium-primary text-[9px] md:text-[10px] py-2 md:py-3 px-4 md:px-6 disabled:opacity-30 disabled:grayscale transition-all whitespace-nowrap"
-            >
-              Compare
-            </button>
-            <button onClick={clearCompare} title="Clear all" className="text-white/40 hover:text-white transition-colors p-1">
-              <X size={16} />
-            </button>
-          </div>
+              {/* Actions */}
+              <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                <button
+                  onClick={() => setShowModal(true)}
+                  disabled={compared.length < 2}
+                  title="Open comparison"
+                  className="btn-premium-primary text-[9px] md:text-[10px] py-2 md:py-3 px-4 md:px-6 disabled:opacity-30 disabled:grayscale transition-all whitespace-nowrap"
+                >
+                  {compared.length < 2 ? 'Select More' : 'Compare Now'}
+                </button>
+                <button onClick={clearCompare} title="Clear all" className="text-white/40 hover:text-white transition-colors p-1">
+                  <X size={16} />
+                </button>
+              </div>
+            </>
+          )}
+
+          {isEmpty && (
+            <div className="md:hidden">
+               <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Compare</p>
+            </div>
+          )}
         </div>
       </motion.div>
 

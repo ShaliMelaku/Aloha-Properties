@@ -54,6 +54,15 @@ interface AnalyticsProperty {
   unit_types: AnalyticsUnitType[];
 }
 
+interface AdminActivityRecord {
+  id: string;
+  action: string;
+  entity_type?: string;
+  details?: string;
+  created_at: string;
+}
+
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CHANNEL_COLORS: Record<string, string> = {
   organic: "#10B981", direct: "#3B82F6", instagram: "#E1306C",
@@ -244,20 +253,23 @@ export function AnalyticsDashboard() {
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [properties, setProperties] = useState<AnalyticsProperty[]>([]);
+  const [activities, setActivities] = useState<AdminActivityRecord[]>([]);
   const [activeToday, setActiveToday] = useState(0);
   const [liveVisitors, setLiveVisitors] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+
   const channelRef = useRef<ReturnType<typeof supabaseClient.channel> | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [lr, vr, pr] = await Promise.all([
+      const [lr, vr, pr, ar] = await Promise.all([
         supabaseClient.from("leads").select("*").order("created_at", { ascending: false }),
         supabaseClient.from("visitors").select("*").order("created_at", { ascending: false }).limit(10000),
         supabaseClient.from("properties").select("name, units:property_units(status,price,unit_type_id), unit_types:property_unit_types(*)"),
+        supabaseClient.from("admin_activity").select("*").order("created_at", { ascending: false }).limit(50),
       ]);
       if (lr.error) throw lr.error;
       if (vr.error) throw vr.error;
@@ -266,6 +278,8 @@ export function AnalyticsDashboard() {
       setLeads(lr.data || []);
       setVisitors(vr.data || []);
       setProperties(pr.data || []);
+      setActivities(ar.data || []);
+
       
       const today = new Date().toDateString();
       const todayVisitors = (vr.data || []).filter((v) => new Date(v.created_at).toDateString() === today);
@@ -491,18 +505,20 @@ export function AnalyticsDashboard() {
                         </div>
                         <div className="space-y-4 max-h-64 overflow-y-auto pr-4 custom-scrollbar">
                            {[
-                              ...visitors.map(v => ({ type: 'visitor', message: `Visitor from ${v.city || v.country || 'Unknown'} (${v.device_type}) viewed ${v.path}`, time: new Date(v.created_at) })),
-                              ...leads.map(l => ({ type: 'lead', message: `New inquiry from ${l.name} - Status: ${l.status || 'new'}`, time: new Date(l.created_at || new Date().toISOString()) }))
+                              ...activities.map(a => ({ type: 'activity', message: `${a.action}: ${a.details || ''}`, time: new Date(a.created_at) })),
+                              ...visitors.map(v => ({ type: 'visitor', message: `Visitor from ${v.city || v.country || 'Unknown'} viewed ${v.path}`, time: new Date(v.created_at) })),
+                              ...leads.map(l => ({ type: 'lead', message: `Inquiry from ${l.name}`, time: new Date(l.created_at || new Date().toISOString()) }))
                            ].sort((a,b) => b.time.getTime() - a.time.getTime()).slice(0, 30).map((log, i) => (
                               <div key={i} className="flex gap-4 items-start p-4 bg-black/20 rounded-2xl border border-white/5 transition-all hover:bg-white/5">
-                                 <div className={`mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full ${log.type === 'lead' ? 'bg-purple-500 shadow-[0_0_10px_#A855F7]' : 'bg-emerald-500 shadow-[0_0_10px_#10B981]'}`} />
-                                 <div>
-                                    <p className="text-[10px] font-bold leading-relaxed opacity-90">{log.message}</p>
+                                 <div className={`mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full ${log.type === 'activity' ? 'bg-brand-blue shadow-[0_0_10px_#3B82F6]' : log.type === 'lead' ? 'bg-purple-500 shadow-[0_0_10px_#A855F7]' : 'bg-emerald-500 shadow-[0_0_10px_#10B981]'}`} />
+                                 <div className="min-w-0">
+                                    <p className="text-[10px] font-bold leading-relaxed opacity-90 truncate">{log.message}</p>
                                     <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mt-1">{log.time.toLocaleTimeString()}</p>
                                  </div>
                               </div>
                            ))}
                         </div>
+
                      </div>
                   </div>
                 </div>
@@ -645,25 +661,83 @@ export function AnalyticsDashboard() {
                 </div>
               )}
 
-              {(tab === "sources" || tab === "devices") && (
+              {tab === "devices" && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-4">
+                   <div className="space-y-8">
+                      <div className="flex-1 w-full h-[300px] relative">
+                         <ResponsiveContainer width="100%" height="100%">
+                           <PieChart>
+                             <Pie 
+                               data={buildDevices(visitors)} 
+                               cx="50%" cy="50%" innerRadius={80} outerRadius={120} paddingAngle={5} dataKey="value"
+                             >
+                               {buildDevices(visitors).map((e, i) => (
+                                  <Cell key={i} fill={e.color} />
+                               ))}
+                             </Pie>
+                             <Tooltip content={<ChartTip unit="Visitors" />} />
+                           </PieChart>
+                         </ResponsiveContainer>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                         {buildDevices(visitors).map((s, i) => (
+                           <div key={i} className="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5">
+                              <div className="flex items-center gap-3">
+                                 <div className={`w-2 h-2 rounded-full ${getBgClass(s.color)}`} />
+                                 <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">{s.name}</span>
+                              </div>
+                              <span className="font-heading font-black text-lg tabular-nums">{s.value}</span>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="space-y-6">
+                      <div className="flex justify-between items-center px-2">
+                        <h3 className="text-xl font-heading font-black tracking-tight uppercase">System <span className="opacity-30 italic">Pulse.</span></h3>
+                        <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-1.5 bg-brand-blue rounded-full animate-pulse" />
+                           <span className="text-[9px] font-bold uppercase tracking-widest text-brand-blue">Live Audit</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3 max-h-[450px] overflow-y-auto pr-4 custom-scrollbar">
+                         {activities.slice(0, 15).map((log, i) => (
+                            <div key={i} className="flex gap-4 items-start p-5 bg-white/2 rounded-2xl border border-white/5 transition-all hover:bg-white/5">
+                               <div className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-brand-blue shadow-[0_0_10px_#3B82F6]" />
+                               <div className="min-w-0">
+                                  <p className="text-[10px] font-bold leading-relaxed text-white truncate">{log.action}</p>
+                                  <p className="text-[9px] opacity-40 leading-snug mt-1 line-clamp-1">{log.details || 'System event'}</p>
+                                  <p className="text-[8px] font-black uppercase tracking-widest opacity-20 mt-2">{new Date(log.created_at).toLocaleTimeString()}</p>
+                               </div>
+                            </div>
+                         ))}
+                         {activities.length === 0 && (
+                            <div className="py-20 text-center opacity-20 uppercase text-[10px] font-black tracking-widest">No activity recorded</div>
+                         )}
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {tab === "sources" && (
                 <div className="flex flex-col lg:flex-row items-center gap-12 py-4">
                    <div className="flex-1 w-full lg:h-[400px] relative">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
-                            data={tab === "sources" ? buildSources(leads) : buildDevices(visitors)} 
+                            data={buildSources(leads)} 
                             cx="50%" cy="50%" innerRadius={100} outerRadius={160} paddingAngle={5} dataKey="value"
                           >
-                            {(tab === "sources" ? buildSources(leads) : buildDevices(visitors)).map((e, i) => (
+                            {buildSources(leads).map((e, i) => (
                                <Cell key={i} fill={e.color} />
                             ))}
                           </Pie>
-                          <Tooltip content={<ChartTip unit={tab === "sources" ? "Leads" : "Visitors"} />} />
+                          <Tooltip content={<ChartTip unit="Leads" />} />
                         </PieChart>
                       </ResponsiveContainer>
                    </div>
                    <div className="w-full lg:w-[350px] space-y-3">
-                      {(tab === "sources" ? buildSources(leads) : buildDevices(visitors)).map((s, i) => (
+                      {buildSources(leads).map((s, i) => (
                         <div key={i} className="flex items-center justify-between p-6 bg-white/2 rounded-2xl border border-white/5 hover:bg-white/5 transition-all">
                            <div className="flex items-center gap-4">
                               <div className={`w-3 h-3 rounded-full ${getBgClass(s.color)}`} />

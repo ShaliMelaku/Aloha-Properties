@@ -141,3 +141,13 @@ export interface TrustedCompany {
   sort_order?: number;
   created_at?: string;
 }
+
+export interface AdminActivity {
+  id?: string;
+  admin_id?: string;
+  action: string;
+  entity_type?: string;
+  entity_id?: string;
+  details?: string;
+  created_at?: string;
+}

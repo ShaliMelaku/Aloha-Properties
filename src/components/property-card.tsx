@@ -6,9 +6,9 @@ import Link from "next/link";
 import { getProductProgress, calculateDiscount, getLoanPercentage } from "@/data/mock-db";
 import { SupabaseProperty, SupabaseUnitType } from "@/hooks/use-properties";
 import {
-  ChevronDown, MapPin, HardHat, BedDouble, Bath,
+  ChevronDown, MapPin, BedDouble, Bath,
   Maximize, Banknote, ArrowRight, LayoutGrid, X,
-  CheckCircle, Clock, XCircle, Tag, FileText, Shield
+  CheckCircle, Clock, XCircle, Tag, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
@@ -166,21 +166,29 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
         </div>
 
         {/* Construction Progress */}
-        <div className="mb-6 p-4 rounded-2xl bg-slate-500/5 border border-[var(--border)]">
-          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mb-3 opacity-60">
-            <span className="flex items-center gap-1.5"><HardHat size={12} /> Development</span>
+        <div className="mb-6 p-4 rounded-3xl bg-brand-blue/5 border border-brand-blue/10 relative overflow-hidden group/progress">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+            <span className="flex items-center gap-2 text-brand-blue">
+               <div className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse" />
+               Project Pulse
+            </span>
             <div className="flex items-center gap-3">
-              <span className="text-brand-blue font-bold tabular-nums">{progress.progress}%</span>
-              <span className="opacity-40">{progress.statusText}</span>
+              <span className="bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded font-black tabular-nums">{progress.progress}%</span>
+              <span className="opacity-30">{progress.statusText}</span>
             </div>
           </div>
-          <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-slate-500/10 rounded-full overflow-hidden relative">
             <motion.div
               initial={{ width: 0 }}
               whileInView={{ width: `${progress.progress}%` }}
+              viewport={{ once: true }}
               transition={{ duration: 1.5, ease: "circOut" }}
-              className="h-full bg-brand-blue rounded-full shadow-[0_0_12px_rgba(0,102,255,0.4)]"
+              className="h-full bg-brand-blue rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"
             />
+          </div>
+          <div className="mt-2 text-[8px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between">
+             <span>Phase: {progress.statusText}</span>
+             <span>Est. Completion: {progress.estimated}</span>
           </div>
         </div>
 

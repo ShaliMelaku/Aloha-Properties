@@ -33,10 +33,14 @@ export function ScopedThemeProvider({
     const key = getStorageKey(isAdmin);
     const saved = localStorage.getItem(key) as Theme | null;
     const resolved: Theme = saved === "light" ? "light" : "dark";
-    // Batch both updates to prevent cascading renders
-    setTheme(resolved);
-    setMounted(true);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    
+    // Defer state updates to avoid synchronous setState in effect warning
+    const timeout = setTimeout(() => {
+      setTheme(resolved);
+      setMounted(true);
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [isAdmin]);
 
   // Apply theme class to <html> ONLY when this component's page is active.

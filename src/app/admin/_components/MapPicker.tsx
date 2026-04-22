@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin as _MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation } from "lucide-react";
 
 
 

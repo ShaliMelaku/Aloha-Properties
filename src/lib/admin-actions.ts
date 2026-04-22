@@ -15,25 +15,49 @@ function slugify(text: string): string {
 }
 
 /**
+ * ACTIVITY LOGGING
+ */
+export async function logActivity(action: string, entityType?: string, entityId?: string, details?: string) {
+  try {
+    await supabaseClient.from('admin_activity').insert({
+      action,
+      entity_type: entityType,
+      entity_id: entityId,
+      details
+    });
+  } catch (e) {
+    console.error('Activity logging failed:', e);
+  }
+}
+
+/**
  * PORTFOLIO ACTIONS
  */
 
 export async function createProperty(prop: Partial<Property>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, created_at, units, unit_types, progress, ...payload } = prop;
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .insert(prop)
+    .insert(payload)
     .select()
     .single();
   if (error) throw error;
+  await logActivity('Property Created', 'property', data.id, prop.name);
   return data;
 }
 
 export async function updateProperty(id: string, updates: Partial<Property>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _, created_at, units, unit_types, progress, ...payload } = updates;
+
   const { error } = await supabaseClient
     .from('properties')
-    .update(updates)
+    .update(payload)
     .eq('id', id);
   if (error) throw error;
+  await logActivity('Property Updated', 'property', id, updates.name);
 }
 
 export async function deleteProperty(id: string) {
@@ -42,6 +66,7 @@ export async function deleteProperty(id: string) {
     .delete()
     .eq('id', id);
   if (error) throw error;
+  await logActivity('Property Deleted', 'property', id);
 }
 
 export async function saveUnitType(type: Partial<UnitType>) {
@@ -53,11 +78,14 @@ export async function saveUnitType(type: Partial<UnitType>) {
       .update(payload)
       .eq('id', id);
     if (error) throw error;
+    await logActivity('Unit Type Updated', 'unit_type', id, type.name);
   } else {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('property_unit_types')
-      .insert(payload);
+      .insert(payload)
+      .select().single();
     if (error) throw error;
+    await logActivity('Unit Type Created', 'unit_type', data.id, type.name);
   }
 }
 
@@ -70,11 +98,14 @@ export async function saveUnit(unit: Partial<Unit>) {
       .update(payload)
       .eq('id', id);
     if (error) throw error;
+    await logActivity('Unit Instance Updated', 'unit', id, unit.unit_number);
   } else {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('property_units')
-      .insert(payload);
+      .insert(payload)
+      .select().single();
     if (error) throw error;
+    await logActivity('Unit Instance Created', 'unit', data.id, unit.unit_number);
   }
 }
 
@@ -84,6 +115,7 @@ export async function deleteUnit(id: string) {
     .delete()
     .eq('id', id);
   if (error) throw error;
+  await logActivity('Unit Instance Deleted', 'unit', id);
 }
 
 export async function deleteUnitType(id: string) {
@@ -92,6 +124,7 @@ export async function deleteUnitType(id: string) {
     .delete()
     .eq('id', id);
   if (error) throw error;
+  await logActivity('Unit Type Deleted', 'unit_type', id);
 }
 
 interface ProgressInput {
@@ -121,11 +154,14 @@ export async function saveProgress(prog: ProgressInput) {
       .update(payload)
       .eq('id', id);
     if (error) throw error;
+    await logActivity('Progress Updated', 'progress', id, payload.label);
   } else {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('property_progress')
-      .insert(payload);
+      .insert(payload)
+      .select().single();
     if (error) throw error;
+    await logActivity('Progress Created', 'progress', data.id, payload.label);
   }
 }
 
@@ -135,6 +171,7 @@ export async function deleteProgress(id: string) {
     .delete()
     .eq('id', id);
   if (error) throw error;
+  await logActivity('Progress Deleted', 'progress', id);
 }
 
 /**
@@ -151,11 +188,14 @@ export async function saveLead(lead: Partial<Lead>) {
       .update(payload)
       .eq('id', id);
     if (error) throw error;
+    await logActivity('Lead Updated', 'lead', id, lead.name);
   } else {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('leads')
-      .insert(payload);
+      .insert(payload)
+      .select().single();
     if (error) throw error;
+    await logActivity('Lead Created', 'lead', data.id, lead.name);
   }
 }
 
@@ -165,6 +205,7 @@ export async function deleteLead(id: string) {
     .delete()
     .eq('id', id);
   if (error) throw error;
+  await logActivity('Lead Deleted', 'lead', id);
 }
 
 /**
@@ -188,10 +229,14 @@ export async function savePost(post: Partial<Post>) {
       .update(payload)
       .eq('id', id);
     if (error) throw error;
+    await logActivity('Article Updated', 'post', id, post.title);
   } else {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('posts')
-      .insert(payload);
+      .insert(payload)
+      .select().single();
     if (error) throw error;
+    await logActivity('Article Created', 'post', data.id, post.title);
   }
 }
+

@@ -7,6 +7,7 @@ import { CurrencyProvider } from "@/context/currency-context";
 import { ComparisonProvider } from "@/context/comparison-context";
 import { VisitorTracker } from "@/components/visitor-tracker";
 import { BackToTop } from "@/components/back-to-top";
+import { ScrollProgress } from "@/components/scroll-progress";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -75,10 +76,11 @@ export default function RootLayout({
       <body className={`${outfit.variable} ${plusJakarta.variable} noise-bg`} suppressHydrationWarning>
         <ScopedThemeProvider isAdmin={false}>
           <StatusProvider>
-            <CurrencyProvider>
+            <CurrencyProvider isAdmin={false}>
               <ComparisonProvider>
                 <VisitorTracker />
                 <BackToTop />
+                <ScrollProgress />
                 {children}
               </ComparisonProvider>
             </CurrencyProvider>
