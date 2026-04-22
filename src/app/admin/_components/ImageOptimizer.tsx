@@ -32,7 +32,7 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
       });
 
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx || !croppedAreaPixels) return;
 
       const { x, y, width, height } = croppedAreaPixels;
       canvas.width = width;
