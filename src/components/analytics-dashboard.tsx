@@ -662,7 +662,7 @@ export function AnalyticsDashboard() {
               )}
 
               {tab === "devices" && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 py-4">
                    <div className="space-y-8">
                       <div className="flex-1 w-full h-[300px] relative">
                          <ResponsiveContainer width="100%" height="100%">

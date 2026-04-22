@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabaseClient } from "@/lib/supabase";
 import { TrustedCompany } from "@/types/admin";
 import Image from "next/image";
+import { MediaUpload } from "./MediaUpload";
 
 interface PartnersTabProps {
   notify: (type: 'success' | 'error' | 'info', msg: string) => void;
@@ -124,16 +125,16 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
                     <Building2 size={28} className="opacity-20" />
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <label className="text-[9px] font-black uppercase opacity-40 ml-1">Company Logo</label>
-                  <input
-                    type="file"
+                  <MediaUpload
+                    bucket="media-assets"
                     accept="image/*"
-                    title="Upload Company Logo"
-                    onChange={handleLogoUpload}
-                    className="block text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:bg-brand-blue/10 file:text-brand-blue hover:file:bg-brand-blue hover:file:text-white file:transition-all cursor-pointer"
+                    label="Upload Logo (will be optimized)"
+                    aspect={1}
+                    onUploadComplete={(url) => setEditing(prev => ({ ...prev, logo_url: url }))}
                   />
-                  <p className="text-[9px] opacity-30 ml-1">Or paste a URL below</p>
+                  <p className="text-[9px] opacity-30 ml-1 mt-2">Or paste a URL below</p>
                   <input
                     type="url"
                     placeholder="https://example.com/logo.png"

@@ -34,9 +34,28 @@ export async function logActivity(action: string, entityType?: string, entityId?
  * PORTFOLIO ACTIONS
  */
 
+const ALLOWED_PROPERTY_FIELDS = [
+  'name', 'location', 'developer', 'description', 'lat', 'lng', 
+  'amenities', 'images', 'cover_image', 'video_url', 'discount_percentage', 
+  'downpayment_percentage', 'payment_schedule', 'air_quality_index', 
+  'env_risk_level', 'urban_heat_index', 'tenure_type', 'parking_spots', 
+  'virtual_tour_url', 'total_sqm', 'completion_date', 'property_type', 
+  'loan_percentage', 'discount_conditions', 'discount_rules', 
+  'pdf_brochure_url', 'price_start', 'is_deleted'
+];
+
+function sanitizePayload(payload: Partial<Property>) {
+  const sanitized: Record<string, any> = {};
+  for (const key of ALLOWED_PROPERTY_FIELDS) {
+    if (key in payload) {
+      sanitized[key] = (payload as any)[key];
+    }
+  }
+  return sanitized;
+}
+
 export async function createProperty(prop: Partial<Property>) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, created_at, units, unit_types, progress, ...payload } = prop;
+  const payload = sanitizePayload(prop);
 
   const { data, error } = await supabaseClient
     .from('properties')
@@ -49,8 +68,7 @@ export async function createProperty(prop: Partial<Property>) {
 }
 
 export async function updateProperty(id: string, updates: Partial<Property>) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id: _, created_at, units, unit_types, progress, ...payload } = updates;
+  const payload = sanitizePayload(updates);
 
   const { error } = await supabaseClient
     .from('properties')
