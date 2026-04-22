@@ -119,20 +119,34 @@ function buildOperationalValue(leads: LeadRecord[], properties: AnalyticsPropert
 function buildInventory(properties: AnalyticsProperty[]) {
   return properties.map(p => {
      let available = 0; let reserved = 0; let sold = 0;
-     (p.units || []).forEach((u: AnalyticsUnit) => {
-        const s = u.status?.toLowerCase();
-        if(s === 'sold') sold++;
-        else if(s === 'reserved') reserved++;
-        else available++;
-     });
+     
+     if (p.units && p.units.length > 0) {
+       p.units.forEach((u: AnalyticsUnit) => {
+          const s = u.status?.toLowerCase();
+          if(s === 'sold') sold++;
+          else if(s === 'reserved') reserved++;
+          else available++;
+       });
+     } else if (p.unit_types && p.unit_types.length > 0) {
+       // Estimate from unit types if units aren't deployed yet
+       p.unit_types.forEach((ut: any) => {
+          const totalUt = ut.total_units || 0;
+          if (ut.status === 'sold_out') {
+             sold += totalUt;
+          } else {
+             available += totalUt;
+          }
+       });
+     }
+
      return {
         name: p.name.substring(0, 15) + (p.name.length > 15 ? '...' : ''),
         Available: available,
         Reserved: reserved,
         Sold: sold,
-        total: available + (reserved || 0) + (sold || 0)
+        total: available + reserved + sold
      };
-  }).filter(p => p.total > 0).sort((a,b) => b.total - a.total);
+  }).sort((a,b) => b.total - a.total);
 }
 
 // ─── Components ─────────────────────────────────────────────────────────────

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import * as cheerio from "cheerio";
 
 // Cache valid for 1 hour
 let cachedRate: number | null = null;

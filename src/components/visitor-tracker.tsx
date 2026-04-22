@@ -13,11 +13,9 @@ export function VisitorTracker() {
 
     const trackVisit = async () => {
       try {
-        // 1. Fetch Geolocation Data (High Fidelity)
-        const geoRes = await fetch("https://ip-api.com/json/?fields=status,country,countryCode,city,regionName,lat,lon");
+        // 1. Fetch Geolocation Data (High Fidelity over HTTPS)
+        const geoRes = await fetch("https://get.geojs.io/v1/ip/geo.json");
         const geoData = await geoRes.json();
-
-        if (geoData.status !== "success") return;
 
         // 2. Identify Device/Browser (Simple parsing)
         const ua = navigator.userAgent;
@@ -33,12 +31,12 @@ export function VisitorTracker() {
 
         // 3. Log to Supabase
         const { error } = await supabaseClient.from("visitors").insert({
-          country: geoData.country,
-          country_code: geoData.countryCode,
-          city: geoData.city,
-          region: geoData.regionName,
-          lat: geoData.lat,
-          lng: geoData.lon,
+          country: geoData.country || 'Unknown',
+          country_code: geoData.country_code || 'UN',
+          city: geoData.city || '',
+          region: geoData.region || '',
+          lat: parseFloat(geoData.latitude) || 0,
+          lng: parseFloat(geoData.longitude) || 0,
           device_type: deviceType,
           browser: browser
         });

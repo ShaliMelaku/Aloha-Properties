@@ -21,6 +21,7 @@ export interface SupabaseUnitType {
   available_count?: number;
   reserved_count?: number;
   sold_count?: number;
+  status?: 'available' | 'sold_out';
 }
 
 // ── Individual Unit (e.g. "Unit A-101, Floor 4") ──────────────
