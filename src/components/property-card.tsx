@@ -191,7 +191,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
                   {property.unit_types.map((ut, i) => (
                     <button
                       key={ut.id}
-                      onClick={() => setTypeIdx(i)}
+                      onClick={() => setTypeIdx(typeIdx === i ? null : i)}
                       className={`relative rounded-xl overflow-hidden border-2 transition-all text-left p-3 ${typeIdx === i ? 'border-brand-blue bg-brand-blue/5' : 'border-[var(--border)] bg-slate-500/5 hover:border-brand-blue/40'}`}
                     >
                       {ut.type_image && (
@@ -325,20 +325,27 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
                     <p className="text-[11px] font-bold opacity-80 leading-relaxed italic">&quot;{property.discount_conditions}&quot;</p>
                   </div>
                 )}
-                {[20, 30, 50, 70, 100].map((pct) => (
-                  <button
-                    key={pct}
-                    onClick={() => setDownPercent(pct)}
-                    className={`w-full flex items-center justify-between p-4 rounded-2xl text-xs font-bold transition-all border ${downPercent === pct ? 'bg-brand-blue border-brand-blue text-white shadow-lg shadow-brand-blue/20 scale-[1.02]' : 'bg-slate-500/5 border-transparent hover:border-slate-500/20'}`}
-                  >
-                    <span>{pct === 100 ? '🎯 Full Payment' : `${pct}% Down`}</span>
-                    {pct >= 20 && (
-                      <span className={`px-2 py-0.5 rounded-md ${downPercent === pct ? 'bg-white/20' : 'bg-emerald-500 text-white'}`}>
-                        +{pct === 100 ? '15' : pct === 70 ? '10' : pct === 50 ? '7' : pct === 30 ? '4' : '2'}% Disc.
-                      </span>
-                    )}
-                  </button>
-                ))}
+                {(() => {
+                  const rules = activeType?.discount_rules || property.discount_rules || [
+                    { downpayment: 20, discount: 2 }, 
+                    { downpayment: 50, discount: 7 }, 
+                    { downpayment: 100, discount: 15 }
+                  ];
+                  return rules.sort((a,b) => a.downpayment - b.downpayment).map((rule, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setDownPercent(rule.downpayment)}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl text-xs font-bold transition-all border ${downPercent === rule.downpayment ? 'bg-brand-blue border-brand-blue text-white shadow-lg shadow-brand-blue/20 scale-[1.02]' : 'bg-slate-500/5 border-transparent hover:border-slate-500/20'}`}
+                    >
+                      <span>{rule.downpayment === 100 ? '🎯 Full Payment' : `${rule.downpayment}% Down`}</span>
+                      {rule.discount > 0 && (
+                        <span className={`px-2 py-0.5 rounded-md ${downPercent === rule.downpayment ? 'bg-white/20' : 'bg-emerald-500 text-white'}`}>
+                          +{rule.discount}% Disc.
+                        </span>
+                      )}
+                    </button>
+                  ));
+                })()}
             </motion.div>
           )}
         </AnimatePresence>

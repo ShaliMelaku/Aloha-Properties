@@ -95,8 +95,18 @@ export async function deleteUnitType(id: string) {
 }
 
 export async function saveProgress(prog: any) {
-  const { id, ...payload } = prog;
-  if (id && id.trim() !== '') {
+  const { id, ...rest } = prog;
+  
+  const payload = {
+    property_id: rest.property_id,
+    label: rest.label || rest.status_text || 'New Phase',
+    percentage: rest.percentage !== undefined ? rest.percentage : (rest.percent || 0),
+    status_text: rest.label || rest.status_text || 'New Phase',
+    percent: rest.percentage !== undefined ? rest.percentage : (rest.percent || 0),
+    status: rest.percentage === 100 ? 'completed' : 'under-construction'
+  };
+
+  if (id && typeof id === 'string' && id.trim() !== '') {
     const { error } = await supabaseClient
       .from('property_progress')
       .update(payload)

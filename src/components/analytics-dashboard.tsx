@@ -19,6 +19,7 @@ interface LeadRecord {
   source?: string;
   interest?: string;
   status?: string;
+  name?: string;
 }
 
 interface VisitorRecord {
@@ -31,6 +32,7 @@ interface VisitorRecord {
   lng?: number;
   device_type?: string;
   browser?: string;
+  path?: string;
   created_at: string;
 }
 
@@ -119,26 +121,23 @@ function buildDevices(visitors: VisitorRecord[]) {
 }
 
 function buildOperationalValue(leads: LeadRecord[], properties: AnalyticsProperty[]) {
-  let soldValue = 0;
+  let assetValue = 0;
   
   properties.forEach(p => {
     if (p.units && p.units.length > 0) {
        p.units.forEach((u: any) => {
-          if (u.status === 'sold') {
-             // If physical unit has price, use it, else fall back to model type base price
-             soldValue += (u.price || p.unit_types?.find((ut: any) => ut.id === u.unit_type_id)?.price_from || 0);
-          }
+          // Use physical unit price or fallback to its model type base price
+          assetValue += (u.price || p.unit_types?.find((ut: any) => ut.id === u.unit_type_id)?.price_from || 0);
        });
     } else if (p.unit_types && p.unit_types.length > 0) {
        p.unit_types.forEach((ut: any) => {
-          if (ut.status === 'sold_out') {
-             soldValue += ((ut.price_from || 0) * (ut.total_units || 1));
-          }
+          // Calculate potential asset value of this model type block
+          assetValue += ((ut.price_from || 0) * (ut.total_units || 1));
        });
     }
   });
   
-  return soldValue;
+  return assetValue;
 }
 
 function buildInventory(properties: AnalyticsProperty[]) {
@@ -291,6 +290,8 @@ export function AnalyticsDashboard() {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => { fetchData(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => { fetchData(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "property_units" }, () => { fetchData(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "property_unit_types" }, () => { fetchData(); })
       .subscribe();
     
     return () => { 
@@ -481,6 +482,27 @@ export function AnalyticsDashboard() {
                              </div>
                            );
                         })}
+                     </div>
+
+                     <div className="mt-8">
+                        <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-xl font-heading font-black tracking-tighter uppercase">System <span className="opacity-30 italic">Logs.</span></h3>
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10B981]" />
+                        </div>
+                        <div className="space-y-4 max-h-64 overflow-y-auto pr-4 custom-scrollbar">
+                           {[
+                              ...visitors.map(v => ({ type: 'visitor', message: `Visitor from ${v.city || v.country || 'Unknown'} (${v.device_type}) viewed ${v.path}`, time: new Date(v.created_at) })),
+                              ...leads.map(l => ({ type: 'lead', message: `New inquiry from ${l.name} - Status: ${l.status || 'new'}`, time: new Date(l.created_at || new Date().toISOString()) }))
+                           ].sort((a,b) => b.time.getTime() - a.time.getTime()).slice(0, 30).map((log, i) => (
+                              <div key={i} className="flex gap-4 items-start p-4 bg-black/20 rounded-2xl border border-white/5 transition-all hover:bg-white/5">
+                                 <div className={`mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full ${log.type === 'lead' ? 'bg-purple-500 shadow-[0_0_10px_#A855F7]' : 'bg-emerald-500 shadow-[0_0_10px_#10B981]'}`} />
+                                 <div>
+                                    <p className="text-[10px] font-bold leading-relaxed opacity-90">{log.message}</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mt-1">{log.time.toLocaleTimeString()}</p>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
                      </div>
                   </div>
                 </div>
