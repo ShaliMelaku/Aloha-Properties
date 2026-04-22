@@ -204,11 +204,11 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex">
       {/* Sidebar */}
-      <div className="w-80 h-screen sticky top-0 bg-[#0A0A1F] border-r border-white/5 flex flex-col p-8 space-y-12 shadow-2xl z-50 text-white overflow-y-auto custom-scrollbar">
-         <div className="flex items-center gap-4 group cursor-pointer transition-all hover:scale-105 active:scale-95" onClick={() => setActiveTab('overview')}>
+      <div className="w-80 h-screen sticky top-0 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-8 shadow-2xl z-50 transition-all duration-300">
+         <div className="flex items-center gap-4 group cursor-pointer transition-all hover:scale-105 active:scale-95 mb-10" onClick={() => setActiveTab('overview')}>
             <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-brand-blue/30 group-hover:rotate-12 transition-transform ring-4 ring-brand-blue/10"><ShieldCheck size={28} /></div>
             <div>
-               <h1 className="font-heading font-black text-xl tracking-tighter text-white">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
+               <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
                <div className="flex items-center gap-2 mt-0.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-[7px] font-black uppercase tracking-[0.4em] text-emerald-500/60">SYSTEM ACTIVE</span>
@@ -216,12 +216,12 @@ export default function AdminDashboard() {
             </div>
          </div>
 
-         <nav className="flex-1 space-y-3">
+         <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar mb-8">
             {tabs.map(tab => (
                <button 
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-4 px-6 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all relative group overflow-hidden ${activeTab === tab.id ? 'bg-brand-blue text-white shadow-2xl shadow-brand-blue/40' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                className={`w-full flex items-center gap-4 px-6 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all relative group overflow-hidden ${activeTab === tab.id ? 'bg-brand-blue text-white shadow-xl shadow-brand-blue/20' : 'text-[var(--foreground)] opacity-40 hover:opacity-100 hover:bg-slate-500/5'}`}
                >
                  <tab.icon size={18} className={activeTab === tab.id ? 'opacity-100' : 'opacity-40 group-hover:opacity-100 transition-opacity'} />
                  <span className="relative z-10">{tab.label}</span>
@@ -232,15 +232,15 @@ export default function AdminDashboard() {
             ))}
          </nav>
 
-         <div className="pt-8 border-t border-white/5 space-y-3">
+         <div className="pt-6 border-t border-[var(--border)] space-y-2 shrink-0">
             <button 
                onClick={toggleTheme}
-               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 hover:text-white transition-all"
+               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:bg-slate-500/5 transition-all"
             >
                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                {theme === 'dark' ? 'Day Mode' : 'Night Mode'}
             </button>
-            <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-400 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/5 rounded-2xl transition-all">
+            <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-500 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:bg-red-500/5 rounded-2xl transition-all">
                <LogOut size={18} /> Sign Out
             </button>
          </div>

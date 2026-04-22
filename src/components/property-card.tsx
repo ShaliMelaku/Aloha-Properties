@@ -102,15 +102,13 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
         <button
           onClick={() => toggleCompare(property)}
           title={compared.find(p => p.id === property.id) ? "Remove from Comparison" : "Add to Comparison"}
-          className={`w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center transition-all ${compared.find(p => p.id === property.id) ? 'bg-brand-blue border-brand-blue text-white' : 'bg-black/20 border-white/20 text-white hover:bg-black/40'}`}
+          className={`h-9 px-3 rounded-full backdrop-blur-md border flex items-center gap-2 transition-all shadow-lg ${compared.find(p => p.id === property.id) ? 'bg-brand-blue border-brand-blue text-white' : 'bg-black/40 border-white/20 text-white hover:bg-black/60 hover:scale-105 active:scale-95'}`}
         >
-          <div className="relative">
-            <LayoutGrid size={18} />
-            <span className="text-[10px] font-black uppercase tracking-widest ml-2 hidden group-hover:inline-block">Compare</span>
-            {compared.find(p => p.id === property.id) && (
-              <motion.div layoutId="check" className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-brand-blue" />
-            )}
-          </div>
+          <LayoutGrid size={14} className={compared.find(p => p.id === property.id) ? 'animate-pulse' : ''} />
+          <span className="text-[9px] font-black uppercase tracking-[0.2em]">Compare</span>
+          {compared.find(p => p.id === property.id) && (
+            <motion.div layoutId="check" className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+          )}
         </button>
       </div>
 
