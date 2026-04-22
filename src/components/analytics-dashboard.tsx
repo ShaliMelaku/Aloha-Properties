@@ -313,6 +313,15 @@ export function AnalyticsDashboard() {
     };
   }, [fetchData]);
 
+  // Live Visitor Drop-off Tick
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
+      setLiveVisitors(visitors.filter(v => new Date(v.created_at) > fiveMinsAgo).length);
+    }, 10000); // Re-calculate every 10 seconds
+    return () => clearInterval(interval);
+  }, [visitors]);
+
   const trendData   = buildLeadTrend(leads);
   const countries   = buildCountries(visitors);
   const statusMap   = leads.reduce((acc, l) => { const s = l.status || "new"; acc[s] = (acc[s] || 0) + 1; return acc; }, {} as Record<string, number>);

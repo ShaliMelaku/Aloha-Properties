@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Cropper, { Area } from 'react-easy-crop';
 import { motion } from 'framer-motion';
 import { X, Check, Scissors, Maximize, RotateCcw } from 'lucide-react';
@@ -17,6 +18,11 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -62,7 +68,7 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
     }
   };
 
-  return (
+  const modalContent = (
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
@@ -145,4 +151,7 @@ export function ImageOptimizer({ image, onComplete, onCancel, aspect = 16 / 9 }:
       </div>
     </motion.div>
   );
+
+  if (!mounted) return null;
+  return createPortal(modalContent, document.body);
 }
