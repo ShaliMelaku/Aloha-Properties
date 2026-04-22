@@ -8,10 +8,11 @@ import { SupabaseProperty, SupabaseUnitType } from "@/hooks/use-properties";
 import {
   ChevronDown, MapPin, HardHat, BedDouble, Bath,
   Maximize, Banknote, ArrowRight, LayoutGrid, X,
-  CheckCircle, Clock, XCircle, Tag
+  CheckCircle, Clock, XCircle, Tag, FileText, Shield
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
+import { InquiryModal } from "./inquiry-modal";
 import { useComparison } from "@/context/comparison-context";
 import dynamic from "next/dynamic";
 
@@ -60,6 +61,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
   // Use unit_types (new model) with fallback to legacy units
   const hasTypes = property.unit_types && property.unit_types.length > 0;
@@ -106,6 +108,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
         >
           <div className="relative">
             <LayoutGrid size={18} />
+            <span className="text-[10px] font-black uppercase tracking-widest ml-2 hidden group-hover:inline-block">Compare</span>
             {compared.find(p => p.id === property.id) && (
               <motion.div layoutId="check" className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-brand-blue" />
             )}
@@ -168,7 +171,10 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
         <div className="mb-6 p-4 rounded-2xl bg-slate-500/5 border border-[var(--border)]">
           <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mb-3 opacity-60">
             <span className="flex items-center gap-1.5"><HardHat size={12} /> Development</span>
-            <span className="text-brand-blue">{progress.statusText}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-brand-blue font-bold tabular-nums">{progress.progress}%</span>
+              <span className="opacity-40">{progress.statusText}</span>
+            </div>
           </div>
           <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
             <motion.div
@@ -293,22 +299,42 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
         </div>
 
         {/* Actions */}
-        <div className="grid grid-cols-5 gap-3">
-          <button
-            onClick={() => setAccordionOpen(!accordionOpen)}
-            title="Toggle Payment Plans"
-            className="col-span-1 flex items-center justify-center aspect-square rounded-2xl border border-[var(--border)] hover:bg-slate-500/5 transition-colors"
-          >
-            <Banknote size={20} className={accordionOpen ? 'text-brand-blue' : 'opacity-40'} />
-          </button>
-          <Link
-            href="#contact"
-            className="col-span-4 btn-premium-primary w-full flex items-center justify-center gap-2 group/btn"
-          >
-            Secure Inquiry
-            <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-          </Link>
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-5 gap-3">
+            <button
+              onClick={() => setAccordionOpen(!accordionOpen)}
+              title="Toggle Payment Plans"
+              className="col-span-1 flex items-center justify-center aspect-square rounded-2xl border border-[var(--border)] hover:bg-slate-500/5 transition-colors"
+            >
+              <Banknote size={20} className={accordionOpen ? 'text-brand-blue' : 'opacity-40'} />
+            </button>
+            <button
+              onClick={() => setIsInquiryModalOpen(true)}
+              className="col-span-4 btn-premium-primary w-full flex items-center justify-center gap-2 group/btn"
+            >
+              Secure Inquiry
+              <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+            </button>
+          </div>
+
+          {property.pdf_brochure_url && (
+            <a 
+              href={`/pdf-viewer?url=${encodeURIComponent(property.pdf_brochure_url)}&title=${encodeURIComponent(property.name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-4 rounded-2xl bg-slate-500/5 border border-[var(--border)] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue/10 hover:text-brand-blue transition-all"
+            >
+              <FileText size={14} />
+              View Brief
+            </a>
+          )}
         </div>
+
+        <InquiryModal 
+          isOpen={isInquiryModalOpen} 
+          onClose={() => setIsInquiryModalOpen(false)} 
+          propertyName={property.name} 
+        />
 
         {/* Payment Plans */}
         <AnimatePresence>

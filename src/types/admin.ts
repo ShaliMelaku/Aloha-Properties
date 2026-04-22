@@ -67,6 +67,7 @@ export interface Property {
   loan_percentage?: number;
   discount_rules?: { downpayment: number; discount: number }[];
   discount_conditions?: string;
+  pdf_brochure_url?: string;
 }
 
 export interface UnitType {
@@ -127,4 +128,16 @@ export interface AdminTab {
   id: string;
   icon: LucideIcon;
   label: string;
+}
+
+export interface TrustedCompany {
+  id?: string;
+  name: string;
+  logo_url?: string;
+  website_url?: string;
+  description?: string;
+  category?: string;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at?: string;
 }

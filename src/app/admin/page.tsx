@@ -11,6 +11,8 @@ import { useCurrency } from "@/context/currency-context";
 import { supabaseClient } from "@/lib/supabase";
 import { useAdminData } from "@/hooks/use-admin-data";
 import { useScopedTheme } from "@/components/scoped-theme-provider";
+import { Handshake } from "lucide-react";
+import { PartnersTab } from "./_components/PartnersTab";
 
 // Modular Components
 import { AnalyticsTab } from "./_components/AnalyticsTab";
@@ -143,6 +145,29 @@ export default function AdminDashboard() {
     finally { setSyncing(false); }
   };
 
+  const uploadFile = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `admin-uploads/${fileName}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from('property-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabaseClient.storage
+        .from('property-assets')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (err: unknown) {
+      notify('error', `Upload failed: ${err instanceof Error ? err.message : 'Unknown'}`);
+      return null;
+    }
+  };
+
   if (isVerifying) return <div className="h-screen bg-[var(--background)] flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
 
   if (!isAuthorized) {
@@ -169,6 +194,7 @@ export default function AdminDashboard() {
     { id: 'overview', icon: PieChart, label: 'Analytics' },
     { id: 'portfolio', icon: Home, label: 'Portfolio' },
     { id: 'marketing', icon: Mail, label: 'Marketing' },
+    { id: 'partners', icon: Handshake, label: 'Partners' },
     { id: 'content', icon: Globe, label: 'Content' },
     { id: 'leads', icon: Users, label: 'Leads' },
     { id: 'history', icon: History, label: 'History' },
@@ -177,14 +203,14 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex">
       {/* Sidebar */}
-      <div className="w-80 h-screen sticky top-0 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-8 space-y-12 shadow-2xl z-50">
+      <div className="w-80 h-screen sticky top-0 bg-[#1D1C57] border-r border-white/5 flex flex-col p-8 space-y-12 shadow-2xl z-50 text-white">
          <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-xl shadow-brand-blue/20"><ShieldCheck size={28} /></div>
             <div>
-               <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
+               <h1 className="font-heading font-black text-xl tracking-tighter text-white">ALOHA <span className="opacity-30 italic">REAL ESTATE.</span></h1>
                <div className="flex items-center gap-2 mt-0.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[7px] font-black uppercase tracking-[0.4em] opacity-40">Live Sync: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending'}</span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.4em] opacity-40">HQ COMMAND CENTER</span>
                </div>
             </div>
          </div>
@@ -231,7 +257,7 @@ export default function AdminDashboard() {
                 newUnit={newUnit}
                 setNewUnit={setNewUnit}
                 uploadingImage={false}
-                uploadFile={async () => null}
+                uploadFile={uploadFile}
                 handleCreateProperty={async () => {
                    try {
                      await createProperty(newProp);
@@ -299,6 +325,7 @@ export default function AdminDashboard() {
                 selectedLead={selectedLead}
               />
             )}
+            {activeTab === 'partners' && <PartnersTab key="partners" notify={notify} uploadFile={uploadFile} />}
             {activeTab === 'history' && <HistoryTab key="history" history={history} loading={loading} onRepeatCampaign={openMarketingWithDraft} />}
          </AnimatePresence>
       </main>

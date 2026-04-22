@@ -285,7 +285,14 @@ export function PortfolioTab({
                       </div>
                    </div>
 
-                   <div className="space-y-6 bg-[var(--background)] p-8 rounded-3xl border border-[var(--border)]">
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40 px-4">PDF Brochure URL</label>
+                       <div className="flex gap-2">
+                          <input type="text" placeholder="https://example.com/brochure.pdf" value={editingProperty?.pdf_brochure_url || newProp.pdf_brochure_url || ''} onChange={e => editingProperty ? setEditingProperty({...editingProperty, pdf_brochure_url: e.target.value}) : setNewProp({...newProp, pdf_brochure_url: e.target.value})} className="flex-1 px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-bold outline-none border border-[var(--border)] focus:border-brand-blue" />
+                       </div>
+                    </div>
+
+                    <div className="space-y-6 bg-[var(--background)] p-8 rounded-3xl border border-[var(--border)]">
                         <div className="flex justify-between items-center">
                            <h4 className="text-xs font-black uppercase tracking-widest opacity-40 px-4">Discount Tiers</h4>
                            <button onClick={() => {

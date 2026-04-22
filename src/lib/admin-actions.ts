@@ -112,7 +112,7 @@ export async function saveProgress(prog: ProgressInput) {
     percentage: rest.percentage !== undefined ? rest.percentage : (rest.percent || 0),
     status_text: rest.label || rest.status_text || 'New Phase',
     percent: rest.percentage !== undefined ? rest.percentage : (rest.percent || 0),
-    status: rest.percentage === 100 ? 'completed' : 'under-construction'
+    status: rest.percentage === 100 ? 'delivered' : 'under-construction'
   };
 
   if (id && typeof id === 'string' && id.trim() !== '') {

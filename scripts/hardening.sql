@@ -324,3 +324,32 @@ BEGIN
         ALTER TABLE public.property_units ADD CONSTRAINT check_unit_status CHECK (status IN ('available', 'reserved', 'sold'));
     END IF;
 END $$;
+
+-- 11. Trusted Companies (Partner Logos)
+CREATE TABLE IF NOT EXISTS public.trusted_companies (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    logo_url TEXT,
+    website_url TEXT,
+    description TEXT,
+    category TEXT DEFAULT 'Developer',
+    is_active BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- RLS for trusted_companies
+ALTER TABLE public.trusted_companies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read trusted_companies" ON public.trusted_companies;
+CREATE POLICY "Public read trusted_companies" ON public.trusted_companies FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Auth write trusted_companies" ON public.trusted_companies;
+CREATE POLICY "Auth write trusted_companies" ON public.trusted_companies FOR ALL USING (auth.role() = 'authenticated');
+
+-- 12. Add pdf_brochure_url to properties
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='pdf_brochure_url') THEN
+        ALTER TABLE public.properties ADD COLUMN pdf_brochure_url TEXT;
+    END IF;
+END $$;
+
