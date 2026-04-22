@@ -125,12 +125,12 @@ function buildOperationalValue(leads: LeadRecord[], properties: AnalyticsPropert
   
   properties.forEach(p => {
     if (p.units && p.units.length > 0) {
-       p.units.forEach((u: any) => {
+       p.units.forEach((u: AnalyticsUnit) => {
           // Use physical unit price or fallback to its model type base price
-          assetValue += (u.price || p.unit_types?.find((ut: any) => ut.id === u.unit_type_id)?.price_from || 0);
+          assetValue += (u.price || p.unit_types?.find((ut: AnalyticsUnitType) => ut.id === u.unit_type_id)?.price_from || 0);
        });
     } else if (p.unit_types && p.unit_types.length > 0) {
-       p.unit_types.forEach((ut: any) => {
+       p.unit_types.forEach((ut: AnalyticsUnitType) => {
           // Calculate potential asset value of this model type block
           assetValue += ((ut.price_from || 0) * (ut.total_units || 1));
        });
@@ -153,7 +153,7 @@ function buildInventory(properties: AnalyticsProperty[]) {
        });
      } else if (p.unit_types && p.unit_types.length > 0) {
        // Estimate from unit types if units aren't deployed yet
-       p.unit_types.forEach((ut: any) => {
+       p.unit_types.forEach((ut: AnalyticsUnitType) => {
           const totalUt = ut.total_units || 0;
           if (ut.status === 'sold_out') {
              sold += totalUt;

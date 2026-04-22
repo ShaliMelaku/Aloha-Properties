@@ -82,6 +82,7 @@ export interface SupabaseProperty {
   env_risk_level?: string;
   loan_percentage?: number;
   discount_conditions?: string;
+  discount_rules?: { downpayment: number; discount: number }[];
   unit_types: SupabaseUnitType[];   // NEW — apartment configurations
   units: SupabaseUnit[];             // individual unit tracker
   progress: SupabaseProgress[];

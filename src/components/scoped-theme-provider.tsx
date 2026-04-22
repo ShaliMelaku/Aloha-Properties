@@ -28,13 +28,15 @@ export function ScopedThemeProvider({
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
-  // On mount, read the scoped key from localStorage
+  // On mount, read the scoped key from localStorage in a single state update
   useEffect(() => {
     const key = getStorageKey(isAdmin);
     const saved = localStorage.getItem(key) as Theme | null;
     const resolved: Theme = saved === "light" ? "light" : "dark";
+    // Batch both updates to prevent cascading renders
     setTheme(resolved);
     setMounted(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [isAdmin]);
 
   // Apply theme class to <html> ONLY when this component's page is active.

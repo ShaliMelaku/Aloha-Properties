@@ -94,7 +94,16 @@ export async function deleteUnitType(id: string) {
   if (error) throw error;
 }
 
-export async function saveProgress(prog: any) {
+interface ProgressInput {
+  id?: string;
+  property_id: string;
+  label?: string;
+  status_text?: string;
+  percentage?: number;
+  percent?: number;
+}
+
+export async function saveProgress(prog: ProgressInput) {
   const { id, ...rest } = prog;
   
   const payload = {
@@ -133,6 +142,7 @@ export async function deleteProgress(id: string) {
  */
 
 export async function saveLead(lead: Partial<Lead>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, created_at, ...payload } = lead;
   
   if (id) {
@@ -162,6 +172,7 @@ export async function deleteLead(id: string) {
  */
 
 export async function savePost(post: Partial<Post>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, created_at, ...payload } = post;
   
   // Ensure slug exists

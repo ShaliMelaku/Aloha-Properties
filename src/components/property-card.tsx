@@ -331,7 +331,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
                     { downpayment: 50, discount: 7 }, 
                     { downpayment: 100, discount: 15 }
                   ];
-                  return rules.sort((a,b) => a.downpayment - b.downpayment).map((rule, idx) => (
+                  return rules.sort((a: { downpayment: number; discount: number }, b: { downpayment: number; discount: number }) => a.downpayment - b.downpayment).map((rule: { downpayment: number; discount: number }, idx: number) => (
                     <button
                       key={idx}
                       onClick={() => setDownPercent(rule.downpayment)}

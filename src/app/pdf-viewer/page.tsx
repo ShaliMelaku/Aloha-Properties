@@ -2,14 +2,15 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { X, Download, FileText, ChevronLeft, Share2 } from "lucide-react";
-import { useMemo, Suspense } from "react";
+import { useId, Suspense } from "react";
 
 function PDFViewerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const fileUrl = searchParams.get("url");
   const title = searchParams.get("title") || "Document Viewer";
-  const sessionId = useMemo(() => Math.random().toString(36).substring(7).toUpperCase(), []);
+  const rawId = useId();
+  const sessionId = rawId.replace(/[^a-z0-9]/gi, '').substring(0, 6).toUpperCase() || 'ALOHA1';
 
   if (!fileUrl) {
     return (

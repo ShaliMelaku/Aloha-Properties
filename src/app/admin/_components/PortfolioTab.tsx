@@ -593,7 +593,7 @@ export function PortfolioTab({
                                  <label className="text-[9px] font-black uppercase opacity-40 ml-4">Model Type</label>
                                  <select title="Model Type" value={editingUnitInstance.unit_type_id || ''} onChange={e => setEditingUnitInstance({...editingUnitInstance, unit_type_id: e.target.value})} className="w-full px-6 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold uppercase tracking-widest">
                                     <option value="">None / Base</option>
-                                    {properties.find(p => p.id === activePropertyId)?.unit_types?.map((ut: any) => (
+                                    {properties.find(p => p.id === activePropertyId)?.unit_types?.map((ut: UnitType) => (
                                        <option key={ut.id} value={ut.id}>{ut.name}</option>
                                     ))}
                                  </select>
