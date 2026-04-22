@@ -13,7 +13,7 @@ export function Footer() {
               <div className="relative w-8 h-8 group-hover:scale-105 transition-transform">
                 <Image
                   src="/images/brand/aloha-logo.png"
-                  alt="Aloha Properties Logo"
+                  alt="Aloha Real Estate Logo"
                   fill
                   className="object-contain"
                   sizes="32px"
@@ -23,8 +23,11 @@ export function Footer() {
                 ALOHA<span className="text-brand-blue">.</span>
               </span>
             </Link>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">
-              Elevating the standard of real estate marketing in Ethiopia through cinematic storytelling and uncompromising excellence.
+            <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
+              Aloha Real Estate Marketing &amp; Events Comm P.L.C — a full-service, market-leading company changing the way you find, achieve, and maintain the greatest value of home in Addis and beyond.
+            </p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue italic">
+              Excellence. Integrity. Best Service.
             </p>
           </div>
 
@@ -53,11 +56,11 @@ export function Footer() {
               </ul>
             </div>
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Social</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Contact</h4>
               <ul className="space-y-4 text-sm font-bold">
-                <li><a href="#" className="hover:text-brand-blue transition-colors">Instagram</a></li>
-                <li><a href="#" className="hover:text-brand-blue transition-colors">Telegram</a></li>
-                <li><a href="#" className="hover:text-brand-blue transition-colors">LinkedIn</a></li>
+                <li><a href="tel:+251911258981" className="hover:text-brand-blue transition-colors">+251 911 258981</a></li>
+                <li><a href="tel:+251118220992" className="hover:text-brand-blue transition-colors">+251 118 220992</a></li>
+                <li><a href="mailto:Alohaethiopia@gmail.com" className="hover:text-brand-blue transition-colors">Alohaethiopia@gmail.com</a></li>
               </ul>
             </div>
           </div>
@@ -65,13 +68,13 @@ export function Footer() {
 
         <div className="pt-8 border-t border-slate-500/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-[10px] font-black uppercase tracking-widest opacity-30 text-center md:text-left">
-            © {new Date().getFullYear()} Aloha Marketing And Event Communications PLC
+            © {new Date().getFullYear()} Aloha Real Estate Marketing &amp; Events Comm P.L.C
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-50 text-center">
-            Developed by <span className="text-brand-blue">Royal Labs</span> | Shalom Melaku | shalieth101@gmail.com | +251934132115
+            Bole Medhanialem · Gulf Aziz Building, 1st Floor, Office 123 · Addis Ababa
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-80">
-            Addis Ababa, Ethiopia
+            Ethiopia
           </div>
         </div>
       </div>

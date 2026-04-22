@@ -28,7 +28,7 @@ export default function ContactPage() {
                      </div>
                      <div className="text-left">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Email</p>
-                        <p className="text-sm font-bold">bespoke@aloha.et</p>
+                        <p className="text-sm font-bold">Alohaethiopia@gmail.com</p>
                      </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -36,8 +36,8 @@ export default function ContactPage() {
                         <Phone size={20} />
                      </div>
                      <div className="text-left">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Call Base</p>
-                        <p className="text-sm font-bold">+251 908 777 666</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Call Us</p>
+                        <p className="text-sm font-bold">+251 911 258981 / +251 118 220992</p>
                      </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -45,8 +45,8 @@ export default function ContactPage() {
                         <MapPin size={20} />
                      </div>
                      <div className="text-left">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Base</p>
-                        <p className="text-sm font-bold">Addis Ababa, ET</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Office</p>
+                        <p className="text-sm font-bold">Bole Medhanialem · Gulf Aziz Bldg, 1st Fl, Office 123</p>
                      </div>
                   </div>
                </div>
