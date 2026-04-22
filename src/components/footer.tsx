@@ -71,10 +71,10 @@ export function Footer() {
             © {new Date().getFullYear()} Aloha Real Estate Marketing &amp; Events Comm P.L.C
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-50 text-center">
-            Bole Medhanialem · Gulf Aziz Building, 1st Floor, Office 123 · Addis Ababa
+            Bole Medhanialem · Alemnesh Plaza, 12th Floor, Office 1204 · Addis Ababa, Ethiopia
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-80">
-            Ethiopia
+            Excellence. Integrity. Best Service.
           </div>
         </div>
       </div>
