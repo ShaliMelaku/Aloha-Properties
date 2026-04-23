@@ -7,10 +7,10 @@ import {
   Plus, Edit3, Trash2, FileText, Send, 
   Activity, Zap, Download, Database,
   X, ImageIcon, CheckCircle2,
-  Users, MessageSquare, MapPin, BarChart3, User, Mail, Calendar
+  Users, MessageSquare, MapPin, BarChart3, User, Mail, Calendar, ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Post, Lead, Campaign, LeadResponse } from "@/types/admin";
+import { Post, Lead, Campaign, LeadResponse, AdminActivity } from "@/types/admin";
 import { MediaUpload } from "./MediaUpload";
 import { savePost, saveLead, createLeadBatch, saveLeadResponse } from "@/lib/admin-actions";
 import { supabaseClient } from "@/lib/supabase";
@@ -179,15 +179,11 @@ interface MarketingTabProps {
   loading: boolean;
   onRepeatCampaign: (draft: { subject: string; body: string; targetFilter: string }) => void;
   onRefreshResponses: () => void;
-  activities: AdminActivity[];
-  onRefreshActivities: () => void;
 }
 
 
 export function MarketingTab({ 
-  onNotify, onRefreshLeads, initialDraft, history, responses, loading, onRepeatCampaign, onRefreshResponses,
-  activities,
-  onRefreshActivities
+  onNotify, onRefreshLeads, initialDraft, history, responses, loading, onRepeatCampaign, onRefreshResponses
 }: MarketingTabProps) {
   const [marketingSubTab, setMarketingSubTab] = useState<'outreach' | 'history' | 'responses'>('outreach');
   const [loggingResponse, setLoggingResponse] = useState<Partial<LeadResponse> | null>(null);
@@ -767,7 +763,11 @@ export const SystemPulseTab: React.FC<{
            <h2 className="text-5xl font-heading font-black tracking-tighter uppercase leading-[0.8]">System <span className="opacity-30 italic">Pulse.</span></h2>
            <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mt-4 ml-1">Live Operational Audit</p>
         </div>
-        <button onClick={onRefresh} className="p-4 bg-brand-blue/10 text-brand-blue rounded-2xl hover:scale-110 transition-all">
+        <button 
+          title="Refresh Activities"
+          onClick={onRefresh} 
+          className="p-4 bg-brand-blue/10 text-brand-blue rounded-2xl hover:scale-110 transition-all"
+        >
           <Activity size={20} className={loading ? 'animate-pulse' : ''} />
         </button>
       </div>

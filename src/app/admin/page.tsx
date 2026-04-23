@@ -18,7 +18,7 @@ import { PartnersTab } from "./_components/PartnersTab";
 import { AnalyticsTab } from "./_components/AnalyticsTab";
 import { LeadsTab } from "./_components/LeadsTab";
 import { PortfolioTab } from "./_components/PortfolioTab";
-import { ContentTab, MarketingTab } from "./_components/ContentTabs";
+import { ContentTab, MarketingTab, SystemPulseTab } from "./_components/ContentTabs";
 
 // Shared Types
 import { Lead, Property, Unit, AdminTab } from "@/types/admin";
@@ -313,11 +313,9 @@ export default function AdminDashboard() {
                 onDraftConsumed={() => setDraftCampaign(null)} 
                 history={history}
                 responses={responses}
-                activities={activities}
                 loading={loading}
                 onRepeatCampaign={openMarketingWithDraft}
                 onRefreshResponses={fetchResponses}
-                onRefreshActivities={fetchActivities}
               />
             )}
             {activeTab === 'content' && (
