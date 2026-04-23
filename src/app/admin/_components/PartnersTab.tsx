@@ -10,7 +10,6 @@ import { MediaUpload } from "./MediaUpload";
 
 interface PartnersTabProps {
   notify: (type: 'success' | 'error' | 'info', msg: string) => void;
-  uploadFile: (file: File) => Promise<string | null>;
 }
 
 const EMPTY: Partial<TrustedCompany> = {
