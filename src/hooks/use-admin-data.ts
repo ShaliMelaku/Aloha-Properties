@@ -2,6 +2,11 @@ import { useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase';
 import { Lead, Property, Post, Campaign, LeadResponse, AdminActivity } from '@/types/admin';
 
+interface DBResponse extends LeadResponse {
+  leads?: { name: string; email: string };
+  campaigns?: { subject: string };
+}
+
 export function useAdminData() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);

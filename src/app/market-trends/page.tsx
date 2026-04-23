@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useStatus } from "@/context/status-context";
+import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 interface Publication {
   id: string;
@@ -252,7 +253,7 @@ export default function MarketTrendsHub() {
                      </div>
                      <div className="flex items-center gap-3">
                         <a 
-                          href={viewingPDF.file_url} 
+                          href={getSecurePdfUrl(viewingPDF.file_url)} 
                           download 
                           className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-brand-blue transition-all"
                           title="Download PDF"
@@ -272,7 +273,7 @@ export default function MarketTrendsHub() {
                   <div className="flex-1 bg-slate-800 relative">
                      {viewingPDF.file_url ? (
                         <iframe 
-                          src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewingPDF.file_url)}&embedded=true`} 
+                          src={`https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin + getSecurePdfUrl(viewingPDF.file_url))}&embedded=true`} 
                           className="absolute inset-0 w-full h-full border-0"
                           title={`PDF Viewer: ${viewingPDF.title}`}
                         />

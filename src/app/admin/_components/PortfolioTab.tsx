@@ -6,7 +6,7 @@ import {
   Trash2, TrendingUp, Shield, Wind, Sun,
   DollarSign, Calendar, Activity, Camera,
   Home, Map as MapIcon, X, PlusCircle, Settings2,
-  Box, Users
+  Box, Users, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Property, Unit, UnitType, PropertyProgress } from "@/types/admin";
@@ -15,6 +15,8 @@ const MapPicker = dynamic(() => import("./MapPicker").then(mod => mod.MapPicker)
 import { MediaUpload } from "./MediaUpload";
 import Image from "next/image";
 import { saveUnitType, saveUnit, saveProgress, deleteProgress, deleteUnit, deleteUnitType } from "@/lib/admin-actions";
+import { PDFViewerModal } from "./PDFViewerModal";
+import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 interface PortfolioTabProps {
   properties: Property[];
@@ -58,6 +60,7 @@ export function PortfolioTab({
   const [editingProgress, setEditingProgress] = useState<Partial<PropertyProgress> | null>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [expandedUnitType, setExpandedUnitType] = useState<string | null>(null);
+  const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
 
   const handleSaveUnitType = async () => {
     if (!editingUnitType || !activePropertyId) return;
@@ -153,17 +156,28 @@ export function PortfolioTab({
                       </div>
                    </div>
 
-                   <div className="flex gap-3">
-                      <button onClick={() => setEditingProperty(prop)} className="flex-1 py-4 bg-slate-500/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"><Settings2 size={14} /> Edit Property</button>
-                      <button 
-                          onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} 
-                          className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"
-                          aria-label={`Delete ${prop.name}`}
-                          title="Delete Property"
-                       >
-                          <Trash2 size={16} />
-                       </button>
-                   </div>
+                    <div className="flex gap-3">
+                       <button onClick={() => setEditingProperty(prop)} className="flex-1 py-4 bg-slate-500/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"><Settings2 size={14} /> Edit Property</button>
+                       {prop.pdf_brochure_url && (
+                          <button 
+                             onClick={() => setViewingPdf({ 
+                                url: getSecurePdfUrl(prop.pdf_brochure_url), 
+                                title: `${prop.name} - Brief` 
+                             })} 
+                             className="flex-1 py-4 bg-emerald-500/5 text-emerald-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                          >
+                             <FileText size={14} /> View Brief
+                          </button>
+                       )}
+                       <button 
+                           onClick={() => setConfirmDelete({ type: 'property', id: prop.id, name: prop.name })} 
+                           className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                           aria-label={`Delete ${prop.name}`}
+                           title="Delete Property"
+                        >
+                           <Trash2 size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="space-y-6">
@@ -229,7 +243,7 @@ export function PortfolioTab({
       <AnimatePresence>
         {(isAddingProperty || editingProperty) && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-5xl p-12 overflow-y-auto max-h-[90vh] grid grid-cols-1 lg:grid-cols-12 gap-12 relative shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[var(--card)] rounded-3xl md:rounded-[3rem] border border-[var(--border)] w-full max-w-5xl p-6 md:p-12 overflow-y-auto max-h-[90vh] grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-12 relative shadow-2xl">
                <button 
                    onClick={() => { setIsAddingProperty(false); setEditingProperty(null); }} 
                    className="absolute top-8 right-8 w-12 h-12 bg-slate-500/10 rounded-2xl flex items-center justify-center opacity-40 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
@@ -515,7 +529,7 @@ export function PortfolioTab({
       <AnimatePresence>
          {showInventoryModal && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3.5rem] border border-[var(--border)] w-full max-w-6xl p-12 space-y-10 relative overflow-y-auto max-h-[90vh]">
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-3xl md:rounded-[3.5rem] border border-[var(--border)] w-full max-w-6xl p-6 md:p-12 space-y-6 md:space-y-10 relative overflow-y-auto max-h-[90vh]">
                   <button onClick={() => setShowInventoryModal(false)} aria-label="Close Inventory Modal" title="Close Modal" className="absolute top-10 right-10 w-12 h-12 bg-slate-500/10 rounded-2xl flex items-center justify-center opacity-40 hover:opacity-100 transition-all"><X/></button>
                   
                   <div className="flex justify-between items-end border-b border-[var(--border)] pb-8">
@@ -760,6 +774,13 @@ export function PortfolioTab({
             </div>
          )}
       </AnimatePresence>
+
+      <PDFViewerModal 
+        isOpen={!!viewingPdf}
+        onClose={() => setViewingPdf(null)}
+        url={viewingPdf?.url || ''}
+        title={viewingPdf?.title || ''}
+      />
     </motion.div>
   );
 }

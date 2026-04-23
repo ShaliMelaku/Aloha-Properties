@@ -14,6 +14,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";
 import dynamic from "next/dynamic";
+import { PDFViewerModal } from "@/app/admin/_components/PDFViewerModal";
+import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 const PropertyMap = dynamic(() => import("./property-map"), { ssr: false });
 
@@ -60,6 +62,7 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [viewingPdf, setViewingPdf] = useState(false);
 
   // Use unit_types (new model) with fallback to legacy units
   const hasTypes = property.unit_types && property.unit_types.length > 0;
@@ -322,15 +325,13 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
           </div>
 
           {property.pdf_brochure_url && (
-            <a 
-              href={`/pdf-viewer?url=${encodeURIComponent(property.pdf_brochure_url)}&title=${encodeURIComponent(property.name)}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button 
+              onClick={() => setViewingPdf(true)}
               className="w-full py-4 rounded-2xl bg-slate-500/5 border border-[var(--border)] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue/10 hover:text-brand-blue transition-all"
             >
               <FileText size={14} />
               View Brief
-            </a>
+            </button>
           )}
         </div>
 
@@ -407,6 +408,13 @@ export function PropertyCard({ property }: { property: SupabaseProperty }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PDFViewerModal 
+        isOpen={viewingPdf}
+        onClose={() => setViewingPdf(false)}
+        url={getSecurePdfUrl(property.pdf_brochure_url)}
+        title={`${property.name} - Brief`}
+      />
     </motion.div>
   );
 }

@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { X, Download, FileText, ChevronLeft, Share2 } from "lucide-react";
 import { useId, Suspense } from "react";
+import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 function PDFViewerContent() {
   const searchParams = useSearchParams();
@@ -53,7 +54,7 @@ function PDFViewerContent() {
 
         <div className="flex items-center gap-3">
           <button 
-             onClick={() => window.open(fileUrl, '_blank')}
+             onClick={() => window.open(getSecurePdfUrl(fileUrl), '_blank')}
              className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
           >
             <Download size={14} /> Download
@@ -70,7 +71,7 @@ function PDFViewerContent() {
       {/* Viewer Main */}
       <main className="flex-1 relative bg-slate-900">
         <iframe 
-          src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`} 
+          src={`https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin + getSecurePdfUrl(fileUrl))}&embedded=true`} 
           className="w-full h-full border-0"
           title={title}
         />

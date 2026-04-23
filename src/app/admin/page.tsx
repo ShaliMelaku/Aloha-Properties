@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   LogOut, PieChart, Mail, Home, Users, ShieldCheck, Activity, Lock,
-  Globe, Trash2, Sun, Moon
+  Globe, Trash2, Sun, Moon, X, Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
@@ -169,7 +169,9 @@ export default function AdminDashboard() {
     }
   };
 
-  if (isVerifying) return <div className="h-screen bg-[var(--background)] flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  if (isVerifying) return <div className="h-screen bg-black flex items-center justify-center"><Activity className="animate-spin text-brand-blue" size={48} /></div>;
 
   if (!isAuthorized) {
     return (
@@ -203,52 +205,97 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex">
-      {/* Sidebar */}
-      <div className="w-80 h-screen sticky top-0 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-8 shadow-2xl z-50 transition-all duration-300">
-         <div className="flex items-center gap-4 group cursor-pointer transition-all hover:scale-105 active:scale-95 mb-10" onClick={() => setActiveTab('overview')}>
-            <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-brand-blue/30 group-hover:rotate-12 transition-transform ring-4 ring-brand-blue/10"><ShieldCheck size={28} /></div>
-            <div>
-               <h1 className="font-heading font-black text-xl tracking-tighter">ALOHA <span className="opacity-30 italic">HQ.</span></h1>
-               <div className="flex items-center gap-2 mt-0.5">
-                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[7px] font-black uppercase tracking-[0.4em] text-emerald-500/60">SYSTEM ACTIVE</span>
-               </div>
-            </div>
-         </div>
-
-         <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar mb-8">
-            {tabs.map(tab => (
-               <button 
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-4 px-6 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all relative group overflow-hidden ${activeTab === tab.id ? 'bg-brand-blue text-white shadow-xl shadow-brand-blue/20' : 'text-[var(--foreground)] opacity-40 hover:opacity-100 hover:bg-slate-500/5'}`}
-               >
-                 <tab.icon size={18} className={activeTab === tab.id ? 'opacity-100' : 'opacity-40 group-hover:opacity-100 transition-opacity'} />
-                 <span className="relative z-10">{tab.label}</span>
-                 {activeTab === tab.id && (
-                    <motion.div layoutId="activePill" className="absolute left-0 w-1 h-6 bg-white rounded-full" />
-                 )}
-               </button>
-            ))}
-         </nav>
-
-         <div className="pt-6 border-t border-[var(--border)] space-y-2 shrink-0">
-            <button 
-               onClick={toggleTheme}
-               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:bg-slate-500/5 transition-all"
-            >
-               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-               {theme === 'dark' ? 'Day Mode' : 'Night Mode'}
-            </button>
-            <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-red-500 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:bg-red-500/5 rounded-2xl transition-all">
-               <LogOut size={18} /> Sign Out
-            </button>
-         </div>
+    <div className={`min-h-screen flex flex-col md:flex-row ${theme === 'dark' ? 'bg-black text-white' : 'bg-slate-50 text-slate-900'}`}>
+      
+      {/* ── MOBILE HEADER ────────────────────────────────────────────────────────── */}
+      <div className="md:hidden flex items-center justify-between p-6 bg-[var(--card)] border-b border-[var(--border)] sticky top-0 z-[100] backdrop-blur-xl bg-black/80">
+        <div className="flex items-center gap-3">
+           <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white font-black text-xl">A</div>
+           <h1 className="text-sm font-black uppercase tracking-tighter">Aloha <span className="opacity-30 italic">Hub.</span></h1>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-white"
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Activity size={24} />}
+        </button>
       </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+      {/* ── SIDEBAR ──────────────────────────────────────────────────────────────── */}
+      <aside className={`
+        fixed inset-0 z-[90] md:relative md:flex w-full md:w-80 border-r border-[var(--border)] flex-col bg-[var(--card)] transition-transform duration-300
+        ${isMobileMenuOpen ? 'translate-x-0 flex' : '-translate-x-full md:translate-x-0 hidden md:flex'}
+      `}>
+        <div className="p-10 hidden md:block">
+           <div className="flex items-center gap-4 mb-2">
+              <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-brand-blue/20">A</div>
+              <div>
+                <h1 className="text-xl font-heading font-black tracking-tighter uppercase leading-none">Aloha <span className="opacity-30 italic">Hub.</span></h1>
+                <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 mt-1">Intelligence Core</p>
+              </div>
+           </div>
+        </div>
+
+        <nav className="flex-1 px-4 md:px-6 space-y-2 py-10 md:py-0 overflow-y-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-brand-blue text-white shadow-xl shadow-brand-blue/20' : 'opacity-40 hover:opacity-100 hover:bg-slate-500/5'}`}
+            >
+              <tab.icon size={18} />
+              {tab.label}
+              {activeTab === tab.id && <motion.div layoutId="tab-active" className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-6 md:p-8 space-y-4 border-t border-[var(--border)]">
+          <button 
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all border border-[var(--border)]"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? 'Light Protocol' : 'Dark Protocol'}
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut size={18} />
+            Terminate
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-x-hidden p-4 md:p-10 lg:p-16 custom-scrollbar">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+               <ShieldCheck className="text-brand-blue" size={16} />
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Encrypted Terminal v6.2</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-heading font-black tracking-tighter uppercase leading-none">
+              {tabs.find(t => t.id === activeTab)?.label} <span className="opacity-30 italic">Center.</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-4 w-full md:w-auto">
+             {activeTab === 'content' && (
+                <button 
+                  onClick={syncNews} 
+                  disabled={syncing}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 py-4 bg-brand-blue/10 text-brand-blue rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all border border-brand-blue/20"
+                >
+                  {syncing ? <Activity className="animate-spin" size={14}/> : <Zap size={14}/>} Sync Intelligence
+                </button>
+             )}
+             <div className="hidden sm:flex items-center gap-3 px-6 py-4 bg-slate-500/5 rounded-2xl border border-[var(--border)]">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">System Online</span>
+             </div>
+          </div>
+        </header>
+
          <AnimatePresence mode="wait">
             {activeTab === 'overview' && <AnalyticsTab key="analytics" />}
             {activeTab === 'portfolio' && (

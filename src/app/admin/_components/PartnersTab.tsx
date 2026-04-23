@@ -46,7 +46,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
     if (!editing?.name?.trim()) { notify('error', 'Company name is required.'); return; }
     try {
       if (editing.id) {
-        const { id, created_at: _, ...payload } = editing as TrustedCompany;
+        const { id, created_at, ...payload } = editing as TrustedCompany;
         const { error } = await supabaseClient.from('trusted_companies').update(payload).eq('id', id!);
         if (error) throw error;
       } else {
@@ -69,16 +69,10 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
     else { notify('success', `Deleted "${name}"`); fetchCompanies(); }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    notify('info', 'Uploading logo...');
-    const url = await uploadFile(file);
-    if (url) setEditing(prev => ({ ...prev, logo_url: url }));
-  };
+
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-0 md:p-8 space-y-6 md:space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -104,7 +98,7 @@ export function PartnersTab({ notify, uploadFile }: PartnersTabProps) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-8 space-y-6"
+            className="bg-[var(--card)] border border-[var(--border)] rounded-3xl md:rounded-[2rem] p-6 md:p-8 space-y-6"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black uppercase tracking-widest">

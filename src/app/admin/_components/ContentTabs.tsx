@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { 
   Plus, Edit3, Trash2, FileText, Send, 
   Activity, Zap, Download, Database,
@@ -15,6 +14,8 @@ import { MediaUpload } from "./MediaUpload";
 import { savePost, saveLead, createLeadBatch, saveLeadResponse } from "@/lib/admin-actions";
 import { supabaseClient } from "@/lib/supabase";
 import * as XLSX from "xlsx";
+import { PDFViewerModal } from "./PDFViewerModal";
+import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 interface ContentTabProps {
   posts: Post[];
@@ -31,6 +32,7 @@ export function ContentTab({
 }: ContentTabProps) {
   const [isAddingPost, setIsAddingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Partial<Post> | null>(null);
+  const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
 
   const handleSaveArticle = async () => {
     if (!editingPost) return;
@@ -77,7 +79,15 @@ export function ContentTab({
                     <div className="flex gap-2">
                        <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-brand-blue/60 hover:text-brand-blue transition-colors flex items-center gap-1"><Edit3 size={12}/> Edit</button>
                        {post.file_url ? (
-                          <Link href={`/pdf-viewer?url=${encodeURIComponent(post.file_url)}&title=${encodeURIComponent(post.title)}`} className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1 transition-all hover:scale-105 active:scale-95"><FileText size={12}/> Secure View</Link>
+                          <button 
+                             onClick={() => setViewingPdf({ 
+                                url: getSecurePdfUrl(post.file_url), 
+                                title: post.title 
+                             })} 
+                             className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1 transition-all hover:scale-105 active:scale-95"
+                          >
+                             <FileText size={12}/> Secure View
+                          </button>
                        ) : (
                           <button onClick={() => { setEditingPost(post); setIsAddingPost(true); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">Details</button>
                        )}
@@ -99,11 +109,11 @@ export function ContentTab({
       {/* ─── ARTICLE EDITOR MODAL ────────────────────────────────────────────────── */}
       <AnimatePresence>
         {isAddingPost && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-4xl p-10 overflow-y-auto max-h-[90vh] grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6 bg-black/80 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--card)] rounded-3xl md:rounded-[3rem] border border-[var(--border)] w-full max-w-4xl p-6 md:p-10 overflow-y-auto max-h-[90vh] grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                <div className="md:col-span-2 flex justify-between items-start">
                   <div className="space-y-1">
-                     <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Article <span className="opacity-30 italic">Editor.</span></h2>
+                     <h2 className="text-2xl md:text-3xl font-heading font-black tracking-tighter uppercase">Article <span className="opacity-30 italic">Editor.</span></h2>
                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Publish articles, market reports, or guides.</p>
                   </div>
                    <button 
@@ -165,6 +175,12 @@ export function ContentTab({
           </div>
         )}
       </AnimatePresence>
+      <PDFViewerModal 
+        isOpen={!!viewingPdf}
+        onClose={() => setViewingPdf(null)}
+        url={viewingPdf?.url || ''}
+        title={viewingPdf?.title || ''}
+      />
     </motion.div>
   );
 }
@@ -295,22 +311,22 @@ export function MarketingTab({
   return (
     <div className="space-y-8">
       {/* Sub-tab Navigation */}
-      <div className="flex gap-4 p-1.5 bg-slate-500/5 rounded-2xl w-fit">
+      <div className="flex flex-wrap md:flex-nowrap gap-2 md:gap-4 p-1.5 bg-slate-500/5 rounded-2xl w-full md:w-fit overflow-x-auto hide-scrollbar">
         <button 
           onClick={() => setMarketingSubTab('outreach')}
-          className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${marketingSubTab === 'outreach' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+          className={`flex-1 md:flex-none px-4 md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${marketingSubTab === 'outreach' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
         >
           Outreach
         </button>
         <button 
           onClick={() => setMarketingSubTab('history')}
-          className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${marketingSubTab === 'history' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+          className={`flex-1 md:flex-none px-4 md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${marketingSubTab === 'history' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
         >
           Campaign Log
         </button>
         <button 
           onClick={() => setMarketingSubTab('responses')}
-          className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${marketingSubTab === 'responses' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+          className={`flex-1 md:flex-none px-4 md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${marketingSubTab === 'responses' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
         >
           Responded Leads
         </button>
@@ -319,9 +335,9 @@ export function MarketingTab({
       <AnimatePresence mode="wait">
         {marketingSubTab === 'outreach' ? (
           <motion.div key="outreach" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 shadow-sm space-y-10 relative overflow-hidden group">
+            <div className="bg-[var(--card)] rounded-3xl md:rounded-[2.5rem] border border-[var(--border)] p-6 md:p-10 shadow-sm space-y-8 md:space-y-10 relative overflow-hidden group">
               <div className="flex justify-between items-center relative z-10">
-                <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Email <span className="opacity-30 italic">Outreach.</span></h2>
+                <h2 className="text-2xl md:text-3xl font-heading font-black tracking-tighter uppercase leading-none">Email <span className="opacity-30 italic">Outreach.</span></h2>
                 <Zap className="text-brand-blue/20" size={32} />
               </div>
               
@@ -373,7 +389,7 @@ export function MarketingTab({
             </div>
 
             <div className="space-y-8">
-               <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 space-y-8 flex flex-col items-center justify-center text-center">
+               <div className="bg-[var(--card)] rounded-3xl md:rounded-[2.5rem] border border-[var(--border)] p-6 md:p-10 space-y-6 md:space-y-8 flex flex-col items-center justify-center text-center">
                   <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center text-brand-blue mb-2">
                      <Download size={40} />
                   </div>
@@ -804,9 +820,6 @@ export const SystemPulseTab: React.FC<{
                  </div>
               </div>
 
-              <div className="text-right">
-                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-20 group-hover:opacity-100 transition-opacity mb-1">{log.entity_type}</p>
-                 <p className="text-sm font-bold text-brand-blue italic">{log.details || log.entity_id}</p>
               </div>
             </motion.div>
           ))

@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, User, ExternalLink } from "lucide-react";
 import { BlogShareButton } from "@/components/blog-share-button";
 import Link from "next/link";
 import Image from "next/image";
+import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -127,7 +128,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                         <h4 className="text-xl font-heading font-black mb-3 leading-tight">{post.type === 'report' ? 'Download Full Report' : 'Download Complete Guide'}</h4>
                         <p className="text-xs text-white/50 font-medium leading-relaxed mb-6">Get the detailed PDF asset including comprehensive data points and high-resolution visuals.</p>
                         <a 
-                          href={`https://docs.google.com/viewer?url=${encodeURIComponent(post.file_url)}&embedded=true`} 
+                          href={`https://docs.google.com/viewer?url=${encodeURIComponent('https://alohaproperties.vercel.app' + getSecurePdfUrl(post.file_url))}&embedded=true`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 bg-brand-blue text-white w-full justify-center px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue-deep transition-all shadow-lg shadow-brand-blue/20"
