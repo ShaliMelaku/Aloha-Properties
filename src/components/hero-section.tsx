@@ -30,7 +30,7 @@ export function HeroSection() {
     }
   };
 
-  const heroImageUrl = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80';
+  const heroImageUrl = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1920&auto=format&fit=crop';
 
   return (
     <section 
@@ -40,13 +40,13 @@ export function HeroSection() {
     >
       {/* Frame-to-frame Background */}
       <motion.div 
-        style={{ y: y1, opacity }}
+        style={{ opacity }}
         className="absolute inset-0 z-0"
       >
         <motion.div 
-           initial={{ scale: 1.2, filter: "blur(20px)" }}
-           animate={{ scale: 1, filter: "blur(0px)" }}
-           transition={{ duration: 2, ease: "easeOut" }}
+           initial={{ scale: 1.1 }}
+           animate={{ scale: 1 }}
+           transition={{ duration: 1.5, ease: "easeOut" }}
            className="absolute inset-0"
         >
           <Image
