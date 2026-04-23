@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase';
-import { Lead, Property, Post, Campaign } from '@/types/admin';
+import { Lead, Property, Post, Campaign, LeadResponse } from '@/types/admin';
 
 export function useAdminData() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [history, setHistory] = useState<Campaign[]>([]);
+  const [responses, setResponses] = useState<LeadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +55,30 @@ export function useAdminData() {
     return data;
   }, []);
 
+  const fetchResponses = useCallback(async () => {
+    const { data, error } = await supabaseClient
+      .from('lead_responses')
+      .select('*, leads(name, email), campaigns(subject)')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    interface DBResponse extends LeadResponse {
+      leads: { name: string; email: string } | null;
+      campaigns: { subject: string } | null;
+    }
+
+    const formatted = (data as unknown as DBResponse[])?.map(r => ({
+      ...r,
+      lead_name: r.leads?.name,
+      lead_email: r.leads?.email,
+      campaign_subject: r.campaigns?.subject
+    })) || [];
+
+    setResponses(formatted);
+    return formatted;
+  }, []);
+
   const refreshAll = useCallback(async () => {
     setLoading(true);
     try {
@@ -61,26 +86,29 @@ export function useAdminData() {
         fetchProperties(),
         fetchLeads(),
         fetchPosts(),
-        fetchHistory()
+        fetchHistory(),
+        fetchResponses()
       ]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown hook error');
     } finally {
       setLoading(false);
     }
-  }, [fetchProperties, fetchLeads, fetchPosts, fetchHistory]);
+  }, [fetchProperties, fetchLeads, fetchPosts, fetchHistory, fetchResponses]);
 
   return {
     properties,
     leads,
     posts,
     history,
+    responses,
     loading,
     error,
     refreshAll,
     fetchProperties,
     fetchLeads,
     fetchPosts,
-    fetchHistory
+    fetchHistory,
+    fetchResponses
   };
 }

@@ -7,12 +7,13 @@ import {
   Plus, Edit3, Trash2, FileText, Send, 
   Activity, Zap, Download, Database,
   X, ImageIcon, CheckCircle2,
-  Users
+  Users, MessageSquare, MapPin, BarChart3, User, Mail, Calendar
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Post, Lead, Campaign } from "@/types/admin";
+import { Post, Lead, Campaign, LeadResponse } from "@/types/admin";
 import { MediaUpload } from "./MediaUpload";
-import { savePost, saveLead, createLeadBatch } from "@/lib/admin-actions";
+import { savePost, saveLead, createLeadBatch, saveLeadResponse } from "@/lib/admin-actions";
+import { supabaseClient } from "@/lib/supabase";
 import * as XLSX from "xlsx";
 
 interface ContentTabProps {
@@ -174,14 +175,17 @@ interface MarketingTabProps {
   initialDraft?: { subject: string; body: string; targetFilter: string } | null;
   onDraftConsumed?: () => void;
   history: Campaign[];
+  responses: LeadResponse[];
   loading: boolean;
   onRepeatCampaign: (draft: { subject: string; body: string; targetFilter: string }) => void;
+  onRefreshResponses: () => void;
 }
 
 export function MarketingTab({ 
-  onNotify, onRefreshLeads, initialDraft, history, loading, onRepeatCampaign 
+  onNotify, onRefreshLeads, initialDraft, history, responses, loading, onRepeatCampaign, onRefreshResponses 
 }: MarketingTabProps) {
-  const [marketingSubTab, setMarketingSubTab] = useState<'outreach' | 'history'>('outreach');
+  const [marketingSubTab, setMarketingSubTab] = useState<'outreach' | 'history' | 'responses'>('outreach');
+  const [loggingResponse, setLoggingResponse] = useState<Partial<LeadResponse> | null>(null);
   const [sending, setSending] = useState(false);
   const [subject, setSubject] = useState(initialDraft?.subject ?? "");
   const [body, setBody] = useState(initialDraft?.body ?? "");
@@ -303,6 +307,12 @@ export function MarketingTab({
         >
           Campaign Log
         </button>
+        <button 
+          onClick={() => setMarketingSubTab('responses')}
+          className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${marketingSubTab === 'responses' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+        >
+          Responded Leads
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
@@ -390,7 +400,7 @@ export function MarketingTab({
                </div>
             </div>
           </motion.div>
-        ) : (
+        ) : marketingSubTab === 'history' ? (
           <HistoryTab 
             key="history"
             history={history} 
@@ -399,7 +409,104 @@ export function MarketingTab({
               onRepeatCampaign(draft);
               setMarketingSubTab('outreach');
             }} 
+            onLogResponse={(campaignId) => setLoggingResponse({ campaign_id: campaignId })}
           />
+        ) : (
+          <ResponsesTab 
+            key="responses"
+            responses={responses}
+            loading={loading}
+            onLogNew={() => setLoggingResponse({})}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ─── LOG RESPONSE MODAL ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {loggingResponse && (
+           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 max-w-xl w-full space-y-8 shadow-2xl relative">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">Log <span className="opacity-30 italic">Response.</span></h3>
+                  <MessageSquare className="text-brand-blue" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Lead Email</label>
+                    <input 
+                      placeholder="Search lead by email..." 
+                      className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" 
+                      onChange={async (e) => {
+                        const email = e.target.value;
+                        if (email.includes('@')) {
+                          const { data } = await supabaseClient.from('leads').select('id, name').eq('email', email).single();
+                          if (data) setLoggingResponse(prev => ({ ...prev, lead_id: data.id, lead_name: data.name }));
+                        }
+                      }}
+                    />
+                    {loggingResponse.lead_name && <p className="text-[10px] font-bold text-brand-blue ml-4 uppercase">Found: {loggingResponse.lead_name}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Interest Level</label>
+                    <select 
+                      value={loggingResponse.interest_level || 'Medium'}
+                      onChange={e => setLoggingResponse(prev => ({ ...prev, interest_level: e.target.value }))}
+                      className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none appearance-none"
+                    >
+                      <option value="High">🔥 High</option>
+                      <option value="Medium">⚡ Medium</option>
+                      <option value="Low">❄️ Low</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Location</label>
+                    <input 
+                      placeholder="e.g. Dubai, Addis..." 
+                      value={loggingResponse.location || ''} 
+                      onChange={e => setLoggingResponse(prev => ({ ...prev, location: e.target.value }))}
+                      className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" 
+                    />
+                  </div>
+
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Response Summary</label>
+                    <textarea 
+                      rows={3} 
+                      placeholder="What was their main interest?" 
+                      value={loggingResponse.response_text || ''} 
+                      onChange={e => setLoggingResponse(prev => ({ ...prev, response_text: e.target.value }))}
+                      className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] text-sm border border-[var(--border)] focus:border-brand-blue outline-none resize-none" 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <button onClick={() => setLoggingResponse(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/10 transition-all">Cancel</button>
+                  <button 
+                    onClick={async () => {
+                      if (!loggingResponse.lead_id || !loggingResponse.response_text) {
+                        onNotify('error', 'Lead identification and response text are required.');
+                        return;
+                      }
+                      try {
+                        await saveLeadResponse(loggingResponse);
+                        onNotify('success', 'Engagement response logged successfully.');
+                        setLoggingResponse(null);
+                        onRefreshResponses();
+                      } catch (e: unknown) {
+                        onNotify('error', 'Failed to log response.');
+                      }
+                    }}
+                    className="flex-1 py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 hover:scale-[1.05] transition-all"
+                  >
+                    Log Engagement
+                  </button>
+                </div>
+             </motion.div>
+           </div>
         )}
       </AnimatePresence>
 
@@ -489,9 +596,10 @@ interface HistoryTabProps {
   history: Campaign[];
   loading: boolean;
   onRepeatCampaign: (draft: { subject: string; body: string; targetFilter: string }) => void;
+  onLogResponse?: (campaignId: string) => void;
 }
 
-export function HistoryTab({ history, loading, onRepeatCampaign }: HistoryTabProps) {
+export function HistoryTab({ history, loading, onRepeatCampaign, onLogResponse }: HistoryTabProps) {
   if (loading) return <div className="h-40 flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
 
   return (
@@ -506,37 +614,135 @@ export function HistoryTab({ history, loading, onRepeatCampaign }: HistoryTabPro
         </button>
       </div>
 
-      <div className="bg-[var(--card)] rounded-3xl border border-[var(--border)] overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-           <thead>
-              <tr className="border-b border-[var(--border)] bg-slate-500/5">
-                 <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40">Date</th>
-                 <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40">Subject</th>
-                 <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40 text-right">Audience</th>
-                 <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest opacity-40 text-right">Actions</th>
-              </tr>
-           </thead>
-           <tbody className="divide-y divide-[var(--border)]">
-              {history.map((c) => (
-                <tr key={c.id} className="hover:bg-brand-blue/5 transition-all group">
-                  <td className="px-8 py-6 text-xs font-bold opacity-60 tabular-nums">{new Date(c.created_at).toLocaleDateString()}</td>
-                  <td className="px-8 py-6 text-sm font-bold">{c.subject}</td>
-                  <td className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-brand-blue text-right whitespace-nowrap">{c.audience_size.toLocaleString()} Contacts</td>
-                  <td className="px-8 py-6">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => onRepeatCampaign({ subject: c.subject, body: c.body ?? '', targetFilter: c.target_filter ?? '' })} title="Edit & Repeat" aria-label="Edit and Repeat Campaign" className="px-3 py-2 rounded-lg bg-brand-blue/10 text-brand-blue text-[9px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center gap-1"><Edit3 size={11} /> Edit &amp; Repeat</button>
-                      <button onClick={() => onRepeatCampaign({ subject: '', body: '', targetFilter: c.target_filter ?? '' })} title="Same Leads" aria-label="Reuse Campaign Audience" className="px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1"><Users size={11} /> Same Leads</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {history.length === 0 && (
-                <tr>
-                   <td colSpan={4} className="px-8 py-20 text-center text-[10px] font-black uppercase tracking-widest opacity-20">No campaign records found.</td>
-                </tr>
-              )}
-           </tbody>
-        </table>
+      <div className="grid grid-cols-1 gap-4">
+        {history.map(item => (
+          <div key={item.id} className="bg-[var(--card)] p-8 rounded-3xl border border-[var(--border)] hover:border-brand-blue/30 transition-all group">
+            <div className="flex justify-between items-start mb-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 text-brand-blue mb-2">
+                  <Calendar size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{new Date(item.created_at).toLocaleDateString()}</span>
+                </div>
+                <h3 className="text-lg font-bold leading-tight">{item.subject}</h3>
+                <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Filter: {item.target_filter || 'Manual'}</p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => onRepeatCampaign({ subject: item.subject, body: item.body || "", targetFilter: item.target_filter || "" })}
+                  className="px-6 py-3 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-blue/20 hover:scale-[1.05] transition-all"
+                >
+                  Edit & Repeat
+                </button>
+                <button 
+                  onClick={() => onLogResponse?.(item.id)}
+                  className="px-6 py-3 border border-brand-blue/30 text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all"
+                >
+                  Log Response
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-[var(--border)]">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Audience Size</p>
+                <p className="text-xl font-heading font-black tabular-nums">{item.audience_size}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Delivered</p>
+                <p className="text-xl font-heading font-black tabular-nums text-emerald-500">100%</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Type</p>
+                <p className="text-xl font-heading font-black uppercase tracking-widest text-brand-blue">Broadcast</p>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {history.length === 0 && (
+          <div className="py-20 text-center space-y-4 bg-slate-500/5 rounded-[3rem] border border-dashed border-[var(--border)]">
+            <Mail size={48} className="mx-auto opacity-10" />
+            <p className="text-xs font-bold uppercase tracking-widest opacity-30">No recorded campaigns found.</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+interface ResponsesTabProps {
+  responses: LeadResponse[];
+  loading: boolean;
+  onLogNew: () => void;
+}
+
+export function ResponsesTab({ responses, loading, onLogNew }: ResponsesTabProps) {
+  if (loading) return <div className="h-40 flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-heading font-black tracking-tighter uppercase">Engagement <span className="opacity-30 italic">Responses.</span></h2>
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Tracking lead interest and feedback.</p>
+        </div>
+        <button 
+          onClick={onLogNew}
+          className="flex items-center gap-3 px-8 py-4 bg-brand-blue text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-blue/20 hover:scale-[1.05] transition-all"
+        >
+          <Plus size={16} /> Log New Response
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        {responses.map(item => (
+          <div key={item.id} className="bg-[var(--card)] p-8 rounded-3xl border border-[var(--border)] hover:border-brand-blue/30 transition-all flex gap-8 items-start">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+              item.interest_level === 'High' ? 'bg-orange-500/10 text-orange-500' :
+              item.interest_level === 'Medium' ? 'bg-brand-blue/10 text-brand-blue' :
+              'bg-slate-500/10 text-slate-500'
+            }`}>
+              <BarChart3 size={24} />
+            </div>
+            
+            <div className="flex-1 space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="font-bold text-lg">{item.lead_name || 'Unknown Lead'}</h3>
+                    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                      item.interest_level === 'High' ? 'bg-orange-500 text-white' :
+                      item.interest_level === 'Medium' ? 'bg-brand-blue text-white' :
+                      'bg-slate-500/20 text-slate-500'
+                    }`}>
+                      {item.interest_level} Interest
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                    <span className="flex items-center gap-1"><User size={12} /> {item.lead_email}</span>
+                    {item.location && <span className="flex items-center gap-1"><MapPin size={12} /> {item.location}</span>}
+                    <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(item.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Campaign</p>
+                  <p className="text-[10px] font-bold text-brand-blue max-w-[200px] truncate">{item.campaign_subject || 'Manual Entry'}</p>
+                </div>
+              </div>
+
+              <div className="p-6 bg-slate-500/5 rounded-2xl">
+                <p className="text-sm italic opacity-70">&quot;{item.response_text}&quot;</p>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {responses.length === 0 && (
+          <div className="py-20 text-center space-y-4 bg-slate-500/5 rounded-[3rem] border border-dashed border-[var(--border)]">
+            <MessageSquare size={48} className="mx-auto opacity-10" />
+            <p className="text-xs font-bold uppercase tracking-widest opacity-30">No engagement responses logged yet.</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );

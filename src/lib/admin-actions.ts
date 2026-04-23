@@ -1,5 +1,5 @@
 import { supabaseClient } from "./supabase";
-import { Lead, Property, Post, Unit, UnitType } from "@/types/admin";
+import { Lead, Property, Post, Unit, UnitType, LeadResponse } from "@/types/admin";
 
 /**
  * HELPER: Generate slug from text
@@ -45,10 +45,10 @@ const ALLOWED_PROPERTY_FIELDS = [
 ];
 
 function sanitizePayload(payload: Partial<Property>) {
-  const sanitized: Record<string, any> = {};
+  const sanitized: Record<string, unknown> = {};
   for (const key of ALLOWED_PROPERTY_FIELDS) {
     if (key in payload) {
-      sanitized[key] = (payload as any)[key];
+      sanitized[key] = (payload as Record<string, unknown>)[key];
     }
   }
   return sanitized;
@@ -269,3 +269,28 @@ export async function savePost(post: Partial<Post>) {
   }
 }
 
+export async function saveLeadResponse(response: Partial<LeadResponse>) {
+  const { id, ...payload } = response;
+  
+  // Remove join fields before saving
+  const cleanPayload = { ...payload };
+  delete (cleanPayload as Record<string, unknown>).lead_name;
+  delete (cleanPayload as Record<string, unknown>).lead_email;
+  delete (cleanPayload as Record<string, unknown>).campaign_subject;
+
+  if (id) {
+    const { error } = await supabaseClient
+      .from('lead_responses')
+      .update(cleanPayload)
+      .eq('id', id);
+    if (error) throw error;
+    await logActivity('Lead Response Updated', 'lead_response', id);
+  } else {
+    const { data, error } = await supabaseClient
+      .from('lead_responses')
+      .insert(cleanPayload)
+      .select().single();
+    if (error) throw error;
+    await logActivity('Lead Response Created', 'lead_response', data.id);
+  }
+}
