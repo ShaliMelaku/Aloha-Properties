@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Download, FileText, Maximize2 } from "lucide-react";
+import { X, FileText, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PDFViewerModalProps {

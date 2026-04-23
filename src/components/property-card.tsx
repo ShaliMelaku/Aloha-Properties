@@ -3,18 +3,28 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductProgress, calculateDiscount, getLoanPercentage } from "@/data/mock-db";
+import { calculateDiscount, getLoanPercentage, getProductProgress } from "@/data/mock-db";
 import { SupabaseProperty, SupabaseUnitType } from "@/hooks/use-properties";
 import {
-  ChevronDown, MapPin, BedDouble, Bath,
-  Maximize, Banknote, ArrowRight, LayoutGrid, X,
-  CheckCircle, Clock, XCircle, Tag, FileText
+  ArrowRight,
+  Banknote,
+  Bath,
+  BedDouble,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  FileText,
+  LayoutGrid,
+  MapPin,
+  Maximize,
+  Tag,
+  X,
+  XCircle,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";
 import dynamic from "next/dynamic";
-import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
 const PropertyMap = dynamic(() => import("./property-map"), { ssr: false });
 
