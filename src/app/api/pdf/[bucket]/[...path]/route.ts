@@ -3,11 +3,11 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(
   request: Request,
-  { params }: { params: { bucket: string; path: string[] } }
+  { params }: { params: Promise<{ bucket: string; path: string[] }> }
 ) {
   try {
-    const bucket = params.bucket;
-    const path = params.path.join('/');
+    const { bucket, path: pathArray } = await params;
+    const path = pathArray.join('/');
 
     if (!bucket || !path) {
       return new NextResponse('Invalid parameters', { status: 400 });
