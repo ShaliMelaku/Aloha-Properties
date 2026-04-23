@@ -11,6 +11,14 @@ export interface Lead {
   status?: 'new' | 'contacted' | 'qualified' | 'closed' | 'lost';
   notes?: string;
   phone?: string;
+  batch_id?: string;
+}
+
+export interface LeadBatch {
+  id: string;
+  name: string;
+  lead_count: number;
+  created_at: string;
 }
 
 export interface Campaign {

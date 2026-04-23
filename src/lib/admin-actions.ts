@@ -196,6 +196,17 @@ export async function deleteProgress(id: string) {
  * LEAD ACTIONS
  */
 
+export async function createLeadBatch(name: string, lead_count: number) {
+  const { data, error } = await supabaseClient
+    .from('lead_batches')
+    .insert({ name, lead_count })
+    .select()
+    .single();
+  if (error) throw error;
+  await logActivity('Lead Batch Created', 'lead_batch', data.id, name);
+  return data;
+}
+
 export async function saveLead(lead: Partial<Lead>) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, created_at, ...payload } = lead;

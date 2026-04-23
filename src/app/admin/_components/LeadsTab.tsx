@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lead } from "@/types/admin";
-import { saveLead } from "@/lib/admin-actions";
+import { saveLead, createLeadBatch } from "@/lib/admin-actions";
+import * as XLSX from "xlsx";
 
 interface LeadsTabProps {
   leads: Lead[];
@@ -55,59 +56,72 @@ export function LeadsTab({
     onNotify('success', 'Lead registry exported to CSV.');
   };
 
-  const parseCSV = (text: string): Partial<Lead>[] => {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) return [];
-    // header detection
-    const header = lines[0].toLowerCase().replace(/"/g, '');
-    const cols = header.split(',').map(h => h.trim());
-    const nameIdx = cols.findIndex(c => c.includes('name'));
-    const emailIdx = cols.findIndex(c => c.includes('email'));
-    const phoneIdx = cols.findIndex(c => c.includes('phone'));
-    const interestIdx = cols.findIndex(c => c.includes('interest') || c.includes('property'));
-
-    return lines.slice(1).map(line => {
-      const vals = line.split(',').map(v => v.replace(/^"|"$/g, '').trim());
-      return {
-        name: vals[nameIdx] || vals[0] || '',
-        email: vals[emailIdx] || vals[1] || '',
-        phone: phoneIdx >= 0 ? vals[phoneIdx] : undefined,
-        interest: interestIdx >= 0 ? vals[interestIdx] : undefined,
-        status: importStatus,
-      };
-    }).filter(l => l.name && l.email);
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const parsed = parseCSV(text);
-      setImportPreview(parsed);
-      if (parsed.length === 0) onNotify('error', 'No valid leads found in CSV. Ensure columns: name, email.');
+      try {
+        const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet);
+        
+        const parsed: Partial<Lead>[] = json.map(row => {
+          // Normalize keys for fuzzy matching
+          const normalizedRow: Record<string, string> = {};
+          for (const key in row) {
+            normalizedRow[key.toLowerCase().trim()] = String(row[key]).trim();
+          }
+          
+          return {
+            name: normalizedRow['name'] || normalizedRow['full name'] || normalizedRow['first name'] || '',
+            email: normalizedRow['email'] || normalizedRow['email address'] || '',
+            phone: normalizedRow['phone'] || normalizedRow['phone number'] || undefined,
+            interest: normalizedRow['interest'] || normalizedRow['property'] || undefined,
+            status: importStatus,
+          };
+        }).filter(l => l.name && l.email);
+
+        setImportPreview(parsed);
+        if (parsed.length === 0) onNotify('error', 'No valid leads found in file. Ensure columns: name, email.');
+      } catch (err) {
+        console.error(err);
+        onNotify('error', 'Failed to parse file. Ensure it is a valid Excel or CSV file.');
+      }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const handleBatchImport = async () => {
     if (importPreview.length === 0) return;
     setImportUploading(true);
     let success = 0, failed = 0;
-    for (const lead of importPreview) {
-      try {
-        await saveLead({ ...lead, status: importStatus });
-        success++;
-      } catch {
-        failed++;
+    
+    try {
+      const batchName = `Batch Import - ${new Date().toLocaleString()}`;
+      const batch = await createLeadBatch(batchName, importPreview.length);
+      
+      for (const lead of importPreview) {
+        try {
+          await saveLead({ ...lead, status: importStatus, batch_id: batch.id });
+          success++;
+        } catch {
+          failed++;
+        }
       }
+      onNotify('success', `Data Import: ${success} leads added${failed > 0 ? `, ${failed} skipped` : ''}.`);
+    } catch (err) {
+      console.error(err);
+      onNotify('error', 'Failed to initialize batch import.');
     }
+
     setImportUploading(false);
     setShowImportModal(false);
     setImportPreview([]);
     onRefresh();
-    onNotify('success', `CSV Import: ${success} leads added${failed > 0 ? `, ${failed} skipped` : ''}.`);
   };
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Activity className="animate-spin text-brand-blue" /></div>;
@@ -140,7 +154,7 @@ export function LeadsTab({
             <option value="lost">Lost</option>
           </select>
           <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-5 py-4 bg-brand-blue/10 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest border border-brand-blue/20 hover:bg-brand-blue hover:text-white transition-all">
-            <FileUp size={15} /> Import CSV
+            <FileUp size={15} /> Import Data
           </button>
           <button onClick={handleExportCSV} className="flex items-center gap-2 px-5 py-4 bg-emerald-500/10 text-emerald-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">
             <Download size={15} /> Export
@@ -223,7 +237,7 @@ export function LeadsTab({
               <button onClick={() => { setShowImportModal(false); setImportPreview([]); }} aria-label="Close Import" title="Close" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X /></button>
               <div className="space-y-1">
                 <h4 className="text-3xl font-heading font-black tracking-tighter uppercase">Bulk <span className="opacity-30 italic">Import.</span></h4>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload a CSV with columns: name, email, phone (optional), interest (optional).</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload an Excel (.xlsx) or CSV file with columns: name, email, phone (optional), interest (optional).</p>
               </div>
 
               {/* Status assignment */}
@@ -242,8 +256,8 @@ export function LeadsTab({
                 onClick={() => csvInputRef.current?.click()}
               >
                 <FileUp className="mx-auto mb-3 opacity-20" size={40} />
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Click to select a .csv file</p>
-                <input ref={csvInputRef} type="file" accept=".csv" aria-label="Upload CSV file" title="Select a CSV file to import leads" className="hidden" onChange={handleFileChange} />
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Click to select an .xlsx or .csv file</p>
+                <input ref={csvInputRef} type="file" accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" aria-label="Upload data file" title="Select a file to import leads" className="hidden" onChange={handleFileChange} />
               </div>
 
               {/* Preview */}
