@@ -5,6 +5,8 @@ import { SlidersHorizontal } from "lucide-react";
 import { useProperties } from "@/hooks/use-properties";
 import { PropertyCard } from "./property-card";
 import { motion, AnimatePresence } from "framer-motion";
+import { PDFViewerModal } from "@/app/admin/_components/PDFViewerModal";
+import { getSecurePropertyPdfUrl } from "@/lib/pdf-utils";
 
 export function PortfolioGallery() {
   const [mounted, setMounted] = useState(false);
@@ -13,6 +15,7 @@ export function PortfolioGallery() {
   const [bedsFilter, setBedsFilter] = useState("all");
   const [devFilter, setDevFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [viewingPdf, setViewingPdf] = useState<{ id: string, title: string } | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -57,6 +60,7 @@ export function PortfolioGallery() {
   if (!mounted) return null;
 
   return (
+    <>
     <section id="catalog" className="py-32 relative">
       <div className="max-w-6xl mx-auto px-6">
         
@@ -176,7 +180,11 @@ export function PortfolioGallery() {
               </motion.div>
             ) : filteredProperties.length > 0 ? (
               filteredProperties.map((prop) => (
-                <PropertyCard key={prop.id} property={prop} />
+                <PropertyCard 
+                  key={prop.id} 
+                  property={prop} 
+                  onViewPdf={(id, title) => setViewingPdf({ id, title })}
+                />
               ))
             ) : (
               <motion.div 
@@ -192,5 +200,15 @@ export function PortfolioGallery() {
         </div>
       </div>
     </section>
+
+    {viewingPdf && (
+      <PDFViewerModal 
+        isOpen={!!viewingPdf}
+        onClose={() => setViewingPdf(null)}
+        url={getSecurePropertyPdfUrl(viewingPdf.id)}
+        title={viewingPdf.title}
+      />
+    )}
+    </>
   );
 }

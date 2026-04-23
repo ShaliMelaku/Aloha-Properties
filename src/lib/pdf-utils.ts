@@ -21,3 +21,11 @@ export function getSecurePdfUrl(url: string | null | undefined): string {
   // If not a Supabase URL, return as is (could be external)
   return url;
 }
+
+/**
+ * Returns a secure obfuscated URL based on property ID
+ */
+export function getSecurePropertyPdfUrl(propertyId: string): string {
+  if (!propertyId) return '';
+  return `/api/pdf/property/${propertyId}`;
+}
