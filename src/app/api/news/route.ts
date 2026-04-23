@@ -29,17 +29,27 @@ export async function GET(request: Request) {
 
     if (countError) throw countError;
 
+    const force = searchParams.get('force') === 'true';
     const DAILY_LIMIT = 5; 
-    // Cron bypasses the limit to ensure daily consistency
-    if (!isCron && count && count >= DAILY_LIMIT) {
+    
+    // Cron and Force bypass the limit to ensure daily consistency or manual testing
+    if (!isCron && !force && count && count >= DAILY_LIMIT) {
       return NextResponse.json({ 
-        message: 'Daily news limit reached for manual sync. Schedule will run automatically.',
+        message: `Daily news limit (${DAILY_LIMIT}) reached for manual sync. Use ?force=true to override.`,
         count 
       });
     }
 
     // 2. Fetch fresh news
     const articles = await fetchEthiopiaRealEstateNews();
+    
+    if (articles.length === 0) {
+       return NextResponse.json({ 
+         success: false, 
+         message: "Zero articles returned from News API. Check your NEWS_API_KEY and keywords.",
+         keywords: '"Ethiopia" AND (economics OR regulation OR "real estate" OR investment OR finance OR policy OR banking OR "Addis Ababa")'
+       });
+    }
     
     // 3. Guarantee at least 3 articles (prioritizing the freshest available)
     // We removed the strict 30-day filter because the user wants guaranteed content volume.
