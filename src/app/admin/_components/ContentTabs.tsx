@@ -819,7 +819,9 @@ export const SystemPulseTab: React.FC<{
                     </div>
                  </div>
               </div>
-
+              <div className="text-right">
+                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-20 group-hover:opacity-100 transition-opacity mb-1">{log.entity_type}</p>
+                 <p className="text-sm font-bold text-brand-blue italic">{log.details || log.entity_id}</p>
               </div>
             </motion.div>
           ))
