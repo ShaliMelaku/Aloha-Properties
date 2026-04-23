@@ -14,8 +14,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 });
     }
 
-    // Attempt to persist to database
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://mock-url.supabase.co') {
+    // 1. Check if email already exists in leads
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('id, status')
+      .eq('email', email)
+      .single();
+
+    if (existingLead) {
+      // 2. Automated Response Logging: Instead of a duplicate lead, log an engagement response
+      await supabase
+        .from('lead_responses')
+        .insert([{
+          lead_id: existingLead.id,
+          response_text: message || `Contact Form Inquiry: ${interest || 'General'}`,
+          interest_level: 'High',
+          interest_summary: interest,
+          location: 'Website Contact Form'
+        }]);
+
+      // 3. Update lead status to 'qualified' if they were just 'new' or 'contacted'
+      if (existingLead.status === 'new' || existingLead.status === 'contacted') {
+        await supabase
+          .from('leads')
+          .update({ status: 'qualified', notes: `Latest Inquiry: ${message}` })
+          .eq('id', existingLead.id);
+      }
+      
+      console.log(`Automated engagement logged for existing lead: ${email}`);
+    } else {
+      // 4. Create new lead if they don't exist
       const { error: dbError } = await supabase
         .from('leads')
         .insert([{ name, email, interest, message, source: 'contact_form' }]);
@@ -23,7 +51,7 @@ export async function POST(req: Request) {
       if (dbError) {
         console.error("Database insert failed:", dbError);
       } else {
-        // Parallel sync to HubSpot - catch errors to not block the user response
+        // Parallel sync to HubSpot
         syncToHubSpot({ name, email, interest, message }).catch(err => console.error("HS Sync fail:", err));
       }
     }
