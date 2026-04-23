@@ -29,6 +29,21 @@ export interface Campaign {
   target_filter?: string;
   audience_size: number;
 }
+export interface LeadResponse {
+  id: string;
+  created_at: string;
+  lead_id: string;
+  campaign_id?: string;
+  response_text: string;
+  interest_level: string;
+  location?: string;
+  interest_summary?: string;
+  notes?: string;
+  // Join fields
+  lead_name?: string;
+  lead_email?: string;
+  campaign_subject?: string;
+}
 
 export interface PropertyProgress {
   id: string;
