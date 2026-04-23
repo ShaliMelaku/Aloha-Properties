@@ -481,8 +481,7 @@ export function MarketingTab({
             </div>
          )}
       </AnimatePresence>
-
-    </motion.div>
+    </div>
   );
 }
 

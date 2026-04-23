@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { 
-  LogOut, PieChart, Mail, Home, Users, History, ShieldCheck, Activity, Lock,
+  LogOut, PieChart, Mail, Home, Users, ShieldCheck, Activity, Lock,
   Globe, Trash2, Sun, Moon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +18,7 @@ import { PartnersTab } from "./_components/PartnersTab";
 import { AnalyticsTab } from "./_components/AnalyticsTab";
 import { LeadsTab } from "./_components/LeadsTab";
 import { PortfolioTab } from "./_components/PortfolioTab";
-import { ContentTab, MarketingTab, HistoryTab } from "./_components/ContentTabs";
+import { ContentTab, MarketingTab } from "./_components/ContentTabs";
 
 // Shared Types
 import { Lead, Property, Unit, AdminTab } from "@/types/admin";
