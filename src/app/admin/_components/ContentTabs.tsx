@@ -173,9 +173,15 @@ interface MarketingTabProps {
   onRefreshLeads: () => void;
   initialDraft?: { subject: string; body: string; targetFilter: string } | null;
   onDraftConsumed?: () => void;
+  history: Campaign[];
+  loading: boolean;
+  onRepeatCampaign: (draft: { subject: string; body: string; targetFilter: string }) => void;
 }
 
-export function MarketingTab({ onNotify, onRefreshLeads, initialDraft }: MarketingTabProps) {
+export function MarketingTab({ 
+  onNotify, onRefreshLeads, initialDraft, history, loading, onRepeatCampaign 
+}: MarketingTabProps) {
+  const [marketingSubTab, setMarketingSubTab] = useState<'outreach' | 'history'>('outreach');
   const [sending, setSending] = useState(false);
   const [subject, setSubject] = useState(initialDraft?.subject ?? "");
   const [body, setBody] = useState(initialDraft?.body ?? "");
@@ -282,88 +288,120 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft }: Marketi
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-      <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 shadow-sm space-y-10 relative overflow-hidden group">
-        <div className="flex justify-between items-center relative z-10">
-          <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Email <span className="opacity-30 italic">Outreach.</span></h2>
-          <Zap className="text-brand-blue/20" size={32} />
-        </div>
-        
-        <div className="space-y-6 relative z-10">
-            <div className="space-y-2">
-               <label htmlFor="individual-emails" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Individual Emails (Comma Separated)</label>
-               <input id="individual-emails" placeholder="email1@example.com, email2@example.com..." value={individualEmails} onChange={e => setIndividualEmails(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
-            </div>
-            <div className="space-y-2">
-               <label htmlFor="target-recipient" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Recipient Filter (Optional)</label>
-               <input id="target-recipient" placeholder="e.g. qualified, all, bole..." value={targetFilter} onChange={e => setTargetFilter(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
-            </div>
-           <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Subject</label>
-              <input placeholder="Subject Line..." value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] font-bold text-sm border border-[var(--border)] focus:border-brand-blue outline-none" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Message Body</label>
-              <textarea rows={10} placeholder="Type your message here..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] text-sm border border-[var(--border)] focus:border-brand-blue outline-none resize-none" />
-           </div>
-           <button onClick={async () => {
-              if (!subject.trim() || !body.trim()) { onNotify('error', 'Subject and message body are required.'); return; }
-              setSending(true);
-              try {
-                const res = await fetch('/api/admin/broadcast', { 
-                  method: 'POST', 
-                  headers: { 'Content-Type': 'application/json' }, 
-                  body: JSON.stringify({ 
-                    subject, 
-                    body, 
-                    targetFilter,
-                    individualEmails: individualEmails.split(',').map(s => s.trim()).filter(s => s)
-                  }) 
-                });
-                const data = await res.json();
-                if (data.success) onNotify('success', `Broadcast sent to ${data.sent} contacts.`);
-                else throw new Error(data.error || 'Broadcast failed');
-              } catch (e: unknown) {
-                onNotify('error', e instanceof Error ? e.message : 'Broadcast failed');
-              } finally {
-                setSending(false);
-              }
-           }} disabled={sending} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
-             {sending ? <Activity className="animate-spin" /> : <>Send Broadcast <Send size={18} /></>}
-           </button>
-        </div>
-
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-brand-blue/5 to-transparent pointer-events-none" />
+    <div className="space-y-8">
+      {/* Sub-tab Navigation */}
+      <div className="flex gap-4 p-1.5 bg-slate-500/5 rounded-2xl w-fit">
+        <button 
+          onClick={() => setMarketingSubTab('outreach')}
+          className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${marketingSubTab === 'outreach' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+        >
+          Outreach
+        </button>
+        <button 
+          onClick={() => setMarketingSubTab('history')}
+          className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${marketingSubTab === 'history' ? 'bg-brand-blue text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+        >
+          Campaign Log
+        </button>
       </div>
 
-      <div className="space-y-8">
-         <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 space-y-8 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center text-brand-blue mb-2">
-               <Download size={40} />
-            </div>
-            <div className="space-y-2">
-               <h2 className="text-2xl font-heading font-black tracking-tighter uppercase">CSV <span className="opacity-30 italic">Import.</span></h2>
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-40 max-w-xs">Bulk import leads from external sources or junk datasets.</p>
-            </div>
-            <button onClick={() => setIsImporting(true)} className="px-10 py-5 bg-[var(--background)] border border-brand-blue/30 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all">
-               Import Leads
-            </button>
-         </div>
+      <AnimatePresence mode="wait">
+        {marketingSubTab === 'outreach' ? (
+          <motion.div key="outreach" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 shadow-sm space-y-10 relative overflow-hidden group">
+              <div className="flex justify-between items-center relative z-10">
+                <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Email <span className="opacity-30 italic">Outreach.</span></h2>
+                <Zap className="text-brand-blue/20" size={32} />
+              </div>
+              
+              <div className="space-y-6 relative z-10">
+                  <div className="space-y-2">
+                     <label htmlFor="individual-emails" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Individual Emails (Comma Separated)</label>
+                     <input id="individual-emails" placeholder="email1@example.com, email2@example.com..." value={individualEmails} onChange={e => setIndividualEmails(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+                  </div>
+                  <div className="space-y-2">
+                     <label htmlFor="target-recipient" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Recipient Filter (Optional)</label>
+                     <input id="target-recipient" placeholder="e.g. qualified, all, bole..." value={targetFilter} onChange={e => setTargetFilter(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+                  </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Subject</label>
+                    <input placeholder="Subject Line..." value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] font-bold text-sm border border-[var(--border)] focus:border-brand-blue outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Message Body</label>
+                    <textarea rows={10} placeholder="Type your message here..." value={body} onChange={e => setBody(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] text-sm border border-[var(--border)] focus:border-brand-blue outline-none resize-none" />
+                 </div>
+                 <button onClick={async () => {
+                    if (!subject.trim() || !body.trim()) { onNotify('error', 'Subject and message body are required.'); return; }
+                    setSending(true);
+                    try {
+                      const res = await fetch('/api/admin/broadcast', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ 
+                          subject, 
+                          body, 
+                          targetFilter,
+                          individualEmails: individualEmails.split(',').map(s => s.trim()).filter(s => s)
+                        }) 
+                      });
+                      const data = await res.json();
+                      if (data.success) onNotify('success', `Broadcast sent to ${data.sent} contacts.`);
+                      else throw new Error(data.error || 'Broadcast failed');
+                    } catch (e: unknown) {
+                      onNotify('error', e instanceof Error ? e.message : 'Broadcast failed');
+                    } finally {
+                      setSending(false);
+                    }
+                 }} disabled={sending} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+                   {sending ? <Activity className="animate-spin" /> : <>Send Broadcast <Send size={18} /></>}
+                 </button>
+              </div>
 
-         <div className="p-10 bg-brand-blue rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group">
-            <div className="relative z-10 space-y-6">
-               <div className="flex items-center gap-3">
-                  <Users className="opacity-60" size={20} />
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Lead Database Status</p>
-               </div>
-               <div className="flex items-baseline gap-2">
-                  <p className="text-5xl font-heading font-black tracking-tighter tabular-nums">Active</p>
-               </div>
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-60">System logging integrated with Lead CRM.</p>
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-brand-blue/5 to-transparent pointer-events-none" />
             </div>
-            <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform"><Database size={160} /></div>
-         </div>
-      </div>
+
+            <div className="space-y-8">
+               <div className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-10 space-y-8 flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center text-brand-blue mb-2">
+                     <Download size={40} />
+                  </div>
+                  <div className="space-y-2">
+                     <h2 className="text-2xl font-heading font-black tracking-tighter uppercase">CSV <span className="opacity-30 italic">Import.</span></h2>
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40 max-w-xs">Bulk import leads from external sources or junk datasets.</p>
+                  </div>
+                  <button onClick={() => setIsImporting(true)} className="px-10 py-5 bg-[var(--background)] border border-brand-blue/30 text-brand-blue rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all">
+                     Import Leads
+                  </button>
+               </div>
+
+               <div className="p-10 bg-brand-blue rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group">
+                  <div className="relative z-10 space-y-6">
+                     <div className="flex items-center gap-3">
+                        <Users className="opacity-60" size={20} />
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Lead Database Status</p>
+                     </div>
+                     <div className="flex items-baseline gap-2">
+                        <p className="text-5xl font-heading font-black tracking-tighter tabular-nums">Active</p>
+                     </div>
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-60">System logging integrated with Lead CRM.</p>
+                  </div>
+                  <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform"><Database size={160} /></div>
+               </div>
+            </div>
+          </motion.div>
+        ) : (
+          <HistoryTab 
+            key="history"
+            history={history} 
+            loading={loading} 
+            onRepeatCampaign={(draft) => {
+              onRepeatCampaign(draft);
+              setMarketingSubTab('outreach');
+            }} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* ─── IMPORT LEAD MODAL ────────────────────────────────────────────────────── */}
       <AnimatePresence>

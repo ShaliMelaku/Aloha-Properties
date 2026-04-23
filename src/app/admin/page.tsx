@@ -198,7 +198,6 @@ export default function AdminDashboard() {
     { id: 'partners', icon: Handshake, label: 'Partners' },
     { id: 'content', icon: Globe, label: 'Content' },
     { id: 'leads', icon: Users, label: 'Leads' },
-    { id: 'history', icon: History, label: 'History' },
   ];
 
   return (
@@ -303,7 +302,18 @@ export default function AdminDashboard() {
                 editingProperty={editingProperty}
               />
             )}
-            {activeTab === 'marketing' && <MarketingTab key={draftCampaign ? `marketing-${Date.now()}` : 'marketing'} onNotify={notify} onRefreshLeads={fetchLeads} initialDraft={draftCampaign} onDraftConsumed={() => setDraftCampaign(null)} />}
+            {activeTab === 'marketing' && (
+              <MarketingTab 
+                key={draftCampaign ? `marketing-${Date.now()}` : 'marketing'} 
+                onNotify={notify} 
+                onRefreshLeads={fetchLeads} 
+                initialDraft={draftCampaign} 
+                onDraftConsumed={() => setDraftCampaign(null)} 
+                history={history}
+                loading={loading}
+                onRepeatCampaign={openMarketingWithDraft}
+              />
+            )}
             {activeTab === 'content' && (
               <ContentTab 
                 key="content"
@@ -331,7 +341,6 @@ export default function AdminDashboard() {
               />
             )}
             {activeTab === 'partners' && <PartnersTab key="partners" notify={notify} uploadFile={uploadFile} />}
-            {activeTab === 'history' && <HistoryTab key="history" history={history} loading={loading} onRepeatCampaign={openMarketingWithDraft} />}
          </AnimatePresence>
       </main>
 
