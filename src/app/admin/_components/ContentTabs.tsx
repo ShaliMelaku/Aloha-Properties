@@ -12,7 +12,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Post, Lead, Campaign } from "@/types/admin";
 import { MediaUpload } from "./MediaUpload";
-import { savePost, saveLead } from "@/lib/admin-actions";
+import { savePost, saveLead, createLeadBatch } from "@/lib/admin-actions";
+import * as XLSX from "xlsx";
 
 interface ContentTabProps {
   posts: Post[];
@@ -174,46 +175,109 @@ interface MarketingTabProps {
   onDraftConsumed?: () => void;
 }
 
-export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftConsumed }: MarketingTabProps) {
+export function MarketingTab({ onNotify, onRefreshLeads, initialDraft }: MarketingTabProps) {
   const [sending, setSending] = useState(false);
   const [subject, setSubject] = useState(initialDraft?.subject ?? "");
   const [body, setBody] = useState(initialDraft?.body ?? "");
   const [targetFilter, setTargetFilter] = useState(initialDraft?.targetFilter ?? "");
+  const [individualEmails, setIndividualEmails] = useState("");
   const [isImporting, setIsImporting] = useState(false);
-  const [importData, setImportData] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importUrl, setImportUrl] = useState("");
+  const [importStatus, setImportStatus] = useState<'new' | 'contacted' | 'qualified' | 'closed' | 'lost'>('new');
+  const [importPreview, setImportPreview] = useState<Partial<Lead>[]>([]);
+  const [importUploading, setImportUploading] = useState(false);
 
-  // consume the draft once mounted
-  const draftConsumedRef = useRef(false);
-  if (initialDraft && !draftConsumedRef.current) {
-    draftConsumedRef.current = true;
-    onDraftConsumed?.();
-  }
 
-  const handleCsvImport = async () => {
-    if (!importData.trim()) {
-      onNotify('error', 'Please paste CSV data first.');
-      return;
-    }
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const ab = ev.target?.result as ArrayBuffer;
+        const wb = XLSX.read(new Uint8Array(ab), { type: 'array' });
+        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]]);
+        
+        const leads: Partial<Lead>[] = json.map(row => {
+          const norm: Record<string, string> = {};
+          for (const key in row) norm[key.toLowerCase().trim()] = String(row[key]).trim();
+          
+          return {
+            name: norm['name'] || norm['full name'] || norm['first name'] || '',
+            email: norm['email'] || norm['email address'] || '',
+            phone: norm['phone'] || norm['phone number'] || undefined,
+            interest: norm['interest'] || norm['property'] || undefined,
+            status: importStatus
+          };
+        }).filter(l => l.name && l.email);
+
+        if (leads.length === 0) throw new Error("No valid lead data found. Ensure columns: name, email.");
+        setImportPreview(leads);
+      } catch (err: unknown) {
+        onNotify('error', err instanceof Error ? err.message : "Import failed");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleBatchImport = async () => {
+    if (importPreview.length === 0) return;
+    setImportUploading(true);
+    let success = 0, failed = 0;
     
     try {
-      const lines = importData.split('\n').filter(l => l.trim());
-      const leads: Partial<Lead>[] = lines.map(line => {
-        const [name, email, interest] = line.split(',').map(s => s.trim());
-        return { name, email, interest, status: 'new' as const };
-      }).filter(l => l.name && l.email);
-
-      if (leads.length === 0) throw new Error("No valid lead data found (Format: Name, Email, Interest)");
-
-      for (const lead of leads) {
-        await saveLead(lead);
+      const batchName = `Marketing Import - ${new Date().toLocaleString()}`;
+      const batch = await createLeadBatch(batchName, importPreview.length);
+      
+      for (const lead of importPreview) {
+        try {
+          await saveLead({ ...lead, batch_id: batch.id });
+          success++;
+        } catch {
+          failed++;
+        }
       }
-
-      onNotify('success', `Successfully imported ${leads.length} leads.`);
+      onNotify('success', `Imported ${success} leads into batch: ${batch.name}${failed > 0 ? `, ${failed} failed` : ''}`);
       setIsImporting(false);
-      setImportData("");
+      setImportPreview([]);
       onRefreshLeads();
-    } catch (e: unknown) {
-      onNotify('error', e instanceof Error ? e.message : 'Import Error');
+    } catch (err: unknown) {
+      onNotify('error', err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportUploading(false);
+    }
+  };
+
+
+  const handleUrlImport = async () => {
+    if (!importUrl.trim()) return;
+    try {
+      const res = await fetch(importUrl);
+      const text = await res.text();
+      // Simple CSV parse if URL is provided
+      const lines = text.split('\n').filter(l => l.trim());
+      const json = lines.slice(1).map(line => {
+        const [name, email, interest] = line.split(',').map(s => s.trim());
+        return { name, email, interest };
+      });
+      const leads: Partial<Lead>[] = json.map(row => ({
+        name: row.name || 'Imported Lead',
+        email: row.email,
+        interest: row.interest,
+        status: importStatus
+      })).filter(l => l.email);
+
+      const batch = await createLeadBatch(`URL Import: ${new URL(importUrl).hostname}`, leads.length);
+      for (const l of leads) await saveLead({ ...l, batch_id: batch.id });
+      
+      onNotify('success', `Imported ${leads.length} leads from URL.`);
+      setIsImporting(false);
+      setImportUrl("");
+      onRefreshLeads();
+    } catch (err: unknown) {
+      onNotify('error', "URL Import failed. Ensure link is a public CSV.");
     }
   };
 
@@ -226,10 +290,14 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
         </div>
         
         <div className="space-y-6 relative z-10">
-           <div className="space-y-2">
-              <label htmlFor="target-recipient" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Recipient Filter (Optional)</label>
-              <input id="target-recipient" placeholder="e.g. qualified, all, bole..." value={targetFilter} onChange={e => setTargetFilter(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
-           </div>
+            <div className="space-y-2">
+               <label htmlFor="individual-emails" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Individual Emails (Comma Separated)</label>
+               <input id="individual-emails" placeholder="email1@example.com, email2@example.com..." value={individualEmails} onChange={e => setIndividualEmails(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+            </div>
+            <div className="space-y-2">
+               <label htmlFor="target-recipient" className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Recipient Filter (Optional)</label>
+               <input id="target-recipient" placeholder="e.g. qualified, all, bole..." value={targetFilter} onChange={e => setTargetFilter(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none" />
+            </div>
            <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Subject</label>
               <input placeholder="Subject Line..." value={subject} onChange={e => setSubject(e.target.value)} className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] font-bold text-sm border border-[var(--border)] focus:border-brand-blue outline-none" />
@@ -242,7 +310,16 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
               if (!subject.trim() || !body.trim()) { onNotify('error', 'Subject and message body are required.'); return; }
               setSending(true);
               try {
-                const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject, body, targetFilter }) });
+                const res = await fetch('/api/admin/broadcast', { 
+                  method: 'POST', 
+                  headers: { 'Content-Type': 'application/json' }, 
+                  body: JSON.stringify({ 
+                    subject, 
+                    body, 
+                    targetFilter,
+                    individualEmails: individualEmails.split(',').map(s => s.trim()).filter(s => s)
+                  }) 
+                });
                 const data = await res.json();
                 if (data.success) onNotify('success', `Broadcast sent to ${data.sent} contacts.`);
                 else throw new Error(data.error || 'Broadcast failed');
@@ -292,28 +369,81 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft, onDraftCo
       <AnimatePresence>
          {isImporting && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-lg p-10 space-y-8 relative">
-                  <button onClick={() => setIsImporting(false)} aria-label="Close Import" title="Close" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
-                  <div className="space-y-1 text-center">
+               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--card)] rounded-[3rem] border border-[var(--border)] w-full max-w-2xl p-10 space-y-8 relative overflow-y-auto max-h-[90vh]">
+                  <button onClick={() => { setIsImporting(false); setImportPreview([]); }} aria-label="Close Import" title="Close" className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity"><X/></button>
+                  <div className="space-y-1">
                      <h4 className="text-3xl font-heading font-black tracking-tighter uppercase">Bulk <span className="opacity-30 italic">Import.</span></h4>
-                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Paste CSV data below (Name, Email, Interest)</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload an Excel (.xlsx) or CSV file with columns: name, email, phone (optional), interest (optional).</p>
                   </div>
 
-                  <div className="space-y-4">
-                     <textarea 
-                        rows={10} 
-                        placeholder="John Doe, john@example.com, Sky Residence&#10;Jane Smith, jane@example.com, Bole Tower" 
-                        value={importData}
-                        onChange={e => setImportData(e.target.value)}
-                        className="w-full px-6 py-5 rounded-2xl bg-[var(--background)] text-sm border border-[var(--border)] focus:border-brand-blue outline-none resize-none font-mono" 
-                     />
+                  {/* Status assignment */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Assign Status to Imported Batch</label>
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                      {(['new', 'contacted', 'qualified', 'closed', 'lost'] as const).map(s => (
+                        <button key={s} onClick={() => setImportStatus(s)} className={`py-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${importStatus === s ? 'border-brand-blue bg-brand-blue/10 text-brand-blue' : 'border-[var(--border)] opacity-40 hover:opacity-100'}`}>{s}</button>
+                      ))}
+                    </div>
                   </div>
 
-                  <button onClick={handleCsvImport} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Process Import</button>
+                  <div className="space-y-6">
+                     <div 
+                        className="border-2 border-dashed border-[var(--border)] rounded-2xl p-10 text-center cursor-pointer hover:border-brand-blue/40 transition-all bg-brand-blue/5"
+                        onClick={() => fileInputRef.current?.click()}
+                     >
+                        <Download className="mx-auto mb-3 opacity-20" size={40} />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue">Click to select an .xlsx or .csv file</p>
+                        <input ref={fileInputRef} type="file" accept=".csv, .xlsx" className="hidden" aria-label="Upload lead data" title="Upload lead data" onChange={handleFileImport} />
+                     </div>
+
+                     {/* Preview */}
+                     {importPreview.length > 0 && (
+                        <div className="space-y-4">
+                           <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                              <CheckCircle2 className="text-emerald-500 shrink-0" size={16} />
+                              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{importPreview.length} leads parsed — ready to import as &ldquo;{importStatus}&rdquo;</span>
+                           </div>
+                           <div className="max-h-48 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                              {importPreview.slice(0, 8).map((l, i) => (
+                                 <div key={i} className="flex items-center gap-3 px-4 py-2 rounded-xl bg-[var(--background)] text-xs">
+                                    <span className="font-bold w-1/3 truncate">{l.name}</span>
+                                    <span className="opacity-40 flex-1 truncate">{l.email}</span>
+                                    {l.interest && <span className="opacity-30 text-[9px] uppercase font-black truncate">{l.interest}</span>}
+                                 </div>
+                              ))}
+                              {importPreview.length > 8 && <p className="text-center text-[9px] opacity-30 font-black uppercase py-2">+{importPreview.length - 8} more...</p>}
+                           </div>
+                        </div>
+                     )}
+
+                     <button
+                        onClick={handleBatchImport}
+                        disabled={importPreview.length === 0 || importUploading}
+                        className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02] disabled:opacity-40 disabled:scale-100 flex items-center justify-center gap-2"
+                     >
+                        {importUploading ? <Activity className="animate-spin" size={16} /> : <Download size={16} />}
+                        {importUploading ? 'Importing...' : `Import ${importPreview.length} Leads`}
+                     </button>
+
+                     <div className="relative">
+                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none opacity-20"><Zap size={14}/></div>
+                        <input 
+                           placeholder="OR Paste Storage URL (Direct CSV Link)..." 
+                           value={importUrl}
+                           onChange={e => setImportUrl(e.target.value)}
+                           className="w-full pl-12 pr-6 py-4 rounded-2xl bg-[var(--background)] text-[10px] font-black uppercase tracking-widest border border-[var(--border)] focus:border-brand-blue outline-none" 
+                        />
+                     </div>
+
+                     {importUrl && (
+                        <button onClick={handleUrlImport} className="w-full py-5 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 transition-all hover:scale-[1.02]">Sync from URL</button>
+                     )}
+                  </div>
                </motion.div>
             </div>
          )}
       </AnimatePresence>
+
     </motion.div>
   );
 }
