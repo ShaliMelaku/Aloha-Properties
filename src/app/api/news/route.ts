@@ -12,8 +12,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const authHeader = request.headers.get('authorization');
     
-    // Check if caller is the system cron
-    const isCron = authHeader === `Bearer ${CRON_SECRET}` || searchParams.get('key') === CRON_SECRET;
+    // Check if caller is the system cron (Vercel) or manual with secret
+    const isCron = 
+      request.headers.get('x-vercel-cron') === '1' || 
+      authHeader === `Bearer ${CRON_SECRET}` || 
+      searchParams.get('key') === CRON_SECRET;
 
     // 1. Check a simple "daily limit"
     const today = new Date().toISOString().split('T')[0];
@@ -26,7 +29,7 @@ export async function GET(request: Request) {
 
     if (countError) throw countError;
 
-    const DAILY_LIMIT = 3; 
+    const DAILY_LIMIT = 5; 
     // Cron bypasses the limit to ensure daily consistency
     if (!isCron && count && count >= DAILY_LIMIT) {
       return NextResponse.json({ 
@@ -53,8 +56,8 @@ export async function GET(request: Request) {
       // DE-DUPLICATION: Check if this article was already fetched
       const { data: existing } = await supabase
         .from('posts')
-        .select('id')
-        .eq('slug', slug)
+        .select('id, title')
+        .or(`slug.eq.${slug},title.eq.${art.title.replace(/'/g, "''")}`)
         .maybeSingle();
 
       if (existing) {

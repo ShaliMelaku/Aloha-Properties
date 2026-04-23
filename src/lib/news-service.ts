@@ -19,8 +19,8 @@ export async function fetchEthiopiaRealEstateNews(): Promise<NewsArticle[]> {
     return [];
   }
 
-  const keywords = '"Ethiopia" AND ("real estate" OR property OR investment OR finance)';
-  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(keywords)}&lang=en&max=5&apikey=${apiKey}`;
+  const keywords = '"Ethiopia" AND (economics OR regulation OR "real estate" OR investment OR finance OR policy OR banking OR "Addis Ababa")';
+  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(keywords)}&lang=en&max=10&apikey=${apiKey}`;
 
   const response = await fetch(url, { next: { revalidate: 3600 } });
 
