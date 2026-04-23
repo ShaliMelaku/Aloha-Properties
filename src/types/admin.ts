@@ -166,11 +166,13 @@ export interface TrustedCompany {
 }
 
 export interface AdminActivity {
-  id?: string;
+  id: string;
   admin_id?: string;
   action: string;
   entity_type?: string;
   entity_id?: string;
   details?: string;
-  created_at?: string;
+  created_at: string;
+  // Join fields
+  admin_name?: string;
 }

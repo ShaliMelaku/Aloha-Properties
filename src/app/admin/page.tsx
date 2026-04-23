@@ -29,8 +29,8 @@ export default function AdminDashboard() {
   const { formatPrice } = useCurrency();
   const { theme, toggleTheme } = useScopedTheme();
   const { 
-    properties, leads, posts, history, responses, loading, refreshAll,
-    fetchLeads, fetchProperties, fetchPosts, fetchResponses
+    properties, leads, posts, history, responses, activities, loading, refreshAll,
+    fetchLeads, fetchProperties, fetchPosts, fetchResponses, fetchActivities
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -198,6 +198,8 @@ export default function AdminDashboard() {
     { id: 'partners', icon: Handshake, label: 'Partners' },
     { id: 'content', icon: Globe, label: 'Content' },
     { id: 'leads', icon: Users, label: 'Leads' },
+    { id: 'pulse', icon: Activity, label: 'System Pulse' },
+    { id: 'devices', icon: ShieldCheck, label: 'Devices' },
   ];
 
   return (
@@ -311,9 +313,11 @@ export default function AdminDashboard() {
                 onDraftConsumed={() => setDraftCampaign(null)} 
                 history={history}
                 responses={responses}
+                activities={activities}
                 loading={loading}
                 onRepeatCampaign={openMarketingWithDraft}
                 onRefreshResponses={fetchResponses}
+                onRefreshActivities={fetchActivities}
               />
             )}
             {activeTab === 'content' && (
@@ -343,6 +347,20 @@ export default function AdminDashboard() {
               />
             )}
             {activeTab === 'partners' && <PartnersTab key="partners" notify={notify} uploadFile={uploadFile} />}
+            {activeTab === 'pulse' && (
+              <SystemPulseTab 
+                key="pulse"
+                activities={activities}
+                loading={loading}
+                onRefresh={fetchActivities}
+              />
+            )}
+            {activeTab === 'devices' && (
+              <div className="py-20 text-center space-y-4 bg-slate-500/5 rounded-[3rem] border border-dashed border-[var(--border)]">
+                <ShieldCheck size={48} className="mx-auto opacity-10" />
+                <p className="text-xs font-bold uppercase tracking-widest opacity-30">Device management coming soon.</p>
+              </div>
+            )}
          </AnimatePresence>
       </main>
 

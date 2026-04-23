@@ -179,10 +179,15 @@ interface MarketingTabProps {
   loading: boolean;
   onRepeatCampaign: (draft: { subject: string; body: string; targetFilter: string }) => void;
   onRefreshResponses: () => void;
+  activities: AdminActivity[];
+  onRefreshActivities: () => void;
 }
 
+
 export function MarketingTab({ 
-  onNotify, onRefreshLeads, initialDraft, history, responses, loading, onRepeatCampaign, onRefreshResponses 
+  onNotify, onRefreshLeads, initialDraft, history, responses, loading, onRepeatCampaign, onRefreshResponses,
+  activities,
+  onRefreshActivities
 }: MarketingTabProps) {
   const [marketingSubTab, setMarketingSubTab] = useState<'outreach' | 'history' | 'responses'>('outreach');
   const [loggingResponse, setLoggingResponse] = useState<Partial<LeadResponse> | null>(null);
@@ -748,3 +753,65 @@ export function ResponsesTab({ responses, loading, onLogNew }: ResponsesTabProps
     </motion.div>
   );
 }
+
+// ─── SYSTEM PULSE TAB ──────────────────────────────────────────────────────────
+export const SystemPulseTab: React.FC<{ 
+  activities: AdminActivity[]; 
+  loading: boolean;
+  onRefresh: () => void;
+}> = ({ activities, loading, onRefresh }) => {
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+      <div className="flex justify-between items-end">
+        <div>
+           <h2 className="text-5xl font-heading font-black tracking-tighter uppercase leading-[0.8]">System <span className="opacity-30 italic">Pulse.</span></h2>
+           <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mt-4 ml-1">Live Operational Audit</p>
+        </div>
+        <button onClick={onRefresh} className="p-4 bg-brand-blue/10 text-brand-blue rounded-2xl hover:scale-110 transition-all">
+          <Activity size={20} className={loading ? 'animate-pulse' : ''} />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {activities.length === 0 && !loading ? (
+          <div className="py-20 text-center space-y-4 bg-slate-500/5 rounded-[3rem] border border-dashed border-[var(--border)]">
+             <ShieldCheck size={48} className="mx-auto opacity-10" />
+             <p className="text-xs font-bold uppercase tracking-widest opacity-30">No activity logged yet.</p>
+          </div>
+        ) : (
+          activities.map((log) => (
+            <motion.div 
+              key={log.id} 
+              initial={{ opacity: 0, x: -20 }} 
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-[var(--card)] rounded-[2.5rem] border border-[var(--border)] p-8 flex items-center justify-between group hover:border-brand-blue/30 transition-all"
+            >
+              <div className="flex items-center gap-8">
+                 <div className="w-16 h-16 bg-[var(--background)] rounded-3xl flex items-center justify-center text-brand-blue shadow-inner group-hover:scale-110 transition-transform">
+                    <Zap size={24} />
+                 </div>
+                 <div className="space-y-1">
+                    <h4 className="text-xl font-heading font-black tracking-tight uppercase">{log.action}</h4>
+                    <div className="flex items-center gap-3 opacity-40">
+                       <User size={12} />
+                       <span className="text-[10px] font-bold uppercase tracking-widest">{log.admin_name}</span>
+                       <span className="w-1 h-1 rounded-full bg-current" />
+                       <Calendar size={12} />
+                       <span className="text-[10px] font-bold uppercase tracking-widest">
+                          {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                       </span>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="text-right">
+                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-20 group-hover:opacity-100 transition-opacity mb-1">{log.entity_type}</p>
+                 <p className="text-sm font-bold text-brand-blue italic">{log.details || log.entity_id}</p>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </motion.div>
+  );
+};
