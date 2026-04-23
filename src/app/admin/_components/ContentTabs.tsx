@@ -451,6 +451,7 @@ export function MarketingTab({
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Interest Level</label>
                     <select 
+                      title="Interest Level"
                       value={loggingResponse.interest_level || 'Medium'}
                       onChange={e => setLoggingResponse(prev => ({ ...prev, interest_level: e.target.value }))}
                       className="w-full px-6 py-4 rounded-2xl bg-[var(--background)] font-bold text-xs border border-[var(--border)] focus:border-brand-blue outline-none appearance-none"
@@ -496,7 +497,7 @@ export function MarketingTab({
                         onNotify('success', 'Engagement response logged successfully.');
                         setLoggingResponse(null);
                         onRefreshResponses();
-                      } catch (e: unknown) {
+                      } catch {
                         onNotify('error', 'Failed to log response.');
                       }
                     }}
