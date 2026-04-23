@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   LogOut, PieChart, Mail, Home, Users, ShieldCheck, Activity, Lock,
-  Globe, Trash2, Sun, Moon, X, Zap
+  Globe, Trash2, Sun, Moon, X, Zap, Menu
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStatus } from "@/context/status-context";
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-white"
         >
-          {isMobileMenuOpen ? <X size={24} /> : <Activity size={24} />}
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
