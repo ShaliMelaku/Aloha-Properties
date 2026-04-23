@@ -29,8 +29,8 @@ export default function AdminDashboard() {
   const { formatPrice } = useCurrency();
   const { theme, toggleTheme } = useScopedTheme();
   const { 
-    properties, leads, posts, history, loading, refreshAll,
-    fetchLeads, fetchProperties, fetchPosts
+    properties, leads, posts, history, responses, loading, refreshAll,
+    fetchLeads, fetchProperties, fetchPosts, fetchResponses
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -310,8 +310,10 @@ export default function AdminDashboard() {
                 initialDraft={draftCampaign} 
                 onDraftConsumed={() => setDraftCampaign(null)} 
                 history={history}
+                responses={responses}
                 loading={loading}
                 onRepeatCampaign={openMarketingWithDraft}
+                onRefreshResponses={fetchResponses}
               />
             )}
             {activeTab === 'content' && (
