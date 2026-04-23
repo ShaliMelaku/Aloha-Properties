@@ -91,7 +91,7 @@ export function useAdminData() {
     
     // For now, we'll hardcode the admin name if it's the current user or just show "System Admin"
     // Ideally we would join with a profiles table
-    const formatted = data?.map((a: any) => ({
+    const formatted = data?.map((a: AdminActivity) => ({
       ...a,
       admin_name: "Shalom Melaku" // Fallback/Simulator for now as requested
     })) || [];

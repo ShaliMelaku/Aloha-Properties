@@ -391,7 +391,7 @@ export default function AdminDashboard() {
                 selectedLead={selectedLead}
               />
             )}
-            {activeTab === 'partners' && <PartnersTab key="partners" notify={notify} uploadFile={uploadFile} />}
+            {activeTab === 'partners' && <PartnersTab key="partners" notify={notify} />}
             {activeTab === 'pulse' && (
               <SystemPulseTab 
                 key="pulse"
