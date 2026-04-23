@@ -276,7 +276,7 @@ export function MarketingTab({ onNotify, onRefreshLeads, initialDraft }: Marketi
       setIsImporting(false);
       setImportUrl("");
       onRefreshLeads();
-    } catch (err: unknown) {
+    } catch {
       onNotify('error', "URL Import failed. Ensure link is a public CSV.");
     }
   };
