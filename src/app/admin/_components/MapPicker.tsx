@@ -163,9 +163,27 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
             <Navigation size={14} />
             <span className="text-[10px] font-black uppercase tracking-widest">Geo-Coordinates</span>
          </div>
-         <div className="flex gap-4 text-[10px] font-bold opacity-40 uppercase tabular-nums">
-            <span>Lat: {lat.toFixed(6)}</span>
-            <span>Lng: {lng.toFixed(6)}</span>
+         <div className="flex gap-2 text-[10px] font-bold uppercase tabular-nums items-center">
+            <div className="flex items-center gap-1 bg-slate-500/5 px-3 py-1.5 rounded-lg border border-[var(--border)]">
+               <span className="opacity-40">Lat:</span>
+               <input 
+                  type="number" 
+                  step="0.000001"
+                  value={lat}
+                  onChange={(e) => onChange(parseFloat(e.target.value), lng)}
+                  className="bg-transparent outline-none w-20"
+               />
+            </div>
+            <div className="flex items-center gap-1 bg-slate-500/5 px-3 py-1.5 rounded-lg border border-[var(--border)]">
+               <span className="opacity-40">Lng:</span>
+               <input 
+                  type="number" 
+                  step="0.000001"
+                  value={lng}
+                  onChange={(e) => onChange(lat, parseFloat(e.target.value))}
+                  className="bg-transparent outline-none w-20"
+               />
+            </div>
          </div>
       </div>
 
@@ -176,7 +194,7 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
-          <LayersControl position="topright">
+          <LayersControl position="bottomright">
             <LayersControl.BaseLayer checked name="Street View">
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
