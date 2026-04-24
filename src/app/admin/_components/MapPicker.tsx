@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, LayersControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Navigation, Search, Crosshair, Loader2 } from "lucide-react";
+import { Navigation, Search, Crosshair, Loader2, Globe, Map as MapIcon, Target, RotateCcw } from "lucide-react";
 
 
 
@@ -116,26 +116,61 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
     setIsSearching(false);
   };
 
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      onChange(latitude, longitude);
+      if (onAddressChange) {
+        const addr = await fetchAddress(latitude, longitude);
+        onAddressChange(addr);
+      }
+    });
+  };
+
+  const handleReset = () => {
+    onChange(9.0192, 38.7525);
+    if (onAddressChange) onAddressChange("Addis Ababa, Ethiopia");
+  };
+
   if (!mounted) return <div className="h-64 bg-slate-500/5 rounded-2xl animate-pulse flex items-center justify-center text-[10px] uppercase font-black tracking-widest opacity-20">Initializing Map Core...</div>;
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleSearch} className="relative group">
-         <input 
-            type="text" 
-            placeholder="Search location for precise placement..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-6 py-4 bg-slate-500/5 border border-[var(--border)] rounded-2xl text-xs font-bold outline-none focus:border-brand-blue pr-12 transition-all"
-         />
+      <div className="flex gap-2">
+         <form onSubmit={handleSearch} className="relative group flex-1">
+            <input 
+               type="text" 
+               placeholder="Search destination..." 
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
+               className="w-full px-6 py-4 bg-slate-500/5 border border-[var(--border)] rounded-2xl text-xs font-bold outline-none focus:border-brand-blue pr-12 transition-all"
+            />
+            <button 
+               type="submit"
+               className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-blue hover:scale-110 transition-transform"
+               disabled={isSearching}
+            >
+               {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+            </button>
+         </form>
+         
          <button 
-            type="submit"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-blue hover:scale-110 transition-transform"
-            disabled={isSearching}
+            onClick={handleLocateMe}
+            title="Locate Me"
+            className="w-14 h-14 flex items-center justify-center bg-slate-500/5 border border-[var(--border)] rounded-2xl text-brand-blue hover:bg-brand-blue hover:text-white transition-all shadow-lg"
          >
-            {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+            <Target size={20} />
          </button>
-      </form>
+         
+         <button 
+            onClick={handleReset}
+            title="Reset to Addis"
+            className="w-14 h-14 flex items-center justify-center bg-slate-500/5 border border-[var(--border)] rounded-2xl text-slate-400 hover:text-brand-blue transition-all"
+         >
+            <RotateCcw size={20} />
+         </button>
+      </div>
 
       <div className="flex justify-between items-center mb-2 px-4">
          <div className="flex items-center gap-2 text-brand-blue">
@@ -148,17 +183,29 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
          </div>
       </div>
 
-      <div className="h-[300px] w-full rounded-[2rem] overflow-hidden border border-[var(--border)] shadow-xl relative group">
+      <div className="h-[400px] w-full rounded-[2rem] overflow-hidden border border-[var(--border)] shadow-xl relative group">
         <MapContainer 
           center={[lat || 9.0192, lng || 38.7525]} 
           zoom={18} 
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <LayersControl position="topright">
+            <LayersControl.BaseLayer checked name="Street View">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            </LayersControl.BaseLayer>
+            
+            <LayersControl.BaseLayer name="Satellite View">
+              <TileLayer
+                attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              />
+            </LayersControl.BaseLayer>
+          </LayersControl>
+          
           <LocationMarker lat={lat} lng={lng} onChange={onChange} onAddressChange={onAddressChange} />
         </MapContainer>
         
