@@ -48,18 +48,30 @@ const geocodeAddress = async (query: string) => {
 
 function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const map = useMapEvents({
-    async click(e) {
-      onChange(e.latlng.lat, e.latlng.lng);
+    click(e) {
       map.flyTo(e.latlng, map.getZoom());
-      if (onAddressChange) {
-         const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
-         onAddressChange(addr);
-      }
     },
+    moveend() {
+      const center = map.getCenter();
+      onChange(center.lat, center.lng);
+      updateAddress(center.lat, center.lng);
+    }
   });
 
+  const updateAddress = async (la: number, ln: number) => {
+    if (onAddressChange) {
+      const addr = await fetchAddress(la, ln);
+      onAddressChange(addr);
+    }
+  };
+
   useEffect(() => {
-    map.flyTo([lat, lng], map.getZoom());
+    if (lat && lng) {
+      const currentCenter = map.getCenter();
+      if (Math.abs(currentCenter.lat - lat) > 0.0001 || Math.abs(currentCenter.lng - lng) > 0.0001) {
+        map.setView([lat, lng], map.getZoom());
+      }
+    }
   }, [lat, lng, map]);
 
   const DefaultIcon = L.icon({
@@ -69,7 +81,7 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
     iconAnchor: [12, 41],
   });
 
-  return <Marker position={[lat, lng]} icon={DefaultIcon} />;
+  return <Marker position={[lat || 9.0192, lng || 38.7525]} icon={DefaultIcon} />;
 }
 
 export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
@@ -142,11 +154,14 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
         
         {/* Overlay HUD & Crosshair */}
         <div className="absolute inset-0 pointer-events-none z-[400] flex items-center justify-center">
-           <Crosshair size={32} className="text-brand-blue opacity-20" />
+           <div className="relative flex items-center justify-center">
+              <Crosshair size={40} className="text-brand-blue animate-pulse" />
+              <div className="absolute w-1 h-1 bg-brand-blue rounded-full" />
+           </div>
         </div>
 
         <div className="absolute top-4 right-4 z-[400] bg-black/50 backdrop-blur-md p-3 rounded-xl border border-white/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-           <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Click map to relocate node</p>
+           <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Drag map or click to center node</p>
         </div>
       </div>
     </div>
