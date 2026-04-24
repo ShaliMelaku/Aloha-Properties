@@ -175,10 +175,18 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
               <span className="flex items-center gap-1"><Bath size={12} /> {baths}</span>
               <span className="flex items-center gap-1"><Maximize size={12} /> {sqm}m²</span>
            </div>
-           <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black bg-slate-500/10 px-2 py-1 rounded-md uppercase tracking-widest opacity-60">
-                 {progress.progress}%
-              </span>
+           <div className="flex-1 flex flex-col gap-1.5 ml-4">
+              <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest opacity-40">
+                 <span>Progress</span>
+                 <span>{progress.progress}%</span>
+              </div>
+              <div className="h-1 w-full bg-slate-500/10 rounded-full overflow-hidden">
+                 <motion.div 
+                   initial={{ width: 0 }}
+                   whileInView={{ width: `${progress.progress}%` }}
+                   className="h-full bg-brand-blue rounded-full shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+                 />
+              </div>
            </div>
         </div>
 
