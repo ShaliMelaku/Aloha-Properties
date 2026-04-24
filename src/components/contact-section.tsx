@@ -1,5 +1,5 @@
 import { useEffect, useState, Suspense } from "react";
-import { MapPin, Mail, Phone, Tag } from "lucide-react";
+import { MapPin, Mail, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStatus } from "@/context/status-context";
 import { useSearchParams } from "next/navigation";

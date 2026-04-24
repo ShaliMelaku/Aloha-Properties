@@ -23,7 +23,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";
-import dynamic from "next/dynamic";
 
 // PropertyMap handled by parent gallery via onViewMap callback
 
