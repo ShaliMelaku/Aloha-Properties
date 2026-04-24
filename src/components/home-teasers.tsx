@@ -582,7 +582,6 @@ export function TrendsTeaser() {
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500" 
                           sizes="80px"
-                          unoptimized={true}
                         />
                       </div>
                     )}

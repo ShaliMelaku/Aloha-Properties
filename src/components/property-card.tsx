@@ -18,7 +18,6 @@ import {
   MapPin,
   Maximize,
   Tag,
-  X,
   XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -26,7 +25,7 @@ import { useCurrency } from "@/context/currency-context";
 import { useComparison } from "@/context/comparison-context";
 import dynamic from "next/dynamic";
 
-const PropertyMap = dynamic(() => import("./property-map"), { ssr: false });
+// PropertyMap handled by parent gallery via onViewMap callback
 
 function AvailabilityBadge({ type }: { type: SupabaseUnitType }) {
   const total = type.total_units || (type.available_count || 0) + (type.reserved_count || 0) + (type.sold_count || 0);
@@ -64,7 +63,7 @@ function AvailabilityBadge({ type }: { type: SupabaseUnitType }) {
   );
 }
 
-export function PropertyCard({ property, onViewPdf, onViewMap }: { property: SupabaseProperty, onViewPdf: (id: string, title: string) => void, onViewMap: (p: any) => void }) {
+export function PropertyCard({ property, onViewPdf, onViewMap }: { property: SupabaseProperty, onViewPdf: (id: string, title: string) => void, onViewMap: (p: SupabaseProperty) => void }) {
   const { formatPrice } = useCurrency();
   const { toggleCompare, compared, setActivePulse } = useComparison();
   const [typeIdx, setTypeIdx] = useState<number | null>(null);
@@ -139,7 +138,6 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
               fill
               className="object-cover transition-transform duration-1000 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              unoptimized
             />
           </motion.div>
         </AnimatePresence>

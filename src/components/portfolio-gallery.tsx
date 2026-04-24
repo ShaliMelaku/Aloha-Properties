@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { SlidersHorizontal } from "lucide-react";
-import { useProperties } from "@/hooks/use-properties";
+import { useProperties, SupabaseProperty } from "@/hooks/use-properties";
 import { PropertyCard } from "./property-card";
 import { motion, AnimatePresence } from "framer-motion";
 import { PDFViewerModal } from "@/app/admin/_components/PDFViewerModal";
@@ -17,7 +17,7 @@ export function PortfolioGallery() {
   const [devFilter, setDevFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<{ id: string, title: string } | null>(null);
-  const [viewingMap, setViewingMap] = useState<any | null>(null);
+  const [viewingMap, setViewingMap] = useState<SupabaseProperty | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -28,7 +28,7 @@ export function PortfolioGallery() {
 
   const filteredProperties = useMemo(() => {
     if (!mounted || loading) return []; // Prevent SSR flicker
-    return properties.filter((prop) => {
+    return properties.filter((prop: SupabaseProperty) => {
       if (devFilter !== "all" && prop.developer !== devFilter) return false;
       const searchLower = search.toLowerCase();
       if (searchLower && !prop.name.toLowerCase().includes(searchLower) && !prop.location.toLowerCase().includes(searchLower)) {
