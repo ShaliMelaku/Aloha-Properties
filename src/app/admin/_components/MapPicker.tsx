@@ -55,22 +55,8 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
         const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
         onAddressChange(addr);
       }
-      // Instant center without flyTo animation
+      // Center the map on the picked spot
       map.setView(e.latlng, map.getZoom());
-    },
-    async moveend() {
-      // Pick on drag end only if it was a drag (not a flyTo from click)
-      const center = map.getCenter();
-      const dist = Math.sqrt(Math.pow(center.lat - lat, 2) + Math.pow(center.lng - lng, 2));
-      
-      // If the map moved more than a tiny threshold, update parent
-      if (dist > 0.00001) {
-        onChange(center.lat, center.lng);
-        if (onAddressChange) {
-          const addr = await fetchAddress(center.lat, center.lng);
-          onAddressChange(addr);
-        }
-      }
     }
   });
 
@@ -218,7 +204,7 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
         </div>
 
         <div className="absolute top-4 right-4 z-[400] bg-black/50 backdrop-blur-md p-3 rounded-xl border border-white/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-           <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Drag map or click to center node</p>
+           <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Click map to pick specific location</p>
         </div>
       </div>
     </div>
