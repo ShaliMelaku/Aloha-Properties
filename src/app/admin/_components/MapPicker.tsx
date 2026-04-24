@@ -124,73 +124,73 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-         <form onSubmit={handleSearch} className="relative group flex-1">
-            <input 
-               type="text" 
-               placeholder="Search destination..." 
-               value={searchQuery}
-               onChange={(e) => setSearchQuery(e.target.value)}
-               className="w-full px-6 py-4 bg-slate-500/5 border border-[var(--border)] rounded-2xl text-xs font-bold outline-none focus:border-brand-blue pr-12 transition-all"
-            />
-            <button 
-               type="submit"
-               className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-blue hover:scale-110 transition-transform"
-               disabled={isSearching}
-            >
-               {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
-            </button>
-         </form>
-         
-         <button 
-            onClick={handleLocateMe}
-            title="Locate Me"
-            className="w-14 h-14 flex items-center justify-center bg-slate-500/5 border border-[var(--border)] rounded-2xl text-brand-blue hover:bg-brand-blue hover:text-white transition-all shadow-lg"
-         >
-            <Target size={20} />
-         </button>
-         
-         <button 
-            onClick={handleReset}
-            title="Reset to Addis"
-            className="w-14 h-14 flex items-center justify-center bg-slate-500/5 border border-[var(--border)] rounded-2xl text-slate-400 hover:text-brand-blue transition-all"
-         >
-            <RotateCcw size={20} />
-         </button>
+        <form onSubmit={handleSearch} className="relative group flex-1">
+          <input
+            type="text"
+            placeholder="Search destination..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-6 py-4 bg-slate-500/5 border border-[var(--border)] rounded-2xl text-xs font-bold outline-none focus:border-brand-blue pr-12 transition-all"
+          />
+          <button
+            type="submit"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-blue hover:scale-110 transition-transform"
+            disabled={isSearching}
+          >
+            {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+          </button>
+        </form>
+
+        <button
+          onClick={handleLocateMe}
+          title="Locate Me"
+          className="w-14 h-14 flex items-center justify-center bg-slate-500/5 border border-[var(--border)] rounded-2xl text-brand-blue hover:bg-brand-blue hover:text-white transition-all shadow-lg"
+        >
+          <Target size={20} />
+        </button>
+
+        <button
+          onClick={handleReset}
+          title="Reset to Addis"
+          className="w-14 h-14 flex items-center justify-center bg-slate-500/5 border border-[var(--border)] rounded-2xl text-slate-400 hover:text-brand-blue transition-all"
+        >
+          <RotateCcw size={20} />
+        </button>
       </div>
 
       <div className="flex justify-between items-center mb-2 px-4">
-         <div className="flex items-center gap-2 text-brand-blue">
-            <Navigation size={14} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Geo-Coordinates</span>
-         </div>
-         <div className="flex gap-2 text-[10px] font-bold uppercase tabular-nums items-center">
-            <div className="flex items-center gap-1 bg-slate-500/5 px-3 py-1.5 rounded-lg border border-[var(--border)]">
-               <span className="opacity-40">Lat:</span>
-               <input 
-                  type="number" 
-                  step="0.000001"
-                  value={lat}
-                  onChange={(e) => onChange(parseFloat(e.target.value), lng)}
-                  className="bg-transparent outline-none w-20"
-               />
-            </div>
-            <div className="flex items-center gap-1 bg-slate-500/5 px-3 py-1.5 rounded-lg border border-[var(--border)]">
-               <span className="opacity-40">Lng:</span>
-               <input 
-                  type="number" 
-                  step="0.000001"
-                  value={lng}
-                  onChange={(e) => onChange(lat, parseFloat(e.target.value))}
-                  className="bg-transparent outline-none w-20"
-               />
-            </div>
-         </div>
+        <div className="flex items-center gap-2 text-brand-blue">
+          <Navigation size={14} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Geo-Coordinates</span>
+        </div>
+        <div className="flex gap-2 text-[10px] font-bold uppercase tabular-nums items-center">
+          <div className="flex items-center gap-1 bg-slate-500/5 px-3 py-1.5 rounded-lg border border-[var(--border)]">
+            <span className="opacity-40">Lat:</span>
+            <input
+              type="number"
+              step="0.000001"
+              value={lat}
+              onChange={(e) => onChange(parseFloat(e.target.value), lng)}
+              className="bg-transparent outline-none w-20"
+            />
+          </div>
+          <div className="flex items-center gap-1 bg-slate-500/5 px-3 py-1.5 rounded-lg border border-[var(--border)]">
+            <span className="opacity-40">Lng:</span>
+            <input
+              type="number"
+              step="0.000001"
+              value={lng}
+              onChange={(e) => onChange(lat, parseFloat(e.target.value))}
+              className="bg-transparent outline-none w-20"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="h-[400px] w-full rounded-[2rem] overflow-hidden border border-[var(--border)] shadow-xl relative group">
-        <MapContainer 
-          center={[lat || 9.0192, lng || 38.7525]} 
-          zoom={18} 
+        <MapContainer
+          center={[lat || 9.0192, lng || 38.7525]}
+          zoom={18}
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
@@ -201,7 +201,7 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
             </LayersControl.BaseLayer>
-            
+
             <LayersControl.BaseLayer name="Satellite View">
               <TileLayer
                 attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
@@ -209,20 +209,20 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
               />
             </LayersControl.BaseLayer>
           </LayersControl>
-          
+
           <LocationMarker lat={lat} lng={lng} onChange={onChange} onAddressChange={onAddressChange} />
         </MapContainer>
-        
+
         {/* Overlay HUD & Crosshair */}
         <div className="absolute inset-0 pointer-events-none z-[400] flex items-center justify-center">
-           <div className="relative flex items-center justify-center">
-              <Crosshair size={32} className="text-brand-blue" />
-              <div className="absolute w-2 h-2 bg-brand-blue rounded-full shadow-[0_0_10px_rgba(43,171,226,0.5)]" />
-           </div>
+          <div className="relative flex items-center justify-center">
+            <Crosshair size={32} className="text-brand-blue" />
+            <div className="absolute w-2 h-2 bg-brand-blue rounded-full shadow-[0_0_10px_rgba(43,171,226,0.5)]" />
+          </div>
         </div>
 
         <div className="absolute top-4 right-4 z-[400] bg-black/50 backdrop-blur-md p-3 rounded-xl border border-white/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-           <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Click map to pick specific location</p>
+          <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Click map to pick specific location</p>
         </div>
       </div>
     </div>
