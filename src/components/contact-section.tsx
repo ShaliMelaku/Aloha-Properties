@@ -211,6 +211,15 @@ export function ContactSection() {
                       <a href={`mailto:${item.value}`} className="font-heading font-bold text-lg text-[var(--foreground)] hover:text-brand-blue transition-colors break-all">
                         {item.value}
                       </a>
+                    ) : item.icon === MapPin ? (
+                      <a 
+                        href="https://www.google.com/maps/search/?api=1&query=Alemnesh+Plaza+Bole+Medhanialem+Addis+Ababa" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-heading font-bold text-lg text-[var(--foreground)] hover:text-brand-blue transition-colors"
+                      >
+                        {item.value}
+                      </a>
                     ) : (
                       <div className="font-heading font-bold text-lg text-[var(--foreground)]">{item.value}</div>
                     )}

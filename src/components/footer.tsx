@@ -70,9 +70,14 @@ export function Footer() {
           <div className="text-[10px] font-black uppercase tracking-widest opacity-30 text-center md:text-left">
             © {new Date().getFullYear()} Aloha Real Estate Marketing &amp; Events Comm P.L.C
           </div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-50 text-center">
+          <a 
+            href="https://www.google.com/maps/search/?api=1&query=Alemnesh+Plaza+Bole+Medhanialem+Addis+Ababa" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-50 text-center hover:opacity-100 hover:text-brand-blue transition-all"
+          >
             Bole Medhanialem · Alemnesh Plaza, 12th Floor, Office 1204 · Addis Ababa, Ethiopia
-          </div>
+          </a>
           <div className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-80">
             Excellence. Integrity. Best Service.
           </div>
