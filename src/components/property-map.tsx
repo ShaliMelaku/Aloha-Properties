@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, LayersControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -44,16 +44,28 @@ export default function PropertyMap({
     <div className="h-full w-full relative z-0">
       <MapContainer 
         center={[centerLat, centerLng]} 
-        zoom={lat === 0 ? 12 : 15} 
+        zoom={lat === 0 ? 12 : 16} 
         scrollWheelZoom={true} 
         zoomControl={true}
         style={{ height: "100%", width: "100%" }}
         className="z-0"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        />
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="Modern View">
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            />
+          </LayersControl.BaseLayer>
+          
+          <LayersControl.BaseLayer name="Satellite View">
+            <TileLayer
+              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
+
         {lat !== 0 && (
           <Marker position={[lat, lng]} icon={customIcon}>
             <Popup className="font-heading font-black">
