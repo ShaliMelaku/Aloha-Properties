@@ -16,6 +16,7 @@ import {
   MapPin,
   Maximize,
   XCircle,
+  ChevronDown,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";
@@ -65,6 +66,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
   const [typeIdx, setTypeIdx] = useState<number | null>(null);
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'units' | 'payments'>('units');
 
   const hasTypes = property.unit_types && property.unit_types.length > 0;
   const activeType: SupabaseUnitType | null = (hasTypes && typeIdx !== null) ? property.unit_types[typeIdx] : null;
@@ -176,7 +178,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
            </div>
            <div className="flex items-center gap-2">
               <span className="text-[8px] font-black bg-slate-500/10 px-2 py-1 rounded-md uppercase tracking-widest opacity-60">
-                 {progress.progress}% Complete
+                 {progress.progress}%
               </span>
            </div>
         </div>
@@ -186,7 +188,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
           <div className="grid grid-cols-4 gap-2">
             <button
               onClick={() => setAccordionOpen(!accordionOpen)}
-              title={accordionOpen ? "Close Details" : "Show Unit Types & Payment Plans"}
+              title={accordionOpen ? "Close Details" : "Show Units & Payment Plans"}
               className={`col-span-1 flex items-center justify-center aspect-square rounded-xl border transition-all ${accordionOpen ? 'bg-brand-blue border-brand-blue text-white' : 'border-[var(--border)] hover:bg-slate-500/5'}`}
             >
               <LayoutGrid size={18} />
@@ -210,7 +212,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
           )}
         </div>
 
-        {/* Unified Accordion: Unit Selection & Payment Plans */}
+        {/* Unified Accordion with Inner Tabs */}
         <AnimatePresence>
           {accordionOpen && (
             <motion.div
@@ -220,66 +222,96 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
               className="overflow-hidden"
             >
                 <div className="pt-6 space-y-6">
-                  {/* Unit Type Selection in Accordion */}
-                  {hasTypes && (
-                    <div className="space-y-3">
-                      <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Choose Unit Variant</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {property.unit_types.map((ut, i) => (
-                          <button
-                            key={ut.id}
-                            onClick={() => setTypeIdx(typeIdx === i ? null : i)}
-                            className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${typeIdx === i ? 'border-brand-blue bg-brand-blue/5' : 'border-transparent bg-slate-500/5 hover:border-slate-500/20'}`}
-                          >
-                            <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0">
-                               <Image src={ut.type_image || property.cover_image || "/images/cover.jpg"} alt={ut.name} fill className="object-cover" unoptimized />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] font-black uppercase truncate">{ut.name}</p>
-                              <p className="text-[8px] opacity-50">{ut.beds}B/{ut.baths}Ba · {ut.sqm}m²</p>
-                            </div>
-                            <AvailabilityBadge type={ut} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payment Plans in Accordion */}
-                  <div className="space-y-3">
-                    <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Payment Plans</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      {(() => {
-                        const rules = activeType?.discount_rules || property.discount_rules || [
-                          { downpayment: 20, discount: 2 }, 
-                          { downpayment: 50, discount: 7 }, 
-                          { downpayment: 100, discount: 15 }
-                        ];
-                        return rules.sort((a: { downpayment: number }, b: { downpayment: number }) => a.downpayment - b.downpayment).map((rule: { downpayment: number; discount: number }, idx: number) => (
-                          <button
-                            key={idx}
-                            onClick={() => setDownPercent(rule.downpayment)}
-                            className={`flex items-center justify-between p-3 rounded-xl text-[10px] font-bold transition-all border ${downPercent === rule.downpayment ? 'bg-brand-blue border-brand-blue text-white' : 'bg-slate-500/5 border-transparent hover:border-slate-500/20'}`}
-                          >
-                            <span>{rule.downpayment}% Down</span>
-                            {rule.discount > 0 && (
-                              <span className={`px-1.5 py-0.5 rounded text-[8px] ${downPercent === rule.downpayment ? 'bg-white/20' : 'bg-emerald-500 text-white'}`}>
-                                -{rule.discount}%
-                              </span>
-                            )}
-                          </button>
-                        ));
-                      })()}
-                    </div>
+                  {/* Inner Tab Selector */}
+                  <div className="flex gap-2 p-1 bg-slate-500/5 rounded-xl border border-[var(--border)]">
+                     <button 
+                       onClick={() => setActiveTab('units')}
+                       className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'units' ? 'bg-white dark:bg-slate-800 shadow-md text-brand-blue' : 'opacity-40 hover:opacity-100'}`}
+                     >
+                       Units
+                     </button>
+                     <button 
+                       onClick={() => setActiveTab('payments')}
+                       className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'payments' ? 'bg-white dark:bg-slate-800 shadow-md text-brand-blue' : 'opacity-40 hover:opacity-100'}`}
+                     >
+                       Payment Plans
+                     </button>
                   </div>
 
-                  {/* Terms */}
-                  {property.discount_conditions && (
-                    <div className="p-3 bg-brand-blue/5 border border-brand-blue/10 rounded-xl">
-                      <p className="text-[8px] font-black uppercase tracking-widest text-brand-blue mb-1">Offer Terms</p>
-                      <p className="text-[9px] font-bold opacity-60 leading-relaxed italic">&quot;{property.discount_conditions}&quot;</p>
-                    </div>
-                  )}
+                  <AnimatePresence mode="wait">
+                    {activeTab === 'units' ? (
+                      <motion.div 
+                        key="units"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        className="space-y-3"
+                      >
+                        {hasTypes ? (
+                          <div className="grid grid-cols-1 gap-2">
+                            {property.unit_types.map((ut, i) => (
+                              <button
+                                key={ut.id}
+                                onClick={() => setTypeIdx(typeIdx === i ? null : i)}
+                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${typeIdx === i ? 'border-brand-blue bg-brand-blue/5' : 'border-transparent bg-slate-500/5 hover:border-slate-500/20'}`}
+                              >
+                                <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0">
+                                   <Image src={ut.type_image || property.cover_image || "/images/cover.jpg"} alt={ut.name} fill className="object-cover" unoptimized />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-black uppercase truncate">{ut.name}</p>
+                                  <p className="text-[8px] opacity-50">{ut.beds}B/{ut.baths}Ba · {ut.sqm}m²</p>
+                                </div>
+                                <AvailabilityBadge type={ut} />
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center bg-slate-500/5 rounded-2xl border border-dashed border-[var(--border)]">
+                             <p className="text-[10px] font-black uppercase tracking-widest opacity-20">Individual Units Coming Soon</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="payments"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="space-y-3"
+                      >
+                        <div className="grid grid-cols-1 gap-2">
+                          {(() => {
+                            const rules = activeType?.discount_rules || property.discount_rules || [
+                              { downpayment: 20, discount: 2 }, 
+                              { downpayment: 50, discount: 7 }, 
+                              { downpayment: 100, discount: 15 }
+                            ];
+                            return rules.sort((a: { downpayment: number }, b: { downpayment: number }) => a.downpayment - b.downpayment).map((rule: { downpayment: number; discount: number }, idx: number) => (
+                              <button
+                                key={idx}
+                                onClick={() => setDownPercent(rule.downpayment)}
+                                className={`flex items-center justify-between p-3 rounded-xl text-[10px] font-bold transition-all border ${downPercent === rule.downpayment ? 'bg-brand-blue border-brand-blue text-white' : 'bg-slate-500/5 border-transparent hover:border-slate-500/20'}`}
+                              >
+                                <span>{rule.downpayment}% Downpayment</span>
+                                {rule.discount > 0 && (
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] ${downPercent === rule.downpayment ? 'bg-white/20' : 'bg-emerald-500 text-white'}`}>
+                                    -{rule.discount}% Discount
+                                  </span>
+                                )}
+                              </button>
+                            ));
+                          })()}
+                        </div>
+                        {property.discount_conditions && (
+                          <div className="p-3 bg-brand-blue/5 border border-brand-blue/10 rounded-xl">
+                            <p className="text-[8px] font-black uppercase tracking-widest text-brand-blue mb-1">Offer Terms</p>
+                            <p className="text-[9px] font-bold opacity-60 leading-relaxed italic">&quot;{property.discount_conditions}&quot;</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
             </motion.div>
           )}
@@ -287,7 +319,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
 
         <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center opacity-40 text-[8px] font-black uppercase tracking-widest">
            <span>{property.property_type || 'Residential'}</span>
-           <span>{property.payment_schedule || 'Flexible'}</span>
+           <span className="flex items-center gap-1"><Clock size={8} /> {progress.estimated}</span>
         </div>
       </div>
     </motion.div>

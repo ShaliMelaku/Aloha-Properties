@@ -15,15 +15,9 @@ interface MapPickerProps {
   onAddressChange?: (address: string) => void;
 }
 
-const fetchAddress = async (lat: number, lng: number) => {
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-      headers: { 'User-Agent': 'AlohaHQ/1.0' }
-    });
-    const data = await res.json();
-    return data.display_name || "Unknown Intelligence Node";
+    return data.display_name || null;
   } catch {
-    return "Synchronization Pending...";
+    return null;
   }
 };
 
@@ -55,7 +49,7 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
       onChange(e.latlng.lat, e.latlng.lng);
       if (onAddressChange) {
         const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
-        onAddressChange(addr);
+        if (addr) onAddressChange(addr);
       }
       // Center the map on the picked spot
       map.setView(e.latlng, map.getZoom());
@@ -114,7 +108,7 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
       onChange(latitude, longitude);
       if (onAddressChange) {
         const addr = await fetchAddress(latitude, longitude);
-        onAddressChange(addr);
+        if (addr) onAddressChange(addr);
       }
     });
   };
