@@ -169,6 +169,8 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
             <input
               type="number"
               step="0.000001"
+              title="Latitude"
+              placeholder="9.0192"
               value={lat}
               onChange={(e) => onChange(parseFloat(e.target.value), lng)}
               className="bg-transparent outline-none w-20"
@@ -179,6 +181,8 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
             <input
               type="number"
               step="0.000001"
+              title="Longitude"
+              placeholder="38.7525"
               value={lng}
               onChange={(e) => onChange(lat, parseFloat(e.target.value))}
               className="bg-transparent outline-none w-20"
