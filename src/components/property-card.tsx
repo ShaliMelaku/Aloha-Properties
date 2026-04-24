@@ -381,6 +381,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
                   ));
                 })()}
             </motion.div>
+          )}
         </AnimatePresence>
         <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center opacity-40">
            <span className="text-[9px] font-black uppercase tracking-widest">Schedule: {property.payment_schedule || 'Flexible'}</span>

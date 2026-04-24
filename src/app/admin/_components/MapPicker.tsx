@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, Search, Crosshair, Loader2 } from "lucide-react";
+import { Navigation, Search, Crosshair, Loader2 } from "lucide-react";
 
 
 
@@ -78,7 +78,8 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timeout = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
