@@ -184,17 +184,18 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
 
         {/* Actions Grid */}
         <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setAccordionOpen(!accordionOpen)}
               title={accordionOpen ? "Close Details" : "Show Units & Payment Plans"}
-              className={`col-span-1 flex items-center justify-center aspect-square rounded-xl border transition-all ${accordionOpen ? 'bg-brand-blue border-brand-blue text-white' : 'border-[var(--border)] hover:bg-slate-500/5'}`}
+              className={`h-12 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${accordionOpen ? 'bg-brand-blue text-white shadow-brand-blue/20' : 'bg-slate-500/10 text-[var(--foreground)] hover:bg-brand-blue/10 hover:text-brand-blue border border-[var(--border)] shadow-none'}`}
             >
-              <LayoutGrid size={18} />
+              Units
+              <LayoutGrid size={14} className={accordionOpen ? 'rotate-90' : ''} />
             </button>
             <Link
               href={`/contact?interest=${encodeURIComponent(property.name)}`}
-              className="col-span-3 h-12 rounded-xl bg-brand-blue text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-blue-deep transition-all shadow-lg shadow-brand-blue/10"
+              className="h-12 rounded-xl bg-brand-blue text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-blue-deep transition-all shadow-lg shadow-brand-blue/10"
             >
               Inquire
               <ArrowRight size={14} />
