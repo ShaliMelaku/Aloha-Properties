@@ -155,7 +155,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
         {/* Compact Pricing Section */}
         <div className="flex flex-col items-center py-4 rounded-2xl bg-brand-blue/5 border border-brand-blue/10 mb-4">
           <span className="text-[8px] font-black uppercase tracking-[0.2em] text-brand-blue mb-1">
-            {activeType ? 'Starting From' : 'Project Registry'}
+            {activeType ? 'Starting From' : 'Starting Price'}
           </span>
           <div className="text-xl font-heading font-black tracking-tighter">
             {formatPrice(offer.discountedPrice)}
