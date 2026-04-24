@@ -29,7 +29,8 @@ const fetchAddress = async (lat: number, lng: number) => {
 
 const geocodeAddress = async (query: string) => {
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+    // Add Ethiopia filter (countrycodes=et) to make search more relevant
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=et`, {
       headers: { 'User-Agent': 'AlohaHQ/1.0' }
     });
     const data = await res.json();
@@ -41,7 +42,8 @@ const geocodeAddress = async (query: string) => {
       };
     }
     return null;
-  } catch {
+  } catch (error) {
+    console.error("Geocoding failure:", error);
     return null;
   }
 };
@@ -64,7 +66,7 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
     if (lat && lng) {
       const currentCenter = map.getCenter();
       const dist = Math.sqrt(Math.pow(currentCenter.lat - lat, 2) + Math.pow(currentCenter.lng - lng, 2));
-      if (dist > 0.0001) {
+      if (dist > 0.00001) {
         map.setView([lat, lng], map.getZoom());
       }
     }
@@ -98,6 +100,9 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
     if (result) {
       onChange(result.lat, result.lng);
       if (onAddressChange) onAddressChange(result.address);
+      setSearchQuery(""); // Clear on success
+    } else {
+      alert("Location not found in database. Try being more specific or search near Addis Ababa.");
     }
     setIsSearching(false);
   };
