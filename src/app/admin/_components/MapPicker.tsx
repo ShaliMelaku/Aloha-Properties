@@ -55,7 +55,8 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
         const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
         onAddressChange(addr);
       }
-      map.flyTo(e.latlng, map.getZoom());
+      // Instant center without flyTo animation
+      map.setView(e.latlng, map.getZoom());
     },
     async moveend() {
       // Pick on drag end only if it was a drag (not a flyTo from click)
@@ -150,7 +151,7 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
       <div className="h-[300px] w-full rounded-[2rem] overflow-hidden border border-[var(--border)] shadow-xl relative group">
         <MapContainer 
           center={[lat || 9.0192, lng || 38.7525]} 
-          zoom={16} 
+          zoom={18} 
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
@@ -164,8 +165,8 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
         {/* Overlay HUD & Crosshair */}
         <div className="absolute inset-0 pointer-events-none z-[400] flex items-center justify-center">
            <div className="relative flex items-center justify-center">
-              <Crosshair size={40} className="text-brand-blue animate-pulse" />
-              <div className="absolute w-1 h-1 bg-brand-blue rounded-full" />
+              <Crosshair size={32} className="text-brand-blue" />
+              <div className="absolute w-2 h-2 bg-brand-blue rounded-full shadow-[0_0_10px_rgba(43,171,226,0.5)]" />
            </div>
         </div>
 
