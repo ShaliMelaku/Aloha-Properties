@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, LayersControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Navigation, Search, Crosshair, Loader2, Globe, Map as MapIcon, Target, RotateCcw } from "lucide-react";
+import { Navigation, Search, Crosshair, Loader2, Target, RotateCcw } from "lucide-react";
 
 
 
