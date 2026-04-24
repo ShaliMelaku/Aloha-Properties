@@ -28,7 +28,7 @@ export default function ContactPage() {
                         </div>
                         <div className="text-left">
                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Email</p>
-                           <p className="text-sm font-bold">Alohaethiopia@gmail.com</p>
+                           <a href="mailto:Alohaethiopia@gmail.com" className="text-sm font-bold hover:text-brand-blue transition-colors">Alohaethiopia@gmail.com</a>
                         </div>
                      </div>
                      <div className="flex items-center gap-3">
@@ -37,7 +37,10 @@ export default function ContactPage() {
                         </div>
                         <div className="text-left">
                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Call Us</p>
-                           <p className="text-sm font-bold">+251 911 258981 / +251 118 220992</p>
+                           <div className="flex flex-col">
+                              <a href="tel:+251911258981" className="text-sm font-bold hover:text-brand-blue transition-colors">+251 911 258981</a>
+                              <a href="tel:+251118220992" className="text-sm font-bold hover:text-brand-blue transition-colors">+251 118 220992</a>
+                           </div>
                         </div>
                      </div>
                      <div className="flex items-center gap-3">
@@ -46,7 +49,14 @@ export default function ContactPage() {
                         </div>
                         <div className="text-left">
                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Office</p>
-                           <p className="text-sm font-bold">Bole Medhanialem · Alemnesh Plaza, 12th Fl, Office 1204</p>
+                           <a 
+                             href="https://www.google.com/maps/search/?api=1&query=Alemnesh+Plaza+Bole+Medhanialem+Addis+Ababa" 
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="text-sm font-bold hover:text-brand-blue transition-colors block max-w-[200px] leading-tight"
+                           >
+                             Bole Medhanialem · Alemnesh Plaza, 12th Fl, Office 1204
+                           </a>
                         </div>
                      </div>
                   </div>
