@@ -16,7 +16,6 @@ import {
   MapPin,
   Maximize,
   XCircle,
-  ChevronDown,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCurrency } from "@/context/currency-context";

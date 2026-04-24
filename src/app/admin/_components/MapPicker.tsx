@@ -15,6 +15,12 @@ interface MapPickerProps {
   onAddressChange?: (address: string) => void;
 }
 
+const fetchAddress = async (lat: number, lng: number) => {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      headers: { 'User-Agent': 'AlohaHQ/1.0' }
+    });
+    const data = await res.json();
     return data.display_name || null;
   } catch {
     return null;
