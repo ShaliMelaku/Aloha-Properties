@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation, Search, Crosshair, Loader2 } from "lucide-react";
 
 
 
@@ -27,6 +27,25 @@ const fetchAddress = async (lat: number, lng: number) => {
   }
 };
 
+const geocodeAddress = async (query: string) => {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+      headers: { 'User-Agent': 'AlohaHQ/1.0' }
+    });
+    const data = await res.json();
+    if (data && data[0]) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+        address: data[0].display_name
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const map = useMapEvents({
     async click(e) {
@@ -38,6 +57,10 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
       }
     },
   });
+
+  useEffect(() => {
+    map.flyTo([lat, lng], map.getZoom());
+  }, [lat, lng, map]);
 
   const DefaultIcon = L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -51,17 +74,46 @@ function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps)
 
 export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    if (active) setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect
-    return () => { active = false; };
+    setMounted(true);
   }, []);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery) return;
+    setIsSearching(true);
+    const result = await geocodeAddress(searchQuery);
+    if (result) {
+      onChange(result.lat, result.lng);
+      if (onAddressChange) onAddressChange(result.address);
+    }
+    setIsSearching(false);
+  };
 
   if (!mounted) return <div className="h-64 bg-slate-500/5 rounded-2xl animate-pulse flex items-center justify-center text-[10px] uppercase font-black tracking-widest opacity-20">Initializing Map Core...</div>;
 
   return (
     <div className="space-y-4">
+      <form onSubmit={handleSearch} className="relative group">
+         <input 
+            type="text" 
+            placeholder="Search location for precise placement..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-6 py-4 bg-slate-500/5 border border-[var(--border)] rounded-2xl text-xs font-bold outline-none focus:border-brand-blue pr-12 transition-all"
+         />
+         <button 
+            type="submit"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-blue hover:scale-110 transition-transform"
+            disabled={isSearching}
+         >
+            {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+         </button>
+      </form>
+
       <div className="flex justify-between items-center mb-2 px-4">
          <div className="flex items-center gap-2 text-brand-blue">
             <Navigation size={14} />
@@ -75,8 +127,8 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
 
       <div className="h-[300px] w-full rounded-[2rem] overflow-hidden border border-[var(--border)] shadow-xl relative group">
         <MapContainer 
-          center={[lat || 9.0192, lng || 38.7525]} // Default to Addis Ababa
-          zoom={13} 
+          center={[lat || 9.0192, lng || 38.7525]} 
+          zoom={16} 
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
@@ -87,7 +139,11 @@ export function MapPicker({ lat, lng, onChange, onAddressChange }: MapPickerProp
           <LocationMarker lat={lat} lng={lng} onChange={onChange} onAddressChange={onAddressChange} />
         </MapContainer>
         
-        {/* Overlay HUD */}
+        {/* Overlay HUD & Crosshair */}
+        <div className="absolute inset-0 pointer-events-none z-[400] flex items-center justify-center">
+           <Crosshair size={32} className="text-brand-blue opacity-20" />
+        </div>
+
         <div className="absolute top-4 right-4 z-[400] bg-black/50 backdrop-blur-md p-3 rounded-xl border border-white/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
            <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Click map to relocate node</p>
         </div>

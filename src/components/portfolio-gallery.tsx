@@ -6,6 +6,7 @@ import { useProperties } from "@/hooks/use-properties";
 import { PropertyCard } from "./property-card";
 import { motion, AnimatePresence } from "framer-motion";
 import { PDFViewerModal } from "@/app/admin/_components/PDFViewerModal";
+import { MapModal } from "./map-modal";
 import { getSecurePropertyPdfUrl } from "@/lib/pdf-utils";
 
 export function PortfolioGallery() {
@@ -16,6 +17,7 @@ export function PortfolioGallery() {
   const [devFilter, setDevFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<{ id: string, title: string } | null>(null);
+  const [viewingMap, setViewingMap] = useState<any | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -184,6 +186,7 @@ export function PortfolioGallery() {
                   key={prop.id} 
                   property={prop} 
                   onViewPdf={(id, title) => setViewingPdf({ id, title })}
+                  onViewMap={(p) => setViewingMap(p)}
                 />
               ))
             ) : (
@@ -207,6 +210,17 @@ export function PortfolioGallery() {
         onClose={() => setViewingPdf(null)}
         url={getSecurePropertyPdfUrl(viewingPdf.id)}
         title={viewingPdf.title}
+      />
+    )}
+
+    {viewingMap && (
+      <MapModal 
+        isOpen={!!viewingMap}
+        onClose={() => setViewingMap(null)}
+        lat={viewingMap.lat}
+        lng={viewingMap.lng}
+        name={viewingMap.name}
+        location={viewingMap.location}
       />
     )}
     </>

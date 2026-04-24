@@ -64,13 +64,12 @@ function AvailabilityBadge({ type }: { type: SupabaseUnitType }) {
   );
 }
 
-export function PropertyCard({ property, onViewPdf }: { property: SupabaseProperty, onViewPdf: (id: string, title: string) => void }) {
+export function PropertyCard({ property, onViewPdf, onViewMap }: { property: SupabaseProperty, onViewPdf: (id: string, title: string) => void, onViewMap: (p: any) => void }) {
   const { formatPrice } = useCurrency();
   const { toggleCompare, compared, setActivePulse } = useComparison();
   const [typeIdx, setTypeIdx] = useState<number | null>(null);
   const [downPercent, setDownPercent] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
 
   // Use unit_types (new model) with fallback to legacy units
   const hasTypes = property.unit_types && property.unit_types.length > 0;
@@ -167,7 +166,7 @@ export function PropertyCard({ property, onViewPdf }: { property: SupabaseProper
             <h3 className="font-heading text-2xl font-black tracking-tight mb-1 group-hover:text-brand-blue transition-colors">
               {property.name}
             </h3>
-            <button onClick={() => setMapOpen(true)} className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-brand-blue transition-colors text-left" title="View Property on Map">
+            <button onClick={() => onViewMap(property)} className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-brand-blue transition-colors text-left" title="View Property on Map">
               <MapPin size={12} className="text-brand-blue" />
               {property.location}
             </button>
@@ -382,42 +381,13 @@ export function PropertyCard({ property, onViewPdf }: { property: SupabaseProper
                   ));
                 })()}
             </motion.div>
-          )}
         </AnimatePresence>
         <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center opacity-40">
            <span className="text-[9px] font-black uppercase tracking-widest">Schedule: {property.payment_schedule || 'Flexible'}</span>
            <span className="text-[9px] font-black uppercase tracking-widest">Type: {property.property_type || 'Apartment'}</span>
         </div>
       </div>
-
-      {/* Map Modal */}
-      <AnimatePresence>
-        {mapOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex flex-col p-4"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-white font-black uppercase text-xs tracking-widest flex items-center gap-2 drop-shadow-md">
-                <MapPin size={14} className="text-brand-blue" /> Location
-              </div>
-              <button title="Close Map Modal" onClick={() => setMapOpen(false)} className="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors drop-shadow-md">
-                <X size={14} />
-              </button>
-            </div>
-            <div className="flex-1 rounded-[1.5rem] overflow-hidden border border-white/20 shadow-2xl relative">
-              <PropertyMap lat={property.lat} lng={property.lng} name={property.name} location={property.location} />
-            </div>
-            <div className="mt-4 p-4 rounded-2xl bg-black/60 text-white/80 text-[10px] font-bold tracking-wider leading-relaxed border border-white/10 backdrop-blur-md drop-shadow-md">
-              Precise location for &apos;{property.name}&apos; at {property.location}.
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* PDF Modal handled by parent gallery */}
+      {/* PDF and Map Modals handled by parent gallery */}
     </motion.div>
   );
 }
