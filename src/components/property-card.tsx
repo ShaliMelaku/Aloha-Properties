@@ -7,17 +7,14 @@ import { calculateDiscount, getLoanPercentage, getProductProgress } from "@/data
 import { SupabaseProperty, SupabaseUnitType } from "@/hooks/use-properties";
 import {
   ArrowRight,
-  Banknote,
   Bath,
   BedDouble,
   CheckCircle,
-  ChevronDown,
   Clock,
   FileText,
   LayoutGrid,
   MapPin,
   Maximize,
-  Tag,
   XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -189,6 +186,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
           <div className="grid grid-cols-4 gap-2">
             <button
               onClick={() => setAccordionOpen(!accordionOpen)}
+              title={accordionOpen ? "Close Details" : "Show Unit Types & Payment Plans"}
               className={`col-span-1 flex items-center justify-center aspect-square rounded-xl border transition-all ${accordionOpen ? 'bg-brand-blue border-brand-blue text-white' : 'border-[var(--border)] hover:bg-slate-500/5'}`}
             >
               <LayoutGrid size={18} />
@@ -257,7 +255,7 @@ export function PropertyCard({ property, onViewPdf, onViewMap }: { property: Sup
                           { downpayment: 50, discount: 7 }, 
                           { downpayment: 100, discount: 15 }
                         ];
-                        return rules.sort((a: any, b: any) => a.downpayment - b.downpayment).map((rule: any, idx: number) => (
+                        return rules.sort((a: { downpayment: number }, b: { downpayment: number }) => a.downpayment - b.downpayment).map((rule: { downpayment: number; discount: number }, idx: number) => (
                           <button
                             key={idx}
                             onClick={() => setDownPercent(rule.downpayment)}
