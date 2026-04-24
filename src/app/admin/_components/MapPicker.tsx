@@ -48,27 +48,36 @@ const geocodeAddress = async (query: string) => {
 
 function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const map = useMapEvents({
-    click(e) {
+    async click(e) {
+      // Immediate pick on click
+      onChange(e.latlng.lat, e.latlng.lng);
+      if (onAddressChange) {
+        const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
+        onAddressChange(addr);
+      }
       map.flyTo(e.latlng, map.getZoom());
     },
-    moveend() {
+    async moveend() {
+      // Pick on drag end only if it was a drag (not a flyTo from click)
       const center = map.getCenter();
-      onChange(center.lat, center.lng);
-      updateAddress(center.lat, center.lng);
+      const dist = Math.sqrt(Math.pow(center.lat - lat, 2) + Math.pow(center.lng - lng, 2));
+      
+      // If the map moved more than a tiny threshold, update parent
+      if (dist > 0.00001) {
+        onChange(center.lat, center.lng);
+        if (onAddressChange) {
+          const addr = await fetchAddress(center.lat, center.lng);
+          onAddressChange(addr);
+        }
+      }
     }
   });
-
-  const updateAddress = async (la: number, ln: number) => {
-    if (onAddressChange) {
-      const addr = await fetchAddress(la, ln);
-      onAddressChange(addr);
-    }
-  };
 
   useEffect(() => {
     if (lat && lng) {
       const currentCenter = map.getCenter();
-      if (Math.abs(currentCenter.lat - lat) > 0.0001 || Math.abs(currentCenter.lng - lng) > 0.0001) {
+      const dist = Math.sqrt(Math.pow(currentCenter.lat - lat, 2) + Math.pow(currentCenter.lng - lng, 2));
+      if (dist > 0.0001) {
         map.setView([lat, lng], map.getZoom());
       }
     }
