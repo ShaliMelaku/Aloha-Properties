@@ -399,7 +399,7 @@ export function AnalyticsDashboard() {
           { label: "Active Today", value: activeToday, icon: Activity, color: "emerald", sub: "Live interactions" },
           { label: "Market Reach", value: totalTraffic, icon: Globe2, color: "blue", sub: "Platform footprint" },
           { label: "Acquisition", value: totalLeads, icon: Zap, color: "purple", sub: "Potential clients" },
-          { label: "Portfolio Value", value: opValue, icon: TrendingUp, color: "amber", sub: "Asset valuation", isCurrency: true },
+          { label: "Products Value", value: opValue, icon: TrendingUp, color: "amber", sub: "Asset valuation", isCurrency: true },
         ].map((k, i) => (
           <motion.div 
             key={i} 

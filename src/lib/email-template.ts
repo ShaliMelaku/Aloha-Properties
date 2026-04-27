@@ -145,7 +145,7 @@ export function renderEmailTemplate(content: string, recipientName: string) {
                   Discover the future of Ethiopian Real Estate.
                 </p>
                 <a href="https://alohaproperties.et" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em;">
-                  Explore our Portfolio &rarr;
+                  Explore our Products &rarr;
                 </a>
               </td>
             </tr>

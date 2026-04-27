@@ -31,7 +31,7 @@ export async function logActivity(action: string, entityType?: string, entityId?
 }
 
 /**
- * PORTFOLIO ACTIONS
+ * PRODUCT ACTIONS
  */
 
 const ALLOWED_PROPERTY_FIELDS = [

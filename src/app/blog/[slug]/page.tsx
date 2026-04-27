@@ -143,7 +143,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                      <ul className="space-y-4">
                         <li>
                            <Link href="/#catalog" className="text-sm font-bold opacity-60 hover:text-brand-blue hover:opacity-100 transition-all flex items-center justify-between">
-                              Portfolio Map <ArrowLeft size={14} className="rotate-180" />
+                              Products Map <ArrowLeft size={14} className="rotate-180" />
                            </Link>
                         </li>
                         <li>

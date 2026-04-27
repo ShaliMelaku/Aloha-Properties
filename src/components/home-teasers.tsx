@@ -51,106 +51,84 @@ export function VisionTeaser() {
 
   return (
     <section className="py-20 md:py-32 px-6 bg-[var(--background)] overflow-hidden">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-20">
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          className="flex-1 space-y-6 md:space-y-8 text-center md:text-left relative z-20"
-        >
-          <div className="flex items-center gap-3 justify-center md:justify-start">
-            <div className="w-12 h-px bg-brand-blue" />
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-blue">Aloha Vision</span>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center gap-16 md:gap-24">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex-1 space-y-6 md:space-y-10"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-px bg-brand-blue" />
+              <span className="text-xs font-black uppercase tracking-[0.3em] text-brand-blue">Aloha Vision</span>
+            </div>
+            <h2 className="text-5xl sm:text-6xl md:text-8xl font-heading font-black tracking-tighter leading-[0.85]">
+              DEFINING <br />
+              <span className="opacity-30 italic text-brand-blue">EXCELLENCE.</span>
+            </h2>
+            <p className="text-lg md:text-xl opacity-60 font-medium leading-relaxed max-w-xl">
+              From bespoke placement to global investment standards, Aloha is reshaping the Addis Ababa skyline with integrity and architectural soul.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Link href="/about" className="btn-premium-primary text-xs tracking-wider uppercase inline-flex items-center gap-3 group">
+                Our Journey <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+              </Link>
+              <div className="flex -space-x-3 items-center">
+                 {[1,2,3,4].map(i => (
+                   <div key={i} className="w-10 h-10 rounded-full border-2 border-[var(--background)] overflow-hidden bg-slate-200">
+                     <Image src={`https://i.pravatar.cc/100?img=${i+10}`} alt="Partner" width={40} height={40} />
+                   </div>
+                 ))}
+                 <span className="pl-6 text-[10px] font-black uppercase tracking-widest opacity-40">Trusted by 200+ Investors</span>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="flex-1 relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/5]">
+            <motion.div 
+              initial={{ opacity: 0, scale: 1.1 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative w-full h-full rounded-[3rem] overflow-hidden shadow-2xl border border-[var(--border)]"
+            >
+              <Image
+                src="/images/home/vision-highrise.png"
+                alt="Luxury Highrise in Addis"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            </motion.div>
+
+            {/* Overlapping Detail Card */}
+            <motion.div 
+              initial={{ opacity: 0, y: 50, x: 50 }}
+              whileInView={{ opacity: 1, y: 0, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="absolute -bottom-10 -left-10 md:-bottom-16 md:-left-16 w-3/5 aspect-square rounded-[2.5rem] overflow-hidden shadow-3xl border-8 border-[var(--background)] z-10"
+            >
+              <Image
+                src="/images/home/vision-interior.png"
+                alt="Bespoke Interior"
+                fill
+                className="object-cover"
+              />
+            </motion.div>
+
+            {/* Floating Stats */}
+            <motion.div 
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              className="absolute top-12 -right-6 md:-right-12 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl border border-[var(--border)] z-20 hidden sm:block"
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-3xl font-heading font-black text-brand-blue">98%</span>
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Client Satisfaction</span>
+              </div>
+            </motion.div>
           </div>
-          <h2 className="text-4xl sm:text-5xl md:text-7xl font-heading font-black tracking-tighter leading-[0.9]">
-            DEFINING <br />
-            <span className="opacity-30 italic">LUXURY.</span>
-          </h2>
-          <p className="text-base md:text-lg opacity-60 font-medium leading-relaxed max-w-md mx-auto md:mx-0">
-            From bespoke placement to global investment standards, discover how we are reshaping the Addis Ababa skyline.
-          </p>
-          <Link href="/about" className="btn-premium-primary text-xs tracking-wider uppercase inline-flex items-center gap-2 group">
-            Our Journey <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
-          </Link>
-        </motion.div>
-
-        {/* Interactive Poker Card Stack */}
-        <div
-          ref={containerRef}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          className="flex-1 relative w-full h-[280px] sm:h-[440px] md:h-[600px] flex items-center justify-center [perspective:1200px]"
-        >
-          {/* Card 1 — Back Left */}
-          <motion.div
-            initial={{ opacity: 0, x: 50, rotate: 0 }}
-            whileInView={{ opacity: 1, x: -55, rotate: -10 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            style={{ rotateX: rotateXBackL, rotateY: rotateYBackL, position: 'absolute', zIndex: 10 }}
-            className="aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80"
-              alt="Luxury Residence"
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              sizes="(max-width: 768px) 50vw, 30vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-white/70 text-[10px] font-medium italic leading-snug">&quot;Architecture is where art meets science.&quot;</p>
-            </div>
-          </motion.div>
-
-          {/* Card 2 — Back Right */}
-          <motion.div
-            initial={{ opacity: 0, x: -50, rotate: 0 }}
-            whileInView={{ opacity: 1, x: 55, rotate: 10 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-            style={{ rotateX: rotateXBackR, rotateY: rotateYBackR, position: 'absolute', zIndex: 10 }}
-            className="aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80"
-              alt="Modern Skyscraper"
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              sizes="(max-width: 768px) 50vw, 30vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-white/70 text-[10px] font-medium italic leading-snug">&quot;The finest homes are silent poetry.&quot;</p>
-            </div>
-          </motion.div>
-
-          {/* Card 3 — Center Front (primary) */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-            style={{ rotateX: rotateXFront, rotateY: rotateYFront, position: 'absolute', zIndex: 20 }}
-            whileHover={{ scale: 1.03 }}
-            className="aspect-[4/5] w-52 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80"
-              alt="Aloha Signature Property"
-              fill
-              priority
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              sizes="(max-width: 768px) 60vw, 40vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-            <div className="absolute bottom-5 md:bottom-8 left-5 md:left-8 right-5 md:right-8">
-              <div className="w-8 md:w-12 h-1 bg-brand-blue mb-3 md:mb-4" />
-              <p className="text-white text-sm md:text-lg font-heading font-black tracking-tight leading-tight">
-                &quot;Integrity is the bedrock of our investment strategy.&quot;
-              </p>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
