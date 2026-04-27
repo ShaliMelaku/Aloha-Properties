@@ -70,17 +70,23 @@ export function VisionTeaser() {
             <p className="text-lg md:text-xl opacity-60 font-medium leading-relaxed max-w-xl">
               From bespoke placement to global investment standards, Aloha is reshaping the Addis Ababa skyline with integrity and architectural soul.
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
-              <Link href="/about" className="btn-premium-primary text-xs tracking-wider uppercase inline-flex items-center gap-3 group">
-                Our Journey <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
-              </Link>
+            <div className="flex flex-col gap-6 pt-6">
               <div className="flex -space-x-3 items-center">
-                 {[1,2,3,4].map(i => (
-                   <div key={i} className="w-10 h-10 rounded-full border-2 border-[var(--background)] overflow-hidden bg-slate-200">
-                     <Image src={`https://i.pravatar.cc/100?img=${i+10}`} alt="Partner" width={40} height={40} />
+                 {['CBE', 'Awash', 'Midroc', 'Dashen'].map((partner, i) => (
+                   <div key={i} className="w-12 h-12 rounded-full border-4 border-[var(--background)] overflow-hidden bg-white shadow-xl flex items-center justify-center p-2 group/logo relative">
+                     <div className="text-[8px] font-black tracking-tighter text-slate-400 group-hover/logo:text-brand-blue transition-colors">{partner}</div>
+                     <div className="absolute inset-0 bg-brand-blue/5 opacity-0 group-hover/logo:opacity-100 transition-opacity" />
                    </div>
                  ))}
-                 <span className="pl-6 text-[10px] font-black uppercase tracking-widest opacity-40">Trusted by 200+ Investors</span>
+                 <div className="pl-6 flex flex-col">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[var(--foreground)]">Strategic Partnerships</span>
+                    <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">CBE · Awash · Midroc · Dashen</span>
+                 </div>
+              </div>
+              <div className="pt-2">
+                 <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-brand-blue px-4 py-2 rounded-full bg-brand-blue/5 border border-brand-blue/10">
+                    Trusted by 200+ Investors
+                 </span>
               </div>
             </div>
           </motion.div>
@@ -184,48 +190,22 @@ export function ProductsTeaser() {
   const [properties, setProperties] = useState<PartialProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-
+  
   useEffect(() => {
     async function fetchTopProperties() {
       const { data } = await supabaseClient
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(8); // Increased for better sliding feel
+        .limit(10); 
       if (data) setProperties(data);
       setLoading(false);
     }
     fetchTopProperties();
   }, []);
 
-  // Auto-scroll logic
-  useEffect(() => {
-    if (loading || isPaused || !sliderRef.current) return;
-
-    const interval = setInterval(() => {
-      if (sliderRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
-        const maxScroll = scrollWidth - clientWidth;
-        
-        if (scrollLeft >= maxScroll - 1) {
-          sliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          sliderRef.current.scrollBy({ left: 2, behavior: 'auto' });
-        }
-      }
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, [loading, isPaused]);
-
-  const handleScroll = () => {
-    if (sliderRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
-      setScrollProgress(scrollLeft / (scrollWidth - clientWidth));
-    }
-  };
+  // Marquee logic: Double the items for seamless loop
+  const marqueeItems = [...properties, ...properties];
 
   return (
     <section className="py-32 bg-slate-500/5 border-y border-[var(--border)] overflow-hidden">
@@ -251,37 +231,34 @@ export function ProductsTeaser() {
         </Link>
       </div>
 
-      {/* Interactive Slider */}
+      {/* Perfectly Smooth Marquee Slider */}
       <div 
-        className="relative group"
+        className="relative flex overflow-hidden group"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        <div 
-          ref={sliderRef}
-          onScroll={handleScroll}
-          className="flex gap-8 overflow-x-auto pb-12 px-[calc(50vw-min(50vw,576px))] snap-x snap-mandatory no-scrollbar scroll-smooth"
+        <motion.div 
+          className="flex gap-8 whitespace-nowrap"
+          animate={{ x: isPaused ? undefined : "-50%" }}
+          transition={{ 
+            duration: 40, 
+            repeat: Infinity, 
+            ease: "linear" 
+          }}
+          style={{ width: "fit-content" }}
         >
           {loading ? (
-            [1, 2, 3, 4].map(i => (
+            [1, 2, 3, 4, 5, 6].map(i => (
               <div key={i} className="flex-shrink-0 w-[300px] md:w-[400px] aspect-[4/5] rounded-[2rem] bg-slate-500/10 animate-pulse" />
             ))
-          ) : properties.map((prop, idx) => (
-            <div key={prop.id} className="flex-shrink-0 w-[300px] md:w-[400px] snap-center">
-              <ProductCard prop={prop} idx={idx} />
-            </div>
-          ))}
-        </div>
-
-        {/* Custom Progress Bar */}
-        <div className="max-w-6xl mx-auto px-6 mt-4">
-          <div className="h-1 w-full bg-[var(--border)] rounded-full overflow-hidden">
-             <motion.div 
-               className="h-full bg-brand-blue"
-               style={{ width: `${(scrollProgress * 100) || 0}%` }}
-             />
-          </div>
-        </div>
+          ) : (
+            marqueeItems.map((prop, idx) => (
+              <div key={`${prop.id}-${idx}`} className="flex-shrink-0 w-[300px] md:w-[400px]">
+                <ProductCard prop={prop} idx={idx} />
+              </div>
+            ))
+          )}
+        </motion.div>
       </div>
     </section>
   );
