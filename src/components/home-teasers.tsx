@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, BookOpen, LayoutGrid, MessageSquare, X, ExternalLink, Clock, Newspaper } from "lucide-react";
 import Image from "next/image";
@@ -27,28 +27,6 @@ interface NewsArticle {
 }
 
 export function VisionTeaser() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // Front card — full intensity tilt
-  const rotateXFront = useTransform(mouseY, [-0.5, 0.5], [12, -12]);
-  const rotateYFront = useTransform(mouseX, [-0.5, 0.5], [-12, 12]);
-  // Back-left card — exaggerated Y for strong parallax
-  const rotateXBackL = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
-  const rotateYBackL = useTransform(mouseX, [-0.5, 0.5], [-20, 20]);
-  // Back-right card — inverted Y for depth separation
-  const rotateXBackR = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
-  const rotateYBackR = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const handleMouseLeave = () => { mouseX.set(0); mouseY.set(0); };
-
   return (
     <section className="py-20 md:py-32 px-6 bg-[var(--background)] overflow-hidden">
       <div className="max-w-7xl mx-auto">
