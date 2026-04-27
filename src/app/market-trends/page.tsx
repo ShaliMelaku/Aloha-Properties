@@ -166,10 +166,10 @@ export default function MarketTrendsHub() {
                             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-black/40 text-white backdrop-blur-md border border-white/20 flex items-center w-fit gap-2`}>
                                 {pub.type === 'report' ? <FileText size={10} /> : <BookOpen size={10} />} {pub.type}
                             </span>
-                            {pub.file_url && (
+                            {(pub.file_url && (pub.file_url.includes('.pdf') || pub.file_url.includes('/api/pdf'))) && (
                               <div className="flex items-center gap-1.5 text-emerald-400">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                <span className="text-[8px] font-black uppercase tracking-tighter">Asset Ready</span>
+                                <span className="text-[8px] font-black uppercase tracking-tighter">Document Ready</span>
                               </div>
                             )}
                         </div>
@@ -202,10 +202,10 @@ export default function MarketTrendsHub() {
                            
                            <div className="flex gap-3">
                                                                <button 
-                                 onClick={() => pub.file_url ? setViewingPDF(pub) : setSelectedPost(pub)}
+                                 onClick={() => (pub.file_url && (pub.file_url.includes('.pdf') || pub.file_url.includes('/api/pdf'))) ? setViewingPDF(pub) : setSelectedPost(pub)}
                                  className="flex-1 py-3 bg-brand-blue/5 border border-brand-blue/10 text-brand-blue rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center gap-2"
                                >
-                                 {pub.file_url ? 'View Document' : 'View Details'} <ArrowRight size={14} />
+                                 {(pub.file_url && (pub.file_url.includes('.pdf') || pub.file_url.includes('/api/pdf'))) ? 'View Document' : 'View Details'} <ArrowRight size={14} />
                                </button>
                                <button 
                                  onClick={() => handleShare(pub)}
@@ -273,7 +273,7 @@ export default function MarketTrendsHub() {
                   <div className="flex-1 bg-slate-800 relative">
                      {viewingPDF.file_url ? (
                         <iframe 
-                          src={`https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin + getSecurePdfUrl(viewingPDF.file_url))}&embedded=true`} 
+                          src={getSecurePdfUrl(viewingPDF.file_url)} 
                           className="absolute inset-0 w-full h-full border-0"
                           title={`PDF Viewer: ${viewingPDF.title}`}
                         />

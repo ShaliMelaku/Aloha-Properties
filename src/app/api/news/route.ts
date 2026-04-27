@@ -84,8 +84,6 @@ export async function GET(request: Request) {
         cover_image: art.image,
         source_label: art.source.name,
         source_url: art.url,
-        // For reports, use the article URL as a downloadable reference
-        file_url: art.type === 'report' ? art.url : null,
         author_name: "Aloha News",
         type: art.type || 'article',
         is_deleted: false
