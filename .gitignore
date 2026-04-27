@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -23,6 +21,8 @@
 # misc
 .DS_Store
 *.pem
+*.tsbuildinfo
+next-env.d.ts
 
 # debug
 npm-debug.log*
@@ -30,12 +30,39 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Linting & Error Reports (Cleanup)
+lint.json
+*.txt
+!README.md
+!LICENSE.md
+!supabase-schema.sql
+lint_*.txt
+tsc_errors.txt
+final_lint_check.txt
+lint_results.txt
+
+# Scratch & Scripts
+/scratch/
+admin_emergency_fix.py
+admin_fix.py
+admin_post_fix.py
+compare_fix.py
+final_fix.py
+fix_admin_ts.py
+fix_catches.py
+fix_pdf_logic.py
+remove_theme.py
+repair_syntax_final.py
+ui_replace.py
+fix_pdf_upload.py
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class

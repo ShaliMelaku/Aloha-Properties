@@ -51,32 +51,35 @@ const geocodeAddress = async (query: string) => {
 function LocationMarker({ lat, lng, onChange, onAddressChange }: MapPickerProps) {
   const map = useMapEvents({
     async click(e) {
-      // Immediate pick on click
+      // Pick on click
       onChange(e.latlng.lat, e.latlng.lng);
       if (onAddressChange) {
         const addr = await fetchAddress(e.latlng.lat, e.latlng.lng);
         if (addr) onAddressChange(addr);
       }
-      // Center the map on the picked spot
-      map.setView(e.latlng, map.getZoom());
     }
   });
 
+  // Only re-center when props change externally (e.g. from search), 
+  // not on every local interaction to prevent jitter.
   useEffect(() => {
     if (lat && lng) {
       const currentCenter = map.getCenter();
       const dist = Math.sqrt(Math.pow(currentCenter.lat - lat, 2) + Math.pow(currentCenter.lng - lng, 2));
-      if (dist > 0.00001) {
-        map.setView([lat, lng], map.getZoom());
+      // Only fly if distance is large (indicates a search/reset rather than a click)
+      if (dist > 0.005) {
+        map.flyTo([lat, lng], 18, { duration: 1.5 });
       }
     }
   }, [lat, lng, map]);
 
-  const DefaultIcon = L.icon({
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
+  const DefaultIcon = L.divIcon({
+    className: "custom-div-icon",
+    html: `<div class="w-8 h-8 bg-brand-blue rounded-full border-4 border-white shadow-2xl flex items-center justify-center">
+             <div class="w-2 h-2 bg-white rounded-full"></div>
+           </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 
   return <Marker position={[lat || 9.0192, lng || 38.7525]} icon={DefaultIcon} />;

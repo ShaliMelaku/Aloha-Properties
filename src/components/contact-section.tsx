@@ -186,9 +186,9 @@ export function ContactSection() {
 
             <div className="space-y-6">
               {[
-                { icon: Phone, label: "Direct & WhatsApp", value: "+251 911 258981", color: "text-emerald-500" },
-                { icon: Mail, label: "Official Inquiry", value: "Alohaethiopia@gmail.com", color: "text-brand-blue" },
-                { icon: MapPin, label: "Headquarters", value: "Bole Medhanialem · Alemnesh Plaza, 12th Fl, Office 1204", color: "text-slate-400" }
+                { icon: Phone, label: "Direct & WhatsApp", value: "+251911258981", color: "text-emerald-500" },
+                { icon: Mail, label: "Official Inquiry", value: "hello@alohaproperties.com", color: "text-brand-blue" },
+                { icon: MapPin, label: "Headquarters", value: "Bole Medhanialem,Alemnesh plaza, Addis Ababa, Ethiopia", color: "text-slate-400" }
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -212,8 +212,8 @@ export function ContactSection() {
                         {item.value}
                       </a>
                     ) : item.icon === MapPin ? (
-                      <a 
-                        href="https://www.google.com/maps/search/?api=1&query=Alemnesh+Plaza+Bole+Medhanialem+Addis+Ababa" 
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query=Alemnesh+Plaza+Bole+Medhanialem+Addis+Ababa"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-heading font-bold text-lg text-[var(--foreground)] hover:text-brand-blue transition-colors"

@@ -163,23 +163,28 @@ export async function saveProgress(prog: ProgressInput) {
     percentage: rest.percentage !== undefined ? rest.percentage : (rest.percent || 0),
     status_text: rest.label || rest.status_text || 'New Phase',
     percent: rest.percentage !== undefined ? rest.percentage : (rest.percent || 0),
-    status: rest.percentage === 100 ? 'delivered' : 'under-construction'
+    status: (rest.percentage === 100 || rest.percent === 100) ? 'delivered' : 'under-construction'
   };
 
-  if (id && typeof id === 'string' && id.trim() !== '') {
-    const { error } = await supabaseClient
+  if (id && id.length > 5) { // Robust ID check
+    const { data, error } = await supabaseClient
       .from('property_progress')
       .update(payload)
-      .eq('id', id);
+      .eq('id', id)
+      .select()
+      .single();
     if (error) throw error;
     await logActivity('Progress Updated', 'progress', id, payload.label);
+    return data;
   } else {
     const { data, error } = await supabaseClient
       .from('property_progress')
       .insert(payload)
-      .select().single();
+      .select()
+      .single();
     if (error) throw error;
     await logActivity('Progress Created', 'progress', data.id, payload.label);
+    return data;
   }
 }
 

@@ -91,7 +91,7 @@ export function VisionTeaser() {
             className="aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group"
           >
             <Image
-              src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
+              src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80"
               alt="Luxury Residence"
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -113,8 +113,8 @@ export function VisionTeaser() {
             className="aspect-[4/5] w-48 sm:w-52 md:w-64 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group"
           >
             <Image
-              src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80"
-              alt="Luxury Interior"
+              src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80"
+              alt="Modern Skyscraper"
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-110"
               sizes="(max-width: 768px) 50vw, 30vw"
@@ -136,7 +136,7 @@ export function VisionTeaser() {
             className="aspect-[4/5] w-52 sm:w-60 md:w-72 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/20 group"
           >
             <Image
-              src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80"
+              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80"
               alt="Aloha Signature Property"
               fill
               priority
@@ -211,14 +211,16 @@ function PropertyPokerCard({ prop, idx }: { prop: PartialProperty; idx: number }
           translate-y-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0
           transition-all duration-500 ease-out">{quote}</p>
       </div>
-      <Link href={`/portfolio?id=${prop.id}`} className="absolute inset-0 z-10" />
+      <Link href={`/products?id=${prop.id}`} className="absolute inset-0 z-10" />
     </motion.div>
   );
 }
 
-export function PortfolioTeaser() {
+export function ProductsTeaser() {
   const [properties, setProperties] = useState<PartialProperty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchTopProperties() {
@@ -226,34 +228,75 @@ export function PortfolioTeaser() {
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(6);
       if (data) setProperties(data);
       setLoading(false);
     }
     fetchTopProperties();
   }, []);
 
+  const handleScroll = () => {
+    if (sliderRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+      setScrollProgress(scrollLeft / (scrollWidth - clientWidth));
+    }
+  };
+
   return (
-    <section className="py-32 px-6 bg-slate-500/5 border-y border-[var(--border)]">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
+    <section className="py-32 bg-slate-500/5 border-y border-[var(--border)] overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
         <div className="max-w-xl text-left">
+          <motion.div 
+             initial={{ opacity: 0, x: -20 }}
+             whileInView={{ opacity: 1, x: 0 }}
+             viewport={{ once: true }}
+             className="flex items-center gap-2 mb-4"
+          >
+            <div className="w-8 h-px bg-brand-blue" />
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Curated Selection</span>
+          </motion.div>
           <h2 className="text-4xl md:text-6xl font-heading font-black tracking-tighter mb-4 text-[var(--foreground)]">
-            CURATED <br />
-            <span className="opacity-30 italic">COLLECTIONS.</span>
+            PREMIUM <br />
+            <span className="opacity-30 italic">PRODUCTS.</span>
           </h2>
-          <p className="opacity-60 font-medium text-[var(--foreground)]">A selection of premium high-performance units from the Aloha Registry.</p>
+          <p className="opacity-60 font-medium text-[var(--foreground)]">Explore high-performance units from the Aloha Registry.</p>
         </div>
-        <Link href="/portfolio" className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-blue text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-brand-blue/20">
+        <Link href="/products" className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-blue text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-brand-blue/20">
           Enter Registry <LayoutGrid size={16} className="group-hover:rotate-12 transition-transform" />
         </Link>
       </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-        {loading ? (
-          [1, 2, 3].map(i => <div key={i} className="aspect-[3/4] rounded-[2.5rem] bg-slate-500/10 animate-pulse" />)
-        ) : properties.map((prop, idx) => (
-          <PropertyPokerCard key={prop.id} prop={prop} idx={idx} />
-        ))}
+      {/* Interactive Slider */}
+      <div className="relative group">
+        <div 
+          ref={sliderRef}
+          onScroll={handleScroll}
+          className="flex gap-8 overflow-x-auto pb-12 px-[calc(50vw-min(50vw,576px))] snap-x snap-mandatory no-scrollbar"
+        >
+          {loading ? (
+            [1, 2, 3, 4].map(i => (
+              <div key={i} className="flex-shrink-0 w-[300px] md:w-[400px] aspect-[3/4] rounded-[2.5rem] bg-slate-500/10 animate-pulse" />
+            ))
+          ) : properties.map((prop, idx) => (
+            <div key={prop.id} className="flex-shrink-0 w-[300px] md:w-[400px] snap-center">
+              <PropertyPokerCard prop={prop} idx={idx} />
+            </div>
+          ))}
+        </div>
+
+        {/* Custom Progress Bar */}
+        <div className="max-w-6xl mx-auto px-6 mt-4">
+          <div className="h-1 w-full bg-[var(--border)] rounded-full overflow-hidden">
+             <motion.div 
+               className="h-full bg-brand-blue"
+               style={{ width: `${(scrollProgress * 100) || 0}%` }}
+             />
+          </div>
+          <div className="flex justify-between mt-4 text-[9px] font-black uppercase tracking-[0.4em] opacity-20">
+             <span>Registry Start</span>
+             <span>Registry End</span>
+          </div>
+        </div>
       </div>
     </section>
   );

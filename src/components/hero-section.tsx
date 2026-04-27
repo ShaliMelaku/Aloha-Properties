@@ -91,8 +91,8 @@ export function HeroSection() {
              </p>
              
              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
-               <Link href="/portfolio" className="btn-premium-primary text-sm md:text-base px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 group whitespace-nowrap">
-                 Explore Portfolio
+               <Link href="/products" className="btn-premium-primary text-sm md:text-base px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 group whitespace-nowrap">
+                 Explore Products
                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                </Link>
                <Link href="/about" className="btn-premium px-8 md:px-12 py-4 md:py-6 text-sm md:text-base whitespace-nowrap bg-brand-blue/10 text-brand-blue border border-brand-blue/20 hover:bg-brand-blue/20 transition-all font-bold backdrop-blur-sm shadow-lg shadow-brand-blue/5 text-center">

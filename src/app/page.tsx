@@ -3,7 +3,7 @@ import { HeroSection } from "@/components/hero-section";
 import { PartnerSlider } from "@/components/partner-slider";
 import { 
   VisionTeaser, 
-  PortfolioTeaser, 
+  ProductsTeaser, 
   TrendsTeaser, 
   ContactTeaser 
 } from "@/components/home-teasers";
@@ -19,7 +19,7 @@ export default function Home() {
         <HeroSection />
         <PartnerSlider />
         <VisionTeaser />
-        <PortfolioTeaser />
+        <ProductsTeaser />
         <TrendsTeaser />
         <ContactTeaser />
         <NewsletterSection />

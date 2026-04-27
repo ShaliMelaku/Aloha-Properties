@@ -17,7 +17,7 @@ import { PartnersTab } from "./_components/PartnersTab";
 // Modular Components
 import { AnalyticsTab } from "./_components/AnalyticsTab";
 import { LeadsTab } from "./_components/LeadsTab";
-import { PortfolioTab } from "./_components/PortfolioTab";
+import { ProductsTab } from "./_components/ProductsTab";
 import { ContentTab, MarketingTab, SystemPulseTab } from "./_components/ContentTabs";
 
 // Shared Types
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
 
   const tabs: AdminTab[] = [
     { id: 'overview', icon: PieChart, label: 'Analytics' },
-    { id: 'portfolio', icon: Home, label: 'Portfolio' },
+    { id: 'products', icon: Home, label: 'Products' },
     { id: 'marketing', icon: Mail, label: 'Marketing' },
     { id: 'partners', icon: Handshake, label: 'Partners' },
     { id: 'content', icon: Globe, label: 'Content' },
@@ -298,9 +298,9 @@ export default function AdminDashboard() {
 
          <AnimatePresence mode="wait">
             {activeTab === 'overview' && <AnalyticsTab key="analytics" />}
-            {activeTab === 'portfolio' && (
-              <PortfolioTab 
-                key="portfolio"
+            {activeTab === 'products' && (
+              <ProductsTab 
+                key="products"
                 properties={properties}
                 loading={loading}
                 isAddingProperty={isAddingProperty}

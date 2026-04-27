@@ -45,7 +45,8 @@ export function PartnersTab({ notify }: PartnersTabProps) {
     if (!editing?.name?.trim()) { notify('error', 'Company name is required.'); return; }
     try {
       if (editing.id) {
-        const { id, created_at: _created_at, ...payload } = editing as TrustedCompany;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, created_at, ...payload } = editing as TrustedCompany;
         const { error } = await supabaseClient.from('trusted_companies').update(payload).eq('id', id!);
         if (error) throw error;
       } else {

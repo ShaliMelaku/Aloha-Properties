@@ -18,7 +18,7 @@ import { saveUnitType, saveUnit, saveProgress, deleteProgress, deleteUnit, delet
 import { PDFViewerModal } from "./PDFViewerModal";
 import { getSecurePdfUrl } from "@/lib/pdf-utils";
 
-interface PortfolioTabProps {
+interface ProductsTabProps {
   properties: Property[];
   loading: boolean;
   isAddingProperty: boolean;
@@ -45,13 +45,13 @@ interface PortfolioTabProps {
   fetchProperties: () => void;
 }
 
-export function PortfolioTab({
+export function ProductsTab({
   properties, loading, isAddingProperty, setIsAddingProperty,
   newProp, setNewProp, handleCreateProperty, setEditingProperty,
   setConfirmDelete,
   formatPrice, notify, editingProperty, handleUpdateProperty,
   fetchProperties, uploadFile
-}: PortfolioTabProps) {
+}: ProductsTabProps) {
 
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
@@ -107,7 +107,7 @@ export function PortfolioTab({
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Property <span className="opacity-30 italic">Portfolio.</span></h2>
+          <h2 className="text-3xl font-heading font-black tracking-tighter uppercase">Property <span className="opacity-30 italic">Products.</span></h2>
           <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Managing {properties.length} active real estate assets.</p>
         </div>
         <button onClick={() => setIsAddingProperty(true)} className="flex items-center gap-3 px-8 py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-blue/20 hover:scale-105 active:scale-95 transition-all">

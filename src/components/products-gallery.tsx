@@ -9,7 +9,7 @@ import { PDFViewerModal } from "@/app/admin/_components/PDFViewerModal";
 import { MapModal } from "./map-modal";
 import { getSecurePropertyPdfUrl } from "@/lib/pdf-utils";
 
-export function PortfolioGallery() {
+export function ProductsGallery() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");

@@ -22,7 +22,7 @@ export function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Portfolio", href: "/portfolio" },
+    { name: "Products", href: "/products" },
     { name: "Market Trends", href: "/market-trends" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },

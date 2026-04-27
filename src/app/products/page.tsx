@@ -2,11 +2,11 @@
 
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { PortfolioGallery } from "@/components/portfolio-gallery";
+import { ProductsGallery } from "@/components/products-gallery";
 import { CompareBar } from "@/components/compare-bar";
 import { motion } from "framer-motion";
 
-export default function PortfolioPage() {
+export default function ProductsPage() {
    return (
       <main className="min-h-screen bg-[var(--background)]">
          <Navbar />
@@ -17,7 +17,7 @@ export default function PortfolioPage() {
             <div className="max-w-6xl mx-auto relative">
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
                   <h1 className="text-6xl md:text-8xl font-heading font-black tracking-tighter leading-[0.85] mb-8 text-[var(--foreground)]">
-                     OUR SELECTED <span className="opacity-30 italic">PORTFOLIO.</span>
+                     OUR SELECTED <span className="opacity-30 italic">PRODUCTS.</span>
                   </h1>
                   <p className="text-lg md:text-xl font-medium opacity-60 leading-relaxed max-w-xl">
                      Explore our curated high-performance units across Addis Ababa&apos;s most prestigious developments.
@@ -26,7 +26,7 @@ export default function PortfolioPage() {
             </div>
          </section>
 
-         <PortfolioGallery />
+         <ProductsGallery />
 
          <CompareBar />
          <Footer />
