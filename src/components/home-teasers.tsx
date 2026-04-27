@@ -157,59 +157,45 @@ export function VisionTeaser() {
   );
 }
 
-// Interactive property poker card with 3D mouse-tracking tilt and unique quote
-function PropertyPokerCard({ prop, idx }: { prop: PartialProperty; idx: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], [8, -8]);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-8, 8]);
-
-  const QUOTES = [
-    '"Crafted for the visionary few."',
-    '"Where heritage meets modern luxury."',
-    '"The art of living, elevated."',
-  ];
+// Clean, premium Product Card with subtle hover effects
+function ProductCard({ prop, idx }: { prop: PartialProperty; idx: number }) {
   const FALLBACKS = [
     'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80',
   ];
   const imgSrc = prop.cover_image || prop.images?.[0] || FALLBACKS[idx % FALLBACKS.length];
-  const quote = QUOTES[idx % QUOTES.length];
 
   return (
     <motion.div
-      ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: idx * 0.1 }}
-      onMouseMove={(e) => {
-        const rect = cardRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-        mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-      }}
-      onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
-      style={{ rotateX, rotateY, perspective: 1000 }}
-      whileHover={{ scale: 1.03, boxShadow: '0 32px 64px rgba(0,0,0,0.45)' }}
-      className="group relative aspect-[3/4] rounded-[2.5rem] overflow-hidden cursor-pointer"
+      whileHover={{ y: -10 }}
+      className="group relative aspect-[4/5] rounded-[2rem] overflow-hidden cursor-pointer shadow-xl border border-[var(--border)] bg-[var(--card)]"
     >
       <Image
         src={imgSrc}
         alt={prop.name}
         fill
-        className="object-cover group-hover:scale-110 transition-transform duration-700"
-        sizes="(max-width: 768px) 100vw, 33vw"
+        className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+        sizes="(max-width: 768px) 100vw, 400px"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      
+      <div className="absolute top-6 right-6">
+        <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-500 scale-50 group-hover:scale-100">
+           <ArrowRight size={18} />
+        </div>
+      </div>
+
       <div className="absolute bottom-8 left-8 right-8">
-        <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-1">{prop.location}</p>
-        <h4 className="text-2xl font-heading font-black text-white tracking-tight mb-3">{prop.name}</h4>
-        <p className="text-xs text-white/60 italic font-medium leading-snug
-          translate-y-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0
-          transition-all duration-500 ease-out">{quote}</p>
+        <div className="flex flex-col gap-1">
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-brand-blue">{prop.location}</span>
+          <h4 className="text-xl font-heading font-black text-white tracking-tight leading-tight group-hover:text-brand-blue transition-colors duration-300">{prop.name}</h4>
+          <div className="h-px w-0 group-hover:w-12 bg-brand-blue transition-all duration-500 mt-2" />
+        </div>
       </div>
       <Link href={`/products?id=${prop.id}`} className="absolute inset-0 z-10" />
     </motion.div>
@@ -219,8 +205,9 @@ function PropertyPokerCard({ prop, idx }: { prop: PartialProperty; idx: number }
 export function ProductsTeaser() {
   const [properties, setProperties] = useState<PartialProperty[]>([]);
   const [loading, setLoading] = useState(true);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     async function fetchTopProperties() {
@@ -228,12 +215,32 @@ export function ProductsTeaser() {
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(8); // Increased for better sliding feel
       if (data) setProperties(data);
       setLoading(false);
     }
     fetchTopProperties();
   }, []);
+
+  // Auto-scroll logic
+  useEffect(() => {
+    if (loading || isPaused || !sliderRef.current) return;
+
+    const interval = setInterval(() => {
+      if (sliderRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+        const maxScroll = scrollWidth - clientWidth;
+        
+        if (scrollLeft >= maxScroll - 1) {
+          sliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          sliderRef.current.scrollBy({ left: 2, behavior: 'auto' });
+        }
+      }
+    }, 30);
+
+    return () => clearInterval(interval);
+  }, [loading, isPaused]);
 
   const handleScroll = () => {
     if (sliderRef.current) {
@@ -253,13 +260,13 @@ export function ProductsTeaser() {
              className="flex items-center gap-2 mb-4"
           >
             <div className="w-8 h-px bg-brand-blue" />
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Curated Selection</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-blue">Registry Highlights</span>
           </motion.div>
           <h2 className="text-4xl md:text-6xl font-heading font-black tracking-tighter mb-4 text-[var(--foreground)]">
             PREMIUM <br />
             <span className="opacity-30 italic">PRODUCTS.</span>
           </h2>
-          <p className="opacity-60 font-medium text-[var(--foreground)]">Explore high-performance units from the Aloha Registry.</p>
+          <p className="opacity-60 font-medium text-[var(--foreground)]">A selection of high-performance units from the Aloha Registry.</p>
         </div>
         <Link href="/products" className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-blue text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-brand-blue/20">
           Enter Registry <LayoutGrid size={16} className="group-hover:rotate-12 transition-transform" />
@@ -267,19 +274,23 @@ export function ProductsTeaser() {
       </div>
 
       {/* Interactive Slider */}
-      <div className="relative group">
+      <div 
+        className="relative group"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
         <div 
           ref={sliderRef}
           onScroll={handleScroll}
-          className="flex gap-8 overflow-x-auto pb-12 px-[calc(50vw-min(50vw,576px))] snap-x snap-mandatory no-scrollbar"
+          className="flex gap-8 overflow-x-auto pb-12 px-[calc(50vw-min(50vw,576px))] snap-x snap-mandatory no-scrollbar scroll-smooth"
         >
           {loading ? (
             [1, 2, 3, 4].map(i => (
-              <div key={i} className="flex-shrink-0 w-[300px] md:w-[400px] aspect-[3/4] rounded-[2.5rem] bg-slate-500/10 animate-pulse" />
+              <div key={i} className="flex-shrink-0 w-[300px] md:w-[400px] aspect-[4/5] rounded-[2rem] bg-slate-500/10 animate-pulse" />
             ))
           ) : properties.map((prop, idx) => (
             <div key={prop.id} className="flex-shrink-0 w-[300px] md:w-[400px] snap-center">
-              <PropertyPokerCard prop={prop} idx={idx} />
+              <ProductCard prop={prop} idx={idx} />
             </div>
           ))}
         </div>
@@ -291,10 +302,6 @@ export function ProductsTeaser() {
                className="h-full bg-brand-blue"
                style={{ width: `${(scrollProgress * 100) || 0}%` }}
              />
-          </div>
-          <div className="flex justify-between mt-4 text-[9px] font-black uppercase tracking-[0.4em] opacity-20">
-             <span>Registry Start</span>
-             <span>Registry End</span>
           </div>
         </div>
       </div>
