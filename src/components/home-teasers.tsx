@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, BookOpen, LayoutGrid, MessageSquare, X, ExternalLink, Clock, Newspaper } from "lucide-react";
