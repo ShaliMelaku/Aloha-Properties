@@ -70,24 +70,10 @@ export function VisionTeaser() {
             <p className="text-lg md:text-xl opacity-60 font-medium leading-relaxed max-w-xl">
               From bespoke placement to global investment standards, Aloha is reshaping the Addis Ababa skyline with integrity and architectural soul.
             </p>
-            <div className="flex flex-col gap-6 pt-6">
-              <div className="flex -space-x-3 items-center">
-                 {['CBE', 'Awash', 'Midroc', 'Dashen'].map((partner, i) => (
-                   <div key={i} className="w-12 h-12 rounded-full border-4 border-[var(--background)] overflow-hidden bg-white shadow-xl flex items-center justify-center p-2 group/logo relative">
-                     <div className="text-[8px] font-black tracking-tighter text-slate-400 group-hover/logo:text-brand-blue transition-colors">{partner}</div>
-                     <div className="absolute inset-0 bg-brand-blue/5 opacity-0 group-hover/logo:opacity-100 transition-opacity" />
-                   </div>
-                 ))}
-                 <div className="pl-6 flex flex-col">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[var(--foreground)]">Strategic Partnerships</span>
-                    <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">CBE · Awash · Midroc · Dashen</span>
-                 </div>
-              </div>
-              <div className="pt-2">
-                 <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-brand-blue px-4 py-2 rounded-full bg-brand-blue/5 border border-brand-blue/10">
-                    Trusted by 200+ Investors
-                 </span>
-              </div>
+            <div className="pt-4">
+              <Link href="/about" className="btn-premium-primary text-xs tracking-wider uppercase inline-flex items-center gap-3 group">
+                Our Journey <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+              </Link>
             </div>
           </motion.div>
 
