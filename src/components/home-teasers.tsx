@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, BookOpen, LayoutGrid, MessageSquare, X, ExternalLink, Clock, Newspaper } from "lucide-react";
 import Image from "next/image";
@@ -168,6 +168,38 @@ export function ProductsTeaser() {
     fetchTopProperties();
   }, []);
 
+  const controls = useAnimation();
+  
+  useEffect(() => {
+    if (!loading && properties.length > 0) {
+      controls.start({
+        x: "-50%",
+        transition: { 
+          duration: 40, 
+          repeat: Infinity, 
+          ease: "linear" 
+        }
+      });
+    }
+  }, [loading, properties, controls]);
+
+  useEffect(() => {
+    if (isPaused) {
+      controls.stop();
+    } else if (!loading && properties.length > 0) {
+      // Resume from current position is tricky with pure animate, 
+      // but restarting the sequence is acceptable for a marquee.
+      controls.start({
+        x: "-50%",
+        transition: { 
+          duration: 40, 
+          repeat: Infinity, 
+          ease: "linear" 
+        }
+      });
+    }
+  }, [isPaused, controls, loading, properties]);
+
   // Marquee logic: Double the items for seamless loop
   const marqueeItems = [...properties, ...properties];
 
@@ -197,18 +229,13 @@ export function ProductsTeaser() {
 
       {/* Perfectly Smooth Marquee Slider */}
       <div 
-        className="relative flex overflow-hidden group"
+        className="relative flex overflow-hidden group cursor-grab active:cursor-grabbing"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         <motion.div 
           className="flex gap-8 whitespace-nowrap"
-          animate={{ x: isPaused ? undefined : "-50%" }}
-          transition={{ 
-            duration: 40, 
-            repeat: Infinity, 
-            ease: "linear" 
-          }}
+          animate={controls}
           style={{ width: "fit-content" }}
         >
           {loading ? (
