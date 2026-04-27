@@ -8,6 +8,7 @@ import { ComparisonProvider } from "@/context/comparison-context";
 import { VisitorTracker } from "@/components/visitor-tracker";
 import { BackToTop } from "@/components/back-to-top";
 import { ScrollProgress } from "@/components/scroll-progress";
+import { AuthRedirect } from "@/components/auth-redirect";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -78,6 +79,7 @@ export default function RootLayout({
           <StatusProvider>
             <CurrencyProvider isAdmin={false}>
               <ComparisonProvider>
+                <AuthRedirect />
                 <VisitorTracker />
                 <BackToTop />
                 <ScrollProgress />
