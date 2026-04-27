@@ -164,7 +164,7 @@ export function ContentTab({
                               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">PDF Attached</span>
                            </div>
                            <div className="h-64 sm:h-96 w-full rounded-2xl overflow-hidden border border-[var(--border)] relative bg-white">
-                              <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(editingPost.file_url)}&embedded=true`} className="absolute inset-0 w-full h-full border-0" title="PDF Preview" />
+                              <iframe src={editingPost.file_url} className="absolute inset-0 w-full h-full border-0" title="PDF Preview" />
                            </div>
                         </div>
                      )}

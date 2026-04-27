@@ -53,7 +53,7 @@ export function PDFViewerModal({ isOpen, onClose, url, title }: PDFViewerModalPr
           {/* PDF Viewport */}
           <div className="flex-1 bg-[#0a0a0a] relative">
              <iframe 
-                src={`https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin + url)}&embedded=true`} 
+                src={url.startsWith('/') ? url : `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`} 
                 className="w-full h-full border-0"
                 title={title}
              />
