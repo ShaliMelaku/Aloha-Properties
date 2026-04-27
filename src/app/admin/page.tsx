@@ -97,6 +97,8 @@ export default function AdminDashboard() {
       if (event === 'SIGNED_IN') {
         setIsAuthorized(true);
         refreshAll();
+      } else if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('recovery');
       } else if (event === 'SIGNED_OUT') {
         setIsAuthorized(false);
       }
