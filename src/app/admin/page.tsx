@@ -39,6 +39,8 @@ export default function AdminDashboard() {
   const [emailAuth, setEmailAuth] = useState("");
   const [passwordAuth, setPasswordAuth] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'forgot' | 'recovery'>('login');
+  const [newPassword, setNewPassword] = useState("");
 
   // Tab Interaction States
   const [isAddingProperty, setIsAddingProperty] = useState(false);
@@ -74,6 +76,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkSession = async () => {
       setIsVerifying(true);
+      
+      // Check for recovery flow in URL
+      const hash = window.location.hash;
+      if (hash && hash.includes('type=recovery')) {
+        setAuthMode('recovery');
+      }
+
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         setIsAuthorized(true);
@@ -101,6 +110,33 @@ export default function AdminDashboard() {
     const { error } = await supabaseClient.auth.signInWithPassword({ email: emailAuth, password: passwordAuth });
     if (error) notify('error', error.message);
     else notify('success', "Administrative access granted.");
+    setIsVerifying(false);
+  };
+
+  const handleResetRequest = async () => {
+    if (!emailAuth) { notify('error', "Please enter your admin email."); return; }
+    setIsVerifying(true);
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(emailAuth, {
+      redirectTo: `${window.location.origin}/admin#type=recovery`,
+    });
+    if (error) notify('error', error.message);
+    else {
+      notify('success', "Recovery link dispatched to your inbox.");
+      setAuthMode('login');
+    }
+    setIsVerifying(false);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword) { notify('error', "Please enter a new password."); return; }
+    setIsVerifying(true);
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) notify('error', error.message);
+    else {
+      notify('success', "Security credentials updated successfully.");
+      setAuthMode('login');
+      setIsAuthorized(true);
+    }
     setIsVerifying(false);
   };
 
@@ -179,14 +215,48 @@ export default function AdminDashboard() {
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl space-y-8 relative overflow-hidden group">
           <div className="text-center space-y-2 relative z-10">
               <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-brand-blue shadow-xl shadow-brand-blue/10"><Lock size={40} /></div>
-              <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">Admin <span className="opacity-30 italic">Login.</span></h1>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Identity Authentication Pending...</p>
+              <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">
+                {authMode === 'login' ? <>Admin <span className="opacity-30 italic">Login.</span></> : 
+                 authMode === 'forgot' ? <>Reset <span className="opacity-30 italic">Access.</span></> :
+                 <>New <span className="opacity-30 italic">Security.</span></>}
+              </h1>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
+                {authMode === 'login' ? 'Identity Authentication Pending...' : 
+                 authMode === 'forgot' ? 'Recovery Dispatch Protocol' : 
+                 'Update Administrative Credentials'}
+              </p>
            </div>
-           <div className="space-y-4 relative z-10">
-              <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
-              <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
-              <button onClick={handleLogin} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Sign In</button>
-           </div>
+
+           <AnimatePresence mode="wait">
+             {authMode === 'login' && (
+               <motion.div key="login" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4 relative z-10">
+                  <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <div className="flex justify-end px-2">
+                    <button onClick={() => setAuthMode('forgot')} className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-60 hover:opacity-100 transition-opacity">Forgot Password?</button>
+                  </div>
+                  <button onClick={handleLogin} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Sign In</button>
+               </motion.div>
+             )}
+
+             {authMode === 'forgot' && (
+               <motion.div key="forgot" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 relative z-10">
+                  <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <div className="flex justify-between px-2 items-center">
+                    <button onClick={() => setAuthMode('login')} className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">Back to Login</button>
+                  </div>
+                  <button onClick={handleResetRequest} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Send Link</button>
+               </motion.div>
+             )}
+
+             {authMode === 'recovery' && (
+               <motion.div key="recovery" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 relative z-10">
+                  <input type="password" placeholder="NEW SECURITY KEY" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <button onClick={handleUpdatePassword} className="w-full py-6 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all">Update Access</button>
+               </motion.div>
+             )}
+           </AnimatePresence>
+
            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-brand-blue/5 rounded-full blur-3xl" />
         </motion.div>
       </div>

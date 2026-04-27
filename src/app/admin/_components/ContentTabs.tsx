@@ -362,9 +362,14 @@ export function MarketingTab({
                     if (!subject.trim() || !body.trim()) { onNotify('error', 'Subject and message body are required.'); return; }
                     setSending(true);
                     try {
+                      const { data: { session } } = await supabaseClient.auth.getSession();
+                      const token = session?.access_token;
                       const res = await fetch('/api/admin/broadcast', { 
                         method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        }, 
                         body: JSON.stringify({ 
                           subject, 
                           body, 
