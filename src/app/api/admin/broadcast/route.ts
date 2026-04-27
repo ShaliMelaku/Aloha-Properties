@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     let allRecipients: { name: string; email: string; id?: string }[] = [];
 
     // 2. Process Individual Emails & Register as Leads
-    if (individualEmails && Array.isArray(individualEmails)) {
+    if (individualEmails && Array.isArray(individualEmails) && individualEmails.length > 0) {
       const individualLeads = individualEmails.map((email: string) => ({
         name: email.split('@')[0],
         email: email.toLowerCase().trim(),
@@ -42,19 +42,16 @@ export async function POST(req: Request) {
         batch_id: batch.id
       }));
 
-      // Upsert these leads (insert new, update existing if needed)
-      // Note: We use 'onConflict' if email is unique, but if not, we do it manually or assume upsert handles it.
-      // Since schema doesn't have UNIQUE on email yet, we'll try to find them first or just insert.
       const { data: insertedLeads } = await supabase
         .from('leads')
-        .upsert(individualLeads, { onConflict: 'email' }) // Assuming email is unique or we handle conflict
+        .upsert(individualLeads, { onConflict: 'email' })
         .select('name, email, id');
       
       if (insertedLeads) allRecipients = [...allRecipients, ...insertedLeads];
     }
 
-    // 3. Resolve Database Leads via Filter
-    if (targetFilter) {
+    // 3. Resolve Database Leads via Filter (Only if filter is provided and not empty)
+    if (targetFilter && targetFilter.trim().length > 0) {
       let query = supabase.from('leads').select('name, email, id');
       
       if (targetFilter.toLowerCase() !== 'all') {
@@ -63,9 +60,6 @@ export async function POST(req: Request) {
       
       const { data: dbLeads, error: dbError } = await query;
       if (!dbError && dbLeads) {
-        // Link existing leads to this batch too? 
-        // Maybe better to just track who was sent what in a separate table.
-        // For now, we'll just add them to the recipient list.
         allRecipients = [...allRecipients, ...dbLeads];
       }
     }
