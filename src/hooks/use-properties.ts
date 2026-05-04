@@ -62,6 +62,7 @@ export interface SupabaseProgress {
   status_text: string;
   label: string;
   estimated_completion: string;
+  created_at?: string;
 }
 
 // ── Property ──────────────────────────────────────────────────
@@ -142,7 +143,7 @@ export function useProperties() {
               percent: p.percent ?? p.percentage ?? 0,
               label: p.label || p.status_text || 'In Progress'
             }))
-            .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+            .sort((a: SupabaseProgress, b: SupabaseProgress) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
           return { ...prop, unit_types: enrichedTypes, progress: normalizedProgress };
         });
