@@ -1,0 +1,505 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { 
+  LogOut, PieChart, Mail, Home, Users, ShieldCheck, Activity, Lock,
+  Globe, Trash2, Sun, Moon, X, Zap, Menu
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useStatus } from "@/context/status-context";
+import { useCurrency } from "@/context/currency-context";
+import { supabaseClient } from "@/lib/supabase";
+import { useAdminData } from "@/hooks/use-admin-data";
+import { useScopedTheme } from "@/components/scoped-theme-provider";
+import { Handshake } from "lucide-react";
+import { PartnersTab } from "./_components/PartnersTab";
+
+// Modular Components
+import { AnalyticsTab } from "./_components/AnalyticsTab";
+import { LeadsTab } from "./_components/LeadsTab";
+import { ProductsTab } from "./_components/ProductsTab";
+import { ContentTab, MarketingTab, SystemPulseTab } from "./_components/ContentTabs";
+
+// Shared Types
+import { Lead, Property, Unit, AdminTab } from "@/types/admin";
+import { createProperty, updateProperty } from "@/lib/admin-actions";
+
+export default function AdminDashboard() {
+  const { notify } = useStatus();
+  const { formatPrice } = useCurrency();
+  const { theme, toggleTheme } = useScopedTheme();
+  const { 
+    properties, leads, posts, history, responses, activities, loading, refreshAll,
+    fetchLeads, fetchProperties, fetchPosts, fetchResponses, fetchActivities
+  } = useAdminData();
+
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [emailAuth, setEmailAuth] = useState("");
+  const [passwordAuth, setPasswordAuth] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'forgot' | 'recovery'>('login');
+  const [newPassword, setNewPassword] = useState("");
+
+  // Tab Interaction States
+  const [isAddingProperty, setIsAddingProperty] = useState(false);
+  const [newProp, setNewProp] = useState<Partial<Property>>({ 
+    name: '', location: '', developer: 'Getas Real Estate', description: '', 
+    lat: 9.0192, lng: 38.7525, amenities: [], 
+    cover_image: '', video_url: '', 
+    discount_rules: [], 
+    pdf_brochure_url: '',
+    payment_schedule: 'Flexible Terms', air_quality_index: 50,
+    urban_heat_index: 0, env_risk_level: 'Low'
+  });
+  const [newUnit, setNewUnit] = useState<Partial<Unit>>({ 
+    unit_number: '', floor_number: 1, status: 'available', price: 0, notes: ''
+  });
+  const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'property' | 'post' | 'lead' | 'unit' | 'unitType' | 'milestone', id: string, name: string } | null>(null);
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [draftCampaign, setDraftCampaign] = useState<{ subject: string; body: string; targetFilter: string } | null>(null);
+
+  const openMarketingWithDraft = (draft: { subject: string; body: string; targetFilter: string }) => {
+    setDraftCampaign(draft);
+    setActiveTab('marketing');
+  };
+
+
+
+  // Auth Effect
+  useEffect(() => {
+    const checkSession = async () => {
+      setIsVerifying(true);
+      
+      // Check for recovery flow in URL
+      const hash = window.location.hash;
+      if (hash && hash.includes('type=recovery')) {
+        setAuthMode('recovery');
+      }
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        setIsAuthorized(true);
+        refreshAll();
+      }
+      setIsVerifying(false);
+    };
+
+    checkSession();
+
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') {
+        setIsAuthorized(true);
+        refreshAll();
+      } else if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('recovery');
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthorized(false);
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, [refreshAll]);
+
+  const handleLogin = async () => {
+    setIsVerifying(true);
+    const { error } = await supabaseClient.auth.signInWithPassword({ email: emailAuth, password: passwordAuth });
+    if (error) notify('error', error.message);
+    else notify('success', "Administrative access granted.");
+    setIsVerifying(false);
+  };
+
+  const handleResetRequest = async () => {
+    if (!emailAuth) { notify('error', "Please enter your admin email."); return; }
+    setIsVerifying(true);
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(emailAuth, {
+      redirectTo: `${window.location.origin}/admin#type=recovery`,
+    });
+    if (error) notify('error', error.message);
+    else {
+      notify('success', "Recovery link dispatched to your inbox.");
+      setAuthMode('login');
+    }
+    setIsVerifying(false);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword) { notify('error', "Please enter a new password."); return; }
+    setIsVerifying(true);
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) notify('error', error.message);
+    else {
+      notify('success', "Security credentials updated successfully.");
+      setAuthMode('login');
+      setIsAuthorized(true);
+    }
+    setIsVerifying(false);
+  };
+
+  const handleLogout = async () => {
+    await supabaseClient.auth.signOut();
+    notify('info', "Session terminated.");
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      let table = '';
+      if (confirmDelete.type === 'property') table = 'properties';
+      else if (confirmDelete.type === 'lead') table = 'leads';
+      else if (confirmDelete.type === 'post') table = 'posts';
+      else if (confirmDelete.type === 'unit') table = 'property_units';
+      else if (confirmDelete.type === 'unitType') table = 'property_unit_types';
+      else if (confirmDelete.type === 'milestone') table = 'property_progress';
+
+      if (!table) throw new Error("Invalid resource type for deletion.");
+
+      const { error } = await supabaseClient.from(table).delete().eq('id', confirmDelete.id);
+      if (error) throw error;
+      
+      notify('success', `Resource deleted: ${confirmDelete.name}`);
+      refreshAll();
+    } catch (err: unknown) {
+      notify('error', `Deletion error: ${err instanceof Error ? err.message : 'Unknown'}`);
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
+  const syncNews = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      if (data.success) {
+        notify('success', `Intelligence Desk Synchronized: ${data.posted} new articles.`);
+        fetchPosts();
+      }
+    } catch { notify('error', 'Sync operational failure.'); }
+    finally { setSyncing(false); }
+  };
+
+  const uploadFile = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `admin-uploads/${fileName}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from('property-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabaseClient.storage
+        .from('property-assets')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (err: unknown) {
+      notify('error', `Upload failed: ${err instanceof Error ? err.message : 'Unknown'}`);
+      return null;
+    }
+  };
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  if (isVerifying) return <div className="h-screen bg-black flex items-center justify-center"><Activity className="animate-spin text-brand-blue" size={48} /></div>;
+
+  if (!isAuthorized) {
+    return (
+      <div className="h-screen bg-[var(--background)] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--brand-blue-alpha)_0%,_transparent_70%)]">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[var(--card)] rounded-[3rem] border border-[var(--border)] p-12 shadow-2xl space-y-8 relative overflow-hidden group">
+          <div className="text-center space-y-2 relative z-10">
+              <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-brand-blue shadow-xl shadow-brand-blue/10"><Lock size={40} /></div>
+              <h1 className="text-3xl font-heading font-black tracking-tighter uppercase">
+                {authMode === 'login' ? <>Admin <span className="opacity-30 italic">Login.</span></> : 
+                 authMode === 'forgot' ? <>Reset <span className="opacity-30 italic">Access.</span></> :
+                 <>New <span className="opacity-30 italic">Security.</span></>}
+              </h1>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
+                {authMode === 'login' ? 'Identity Authentication Pending...' : 
+                 authMode === 'forgot' ? 'Recovery Dispatch Protocol' : 
+                 'Update Administrative Credentials'}
+              </p>
+           </div>
+
+           <AnimatePresence mode="wait">
+             {authMode === 'login' && (
+               <motion.div key="login" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4 relative z-10">
+                  <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <input type="password" placeholder="SECURITY KEY" value={passwordAuth} onChange={e => setPasswordAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <div className="flex justify-end px-2">
+                    <button onClick={() => setAuthMode('forgot')} className="text-[10px] font-black uppercase tracking-widest text-brand-blue opacity-60 hover:opacity-100 transition-opacity">Forgot Password?</button>
+                  </div>
+                  <button onClick={handleLogin} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Sign In</button>
+               </motion.div>
+             )}
+
+             {authMode === 'forgot' && (
+               <motion.div key="forgot" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 relative z-10">
+                  <input type="email" placeholder="ADMIN EMAIL" value={emailAuth} onChange={e => setEmailAuth(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <div className="flex justify-between px-2 items-center">
+                    <button onClick={() => setAuthMode('login')} className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">Back to Login</button>
+                  </div>
+                  <button onClick={handleResetRequest} className="w-full py-6 bg-brand-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">Send Link</button>
+               </motion.div>
+             )}
+
+             {authMode === 'recovery' && (
+               <motion.div key="recovery" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 relative z-10">
+                  <input type="password" placeholder="NEW SECURITY KEY" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-6 py-5 bg-[var(--background)] rounded-2xl text-xs font-black uppercase tracking-widest outline-none border border-[var(--border)] focus:border-brand-blue transition-all" />
+                  <button onClick={handleUpdatePassword} className="w-full py-6 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all">Update Access</button>
+               </motion.div>
+             )}
+           </AnimatePresence>
+
+           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-brand-blue/5 rounded-full blur-3xl" />
+        </motion.div>
+      </div>
+    );
+  }
+
+  const tabs: AdminTab[] = [
+    { id: 'overview', icon: PieChart, label: 'Analytics' },
+    { id: 'products', icon: Home, label: 'Products' },
+    { id: 'marketing', icon: Mail, label: 'Marketing' },
+    { id: 'partners', icon: Handshake, label: 'Partners' },
+    { id: 'content', icon: Globe, label: 'Content' },
+    { id: 'leads', icon: Users, label: 'Leads' },
+    { id: 'pulse', icon: Activity, label: 'System Pulse' },
+    { id: 'devices', icon: ShieldCheck, label: 'Devices' },
+  ];
+
+  return (
+    <div className={`min-h-screen flex flex-col md:flex-row ${theme === 'dark' ? 'bg-black text-white' : 'bg-slate-50 text-slate-900'}`}>
+      
+      {/* ── MOBILE HEADER ────────────────────────────────────────────────────────── */}
+      <div className="md:hidden flex items-center justify-between p-6 bg-[var(--card)] border-b border-[var(--border)] sticky top-0 z-[100] backdrop-blur-xl bg-black/80">
+        <div className="flex items-center gap-3">
+           <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white font-black text-xl">A</div>
+           <h1 className="text-sm font-black uppercase tracking-tighter">Aloha <span className="opacity-30 italic">Hub.</span></h1>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-white"
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* ── SIDEBAR ──────────────────────────────────────────────────────────────── */}
+      <aside className={`
+        fixed inset-0 z-[90] md:relative md:flex w-full md:w-80 border-r border-[var(--border)] flex-col bg-[var(--card)] transition-transform duration-300
+        ${isMobileMenuOpen ? 'translate-x-0 flex' : '-translate-x-full md:translate-x-0 hidden md:flex'}
+      `}>
+        <div className="p-10 hidden md:block">
+           <div className="flex items-center gap-4 mb-2">
+              <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-brand-blue/20">A</div>
+              <div>
+                <h1 className="text-xl font-heading font-black tracking-tighter uppercase leading-none">Aloha <span className="opacity-30 italic">Hub.</span></h1>
+                <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 mt-1">Intelligence Core</p>
+              </div>
+           </div>
+        </div>
+
+        <nav className="flex-1 px-4 md:px-6 space-y-2 py-10 md:py-0 overflow-y-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-brand-blue text-white shadow-xl shadow-brand-blue/20' : 'opacity-40 hover:opacity-100 hover:bg-slate-500/5'}`}
+            >
+              <tab.icon size={18} />
+              {tab.label}
+              {activeTab === tab.id && <motion.div layoutId="tab-active" className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-6 md:p-8 space-y-4 border-t border-[var(--border)]">
+          <button 
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all border border-[var(--border)]"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? 'Light Protocol' : 'Dark Protocol'}
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut size={18} />
+            Terminate
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-x-hidden p-4 md:p-10 lg:p-16 custom-scrollbar">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+               <ShieldCheck className="text-brand-blue" size={16} />
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Encrypted Terminal v6.2</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-heading font-black tracking-tighter uppercase leading-none">
+              {tabs.find(t => t.id === activeTab)?.label} <span className="opacity-30 italic">Center.</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-4 w-full md:w-auto">
+             {activeTab === 'content' && (
+                <button 
+                  onClick={syncNews} 
+                  disabled={syncing}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 py-4 bg-brand-blue/10 text-brand-blue rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all border border-brand-blue/20"
+                >
+                  {syncing ? <Activity className="animate-spin" size={14}/> : <Zap size={14}/>} Sync Intelligence
+                </button>
+             )}
+             <div className="hidden sm:flex items-center gap-3 px-6 py-4 bg-slate-500/5 rounded-2xl border border-[var(--border)]">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">System Online</span>
+             </div>
+          </div>
+        </header>
+
+         <AnimatePresence mode="wait">
+            {activeTab === 'overview' && <AnalyticsTab key="analytics" />}
+            {activeTab === 'products' && (
+              <ProductsTab 
+                key="products"
+                properties={properties}
+                loading={loading}
+                isAddingProperty={isAddingProperty}
+                setIsAddingProperty={setIsAddingProperty}
+                newProp={newProp}
+                setNewProp={setNewProp}
+                newUnit={newUnit}
+                setNewUnit={setNewUnit}
+                uploadingImage={false}
+                uploadFile={uploadFile}
+                handleCreateProperty={async () => {
+                   try {
+                     await createProperty(newProp);
+                     notify('success', 'Asset Successfully Deployed to Registry.');
+                     setIsAddingProperty(false);
+                     refreshAll();
+                   } catch (e: unknown) {
+                     notify('error', e instanceof Error ? e.message : 'Deployment Fault');
+                   }
+                }}
+                handleUpdateProperty={async () => {
+                   if (!editingProperty) return;
+                   try {
+                     await updateProperty(editingProperty.id, editingProperty);
+                     notify('success', 'Asset Parameters Synchronized.');
+                     setEditingProperty(null);
+                     refreshAll();
+                   } catch (e: unknown) {
+                     notify('error', e instanceof Error ? e.message : 'Sync Fault');
+                   }
+                }}
+                setEditingProperty={setEditingProperty}
+                setConfirmDelete={setConfirmDelete}
+                togglePropertyUnits={(id: string) => {
+                   const next = new Set(expandedProperties);
+                   if (next.has(id)) next.delete(id);
+                   else next.add(id);
+                   setExpandedProperties(next);
+                }}
+                expandedProperties={expandedProperties}
+                formatPrice={formatPrice}
+                setEditingUnit={setEditingUnit}
+                setSelectedPropertyId={setSelectedPropertyId}
+                selectedPropertyId={selectedPropertyId}
+                editingUnit={editingUnit}
+                fetchProperties={fetchProperties}
+                notify={notify}
+                editingProperty={editingProperty}
+              />
+            )}
+            {activeTab === 'marketing' && (
+              <MarketingTab 
+                key={draftCampaign ? `marketing-${Date.now()}` : 'marketing'} 
+                onNotify={notify} 
+                onRefreshLeads={fetchLeads} 
+                initialDraft={draftCampaign} 
+                onDraftConsumed={() => setDraftCampaign(null)} 
+                history={history}
+                responses={responses}
+                loading={loading}
+                onRepeatCampaign={openMarketingWithDraft}
+                onRefreshResponses={fetchResponses}
+              />
+            )}
+            {activeTab === 'content' && (
+              <ContentTab 
+                key="content"
+                posts={posts} 
+                loading={loading} 
+                syncing={syncing} 
+                onSync={syncNews} 
+                onRefresh={fetchPosts}
+                onNotify={notify} 
+                setConfirmDelete={setConfirmDelete} 
+              />
+            )}
+            {activeTab === 'leads' && (
+              <LeadsTab 
+                key="leads"
+                leads={leads} 
+                loading={loading} 
+                onRefresh={fetchLeads}
+                onNotify={notify}
+                setViewingLead={setViewingLead} 
+                setSelectedLead={setSelectedLead} 
+                setConfirmDelete={setConfirmDelete} 
+                viewingLead={viewingLead}
+                selectedLead={selectedLead}
+              />
+            )}
+            {activeTab === 'partners' && <PartnersTab key="partners" notify={notify} />}
+            {activeTab === 'pulse' && (
+              <SystemPulseTab 
+                key="pulse"
+                activities={activities}
+                loading={loading}
+                onRefresh={fetchActivities}
+              />
+            )}
+            {activeTab === 'devices' && (
+              <div className="py-20 text-center space-y-4 bg-slate-500/5 rounded-[3rem] border border-dashed border-[var(--border)]">
+                <ShieldCheck size={48} className="mx-auto opacity-10" />
+                <p className="text-xs font-bold uppercase tracking-widest opacity-30">Device management coming soon.</p>
+              </div>
+            )}
+         </AnimatePresence>
+      </main>
+
+      {/* Shared Delete Confirmation */}
+      <AnimatePresence>
+        {confirmDelete && (
+           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-[var(--card)] rounded-[3rem] border-2 border-red-500/30 p-12 max-w-md w-full text-center space-y-8 shadow-[0_0_100px_rgba(239,68,68,0.15)]">
+                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-red-500/5"><Trash2 size={40} /></div>
+                <div className="space-y-3">
+                   <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">Confirm Deletion</h3>
+                   <p className="text-xs font-bold opacity-40 uppercase tracking-widest leading-relaxed">Are you certain you wish to delete <span className="text-[var(--foreground)]">{confirmDelete.name}</span> from the database?</p>
+                </div>
+                <div className="flex gap-4">
+                   <button onClick={() => setConfirmDelete(null)} className="flex-1 py-5 border border-[var(--border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-500/10 transition-all">Cancel</button>
+                   <button onClick={handleDelete} className="flex-1 py-5 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.05] active:scale-95 transition-all">Delete Forever</button>
+                </div>
+             </motion.div>
+           </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
